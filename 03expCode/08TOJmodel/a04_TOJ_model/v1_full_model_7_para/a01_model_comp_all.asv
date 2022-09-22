@@ -1,0 +1,18 @@
+%Model comparison for ternary TOJ in the pre/post test
+
+clear all; close all; clc;
+
+subjIDs = 3:8;
+nsub = length(subjIDs);
+deltaAIC = NaN(nsub,5); % number of subjects x number of models
+for i = 1:nsub 
+    subjID = subjIDs(i);
+    [deltaAIC(i,:) ] = indiv_model_comp(subjID);
+end
+
+%% plotting
+figure
+heatmap(deltaAIC', 'XLabel','subjects', 'Colormap', flipud(bone),...
+    'ColorLimits', [0, 14], 'ColorbarVisible', 'off', 'GridVisible', 'off',...
+    'FontSize', 15, 'YLabel', 'model'); colorbar
+ 
