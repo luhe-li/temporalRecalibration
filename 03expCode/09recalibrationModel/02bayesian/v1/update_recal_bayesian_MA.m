@@ -17,7 +17,7 @@ for tt = 1:expTrial
 
     % In each trial (1 ≤ i ≤ 250), observer makes a noisy sensory measurement
     % of SOA, soa_m, with a standard deviation sigma_soa centered on adaptor_soa + delta_s
-    soa_m = randn * sigma_soa + adaptor_soa + delta_s(:,tt);
+    soa_m = randn * sigma_soa + adaptor_soa - delta_s(:,tt);
 
     % The likelihood of a common source of SOA measurement in a trial i is:
     L_C1 = 1 / (2*pi*sqrt(const1)) * exp( -0.5 * soa_m^2 / (const1));

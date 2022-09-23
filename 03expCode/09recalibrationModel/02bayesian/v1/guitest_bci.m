@@ -1,26 +1,26 @@
-function varargout = guitest_MCD(varargin)
-% GUITEST_MCD MATLAB code for guitest_MCD.fig
-%      GUITEST_MCD, by itself, creates a new GUITEST_MCD or raises the existing
+function varargout = guitest_bci(varargin)
+% GUITEST_bci MATLAB code for guitest_bci.fig
+%      GUITEST_bci, by itself, creates a new GUITEST_bci or raises the existing
 %      singleton*.
 %
-%      H = GUITEST_MCD returns the handle to a new GUITEST_MCD or the handle to
+%      H = GUITEST_bci returns the handle to a new GUITEST_bci or the handle to
 %      the existing singleton*.
 %
-%      GUITEST_MCD('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in GUITEST_MCD.M with the given input arguments.
+%      GUITEST_bci('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in GUITEST_bci.M with the given input arguments.
 %
-%      GUITEST_MCD('Property','Value',...) creates a new GUITEST_MCD or raises the
+%      GUITEST_bci('Property','Value',...) creates a new GUITEST_bci or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before guitest_MCD_OpeningFcn gets called.  An
+%      applied to the GUI before guitest_bci_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to guitest_MCD_OpeningFcn via varargin.
+%      stop.  All inputs are passed to guitest_bci_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help guitest_MCD
+% Edit the above text to modify the response to help guitest_bci
 
 % Last Modified by GUIDE v2.5 23-Sep-2022 14:26:27
 
@@ -28,8 +28,8 @@ function varargout = guitest_MCD(varargin)
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @guitest_MCD_OpeningFcn, ...
-                   'gui_OutputFcn',  @guitest_MCD_OutputFcn, ...
+                   'gui_OpeningFcn', @guitest_bci_OpeningFcn, ...
+                   'gui_OutputFcn',  @guitest_bci_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -44,15 +44,15 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before guitest_MCD is made visible.
-function guitest_MCD_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before guitest_bci is made visible.
+function guitest_bci_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to guitest_MCD (see VARARGIN)
+% varargin   command line arguments to guitest_bci (see VARARGIN)
 
-% Choose default command line output for guitest_MCD
+% Choose default command line output for guitest_bci
 handles.output = hObject;
 
 % Update handles structure
@@ -71,12 +71,12 @@ set(gca,'TickLength',[0 0]);
 set(gca,'fontsize',16); % was 26
 xticks([]); yticks([]);
 
-% UIWAIT makes guitest_MCD wait for user response (see UIRESUME)
+% UIWAIT makes guitest_bci wait for user response (see UIRESUME)
 %uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = guitest_MCD_OutputFcn(hObject, eventdata, handles) 
+function varargout = guitest_bci_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -109,7 +109,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 function resetPlots(handles,plot_idx)
-%eval(['axes(handles.axes',num2str(plot_idx),')']);  
+% eval(['axes(handles.axes',num2str(plot_idx),')']);  
 cla reset; 
 set(gca,'gridcolor','w');
 set(gca,'xminorgrid','off','yminorgrid','off')
@@ -512,7 +512,7 @@ elseif get(handles.radiobutton_boxes,'Value') == 1 %read off from the text boxes
     param.sigma_c1             = str2double(get(handles.text_sigma_c1,'String'));
     param.sigma_c2           = str2double(get(handles.text_sigma_c2,'String')); 
     param.sigma_soa     = str2double(get(handles.text_sigma_soa,'String'));
-    param.alpha= str2double(get(handles.text_alpha,'String'));
+    param.alpha         = str2double(get(handles.text_alpha,'String'));
 
 else
     errordlg('You need to choose between sliders and text boxes!'); 
@@ -535,7 +535,7 @@ for i                 = 1:n_soas
         delta_s = update_recal_bayesian_MA(setup.exposure_trial, adaptor_soa, ...
             param.p_c1, param.sigma_soa, param.sigma_c1, param.sigma_c2, param.alpha);
 
-        last_recal(i,t)     = - delta_s(:, end);
+        last_recal(i,t)     =  - delta_s(:, end);
 
     end
 
@@ -548,7 +548,7 @@ end
 %% summarize and plot
 last_recal_iSOA_error = std(last_recal, [], 2);
 last_recal_iSOA = mean(last_recal, 2);
-saveResults = { delta_s, last_recal, last_recal_iSOA_error, last_recal_iSOA};
+saveResults = {delta_s, last_recal, last_recal_iSOA_error, last_recal_iSOA};
 
 axes(handles.axes1);
 set(gca,'FontSize',15,'linewidth',2); hold on; 
