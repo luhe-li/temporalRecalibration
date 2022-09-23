@@ -15,4 +15,4 @@ xlim([-1 1])
 yline(0)
 plot(x,y,'ko','MarkerSize',10,'MarkerFaceColor','k')
 
-saveas(gca,'f1','png')
+saveas(gca,'f1','epsc')

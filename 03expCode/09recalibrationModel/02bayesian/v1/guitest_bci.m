@@ -237,9 +237,9 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 function addProgressBar(handles, idx)
-eval(['axes(handles.axes',num2str(10 + idx),')']);
-patch([0, 1, 1, 0], [0, 0, 1, 1], [0.47,0.67,0.19],...
-    'EdgeColor',[0.47,0.67,0.19],'FaceAlpha', 0.5, 'EdgeAlpha', 0.5);
+    eval(['axes(handles.axes',num2str(10 + idx),')']);
+    patch([0, 1, 1, 0], [0, 0, 1, 1], [0.47,0.67,0.19],...
+        'EdgeColor',[0.47,0.67,0.19],'FaceAlpha', 0.5, 'EdgeAlpha', 0.5)
 
 function clearProgressBar(handles)
 for idx = 1:9
@@ -512,7 +512,7 @@ elseif get(handles.radiobutton_boxes,'Value') == 1 %read off from the text boxes
     param.sigma_c1             = str2double(get(handles.text_sigma_c1,'String'));
     param.sigma_c2           = str2double(get(handles.text_sigma_c2,'String')); 
     param.sigma_soa     = str2double(get(handles.text_sigma_soa,'String'));
-    param.lalpha= str2double(get(handles.text_alpha,'String'));
+    param.alpha= str2double(get(handles.text_alpha,'String'));
 
 else
     errordlg('You need to choose between sliders and text boxes!'); 

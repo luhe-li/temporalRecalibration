@@ -88,7 +88,11 @@ for m = 4:4
     xlabel('test lag')
     ylabel('proportion of responses')
     set(gca,'TickDir','out');
+    xlim([SOA_finer(1), SOA_finer(end)])
     xticks(0)
+
+%     plot(SOA_finer, Pre_Vfirst_fit, 'o','w');
+    saveas(gca,'f0','png')
 
     plot(SOA_finer, Pre_Vfirst_fit, 'o','Color', cMAP2(1,:), 'MarkerSize',12,'lineWidth', 3)
     saveas(gca,'f1','png')
