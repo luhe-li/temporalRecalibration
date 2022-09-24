@@ -495,6 +495,7 @@ global setup param saveResults
 % set parameters
 adaptor_soas = [-700, -300:100:300, 700]./1000; % s
 n_soas = length(adaptor_soas);
+mu_pre              = 0.06; %s
 
 % set session parameters
 setup.sim_trial      = str2double(get(handles.text_num_simulations,'String'));%1;
@@ -521,8 +522,8 @@ end
 
 %% initiate recalibration effect for all soas
 
-delta_s               = NaN(n_soas, setup.sim_trial, setup.exposure_trial + 1);
-last_recal            = NaN(n_soas, setup.sim_trial); % summarize the last recalibration effect
+mu               = NaN(n_soas, setup.sim_trial, setup.exposure_trial + 1);
+mu_shift            = NaN(n_soas, setup.sim_trial); % summarize the last recalibration effect
 
 %% running simulation
 
@@ -532,28 +533,30 @@ for i                 = 1:n_soas
 
     for t                 = 1:setup.sim_trial
 
-        delta_s = update_recal_bayesian_MA(setup.exposure_trial, adaptor_soa, ...
+        mu(i,t,:) = update_recal_bayesian_MA(setup.exposure_trial, adaptor_soa, mu_pre,...
             param.p_c1, param.sigma_soa, param.sigma_c1, param.sigma_c2, param.alpha);
 
-        last_recal(i,t)     =  - delta_s(:, end);
+        mu_shift(i,t)     =  mu(i, t, end) - mu(i, t, 1);
 
     end
 
     %plot the histogram
     eval(['axes(handles.axes',num2str(1+i),');']);
-    histogram(last_recal(i,:),20,'FaceColor','k','FaceAlpha',0.3,'EdgeColor','w');
-    yticks([]); xticks(round(mean(last_recal(i,:)),4));
+    histogram(mu_shift(i,:),20,'FaceColor','k','FaceAlpha',0.3,'EdgeColor','w');
+    yticks([]); xticks(round(mean(mu_shift(i,:)),4));
 end
 
 %% summarize and plot
-last_recal_iSOA_error = std(last_recal, [], 2);
-last_recal_iSOA = mean(last_recal, 2);
-saveResults = {delta_s, last_recal, last_recal_iSOA_error, last_recal_iSOA};
+mu_shift_iSOA_error = std(mu_shift, [], 2);
+mu_shift_iSOA       = mean(mu_shift, 2);
+saveResults = {mu, mu_shift, mu_shift_iSOA_error, mu_shift_iSOA};
 
 axes(handles.axes1);
 set(gca,'FontSize',15,'linewidth',2); hold on; 
-errorbar(adaptor_soas, last_recal_iSOA, last_recal_iSOA_error,'.','LineWidth',2); hold off;
+errorbar(adaptor_soas, mu_shift_iSOA, mu_shift_iSOA_error,'.','LineWidth',2); hold off;
 yline(0)
+yl = ylim;
+yticks(yl)
 xticks(adaptor_soas)
 xticklabels(adaptor_soas)
 xlabel('adaptor SOA (s)')

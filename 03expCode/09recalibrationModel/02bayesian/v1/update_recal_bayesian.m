@@ -1,7 +1,8 @@
 % outputs
 
-% delta_s   : a matrix (3 x exposure_trial + 1), row represents different strate
-function delta_s = update_recal_bayesian(exposure_trial, soa, ...
+% mu   : 1 x exposure_trial+1, cumulative shift of mu from pretest (mu_1)
+%       to posttest (mu_{exposure_trial+1})
+function mu = update_recal_bayesian(exposure_trial, adptor_soa, mu_pre,...
     p_common, sig_soa, sig_C1, sig_C2, alpha)
 
 % compute constants (these will come in handy when writing the equations
@@ -12,20 +13,21 @@ JP2                   = sig_C2^-2;
 const1                = sig_soa^2 + sig_C1^2;
 const2                = sig_soa^2 + sig_C2^2;
 
-% For each physical stimulus onset asynchrony (SOA; s) between an
-% audiovisual stimuli pair, the observer remaps it into the internal space
-% with a bias ∆ s . We assume that ∆ s are updated at the end of each
-% exposure trial i. Before the exposure phase (i.e., i = 0), the value of ∆
-% s,0 reﬂects the default bias of SOA mapping. Thus, the internal value
-% corresponding to the stimulus SOA is
-delta_s = zeros(3, exposure_trial + 1); % initiate for3 models
+% For each adaptor SOA (s) that is fixed within each exposure phase, the
+% observer remaps it into the internal space relative to the PSS in each
+% trial. We use μi to denote the cumulative shift of PSS by the end of each
+% trial, thus μ1 = μpre, and μ251 = μpost.
+mu = zeros(3, exposure_trial + 1); % initiate for3 models
+
+% mu_1 is mu_pre
+mu(:,1) = mu_pre;
 
 for tt = 1:exposure_trial
 
-    % In each trial (1 ≤ i ≤ 250), observer makes a noisy sensory measurement
-    % of SOA, soa_m, which is corrupted by Gaussian-distributed sensory noise
-    % with a standard deviation sigma_soa centered on soa_.
-    soa_m = randn * sig_soa + soa + delta_s(:,tt);
+    %    Observer then makes a noisy sensory measurement of SOA, m′, which is
+    %    corrupted by Gaussian-distributed sensory noise with a standard
+    %    deviation σs centered on shifted adaptor SOA, s + μ
+    soa_m = randn * sig_soa + adptor_soa + mu(:,tt);
 
     % The likelihood of a common source of SOA measurement in a trial i is:
     L_C1 = 1 / (2*pi*sqrt(const1)) .* exp( -0.5 * soa_m.^2 ./ (const1));
@@ -52,7 +54,7 @@ for tt = 1:exposure_trial
     %Based on this strategy, the final location estimate depends purely on
     %the causal structure that is more probable.
     %Eq. 5 in Wozny et al., 2010
-    if post_C1 <=0.5
+    if post_C1 > 0.5
         shat(2) = shat_C1(2);
     else
         shat(2) = shat_C2(2);
@@ -71,7 +73,7 @@ for tt = 1:exposure_trial
 
     % update the mean of the measurement using three methods
     for m = 1:3
-        delta_s(m, tt+1) = delta_s(m, tt) + alpha * (shat(m) - soa_m(m));
+        mu(m, tt+1) = mu(m, tt) - alpha * (shat(m) - soa_m(m));
     end
 
 end
