@@ -19,7 +19,7 @@ addpath(genpath([exptDir '03ExpCode/04posttest/data']));
 addpath(genpath('model_comparison_function'))
 
 % loads best-fitting parameters from 6 models
-load('a04_mc_results_v5.mat')
+load('mc_results_v5_n10.mat')
 
 % define subject and session to load, and models to compare
 sub = 7;
@@ -63,8 +63,8 @@ n_color_level = numel(model2compare);
 % plotting parameters
 cmap = parula;
 cidx = floor(linspace(1,230, n_color_level));
-cond_title = {'pre-test, p(V-lead)','pre-test, p(simul)','pre-test, p(A-lead)',...
-    'post-test, p(V-lead)','post-test, p(simul)','post-test, p(A-lead)'};
+cond_title = {'p_{pre}("vision lead")', 'p_{pre}("simultaneous")', 'p_{pre}("audition lead")',...
+    'p_{post}("vision lead")', 'p_{post}("simultaneous")','p_{post}("audition lead")'};
 
 % initiate figure
 figure; hold on
