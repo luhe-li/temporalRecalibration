@@ -8,13 +8,13 @@ clear all; close all; clc; rng(1);
 % set data path
 currentDir = pwd;
 exptDir = currentDir(1:regexp(pwd,'03expCode')-1);
-outDir = [exptDir '02figures/98_plot4slides/07_parameter_estimates_results'];
+outDir = [exptDir '/02figures/02_minicon_plot4slides/07_parameter_estimates_results'];
 addpath(genpath([exptDir '03ExpCode/05functions']));
 addpath(genpath([exptDir '03ExpCode/01pretest/data']));
 addpath(genpath([exptDir '03ExpCode/04posttest/data']));
 addpath('./model_comparison_function_v5')
 
-load('a04_mc_results_v5_n10.mat')
+load('mc_results_v5_n10.mat')
 load('RandomAdaptorOrder.mat' );
 
 % extract the best model across 9 sessions based on delta_AIC
@@ -130,7 +130,8 @@ end
 
 % add correlation 
 [rho pval] = corr(mean_sigma, mean_mu);
-corr_text = sprintf('R^2 = %.2f, p = %.3f', rho^2, pval);
+corr_text = sprintf('r^2 = %.2f, p = %.3f', rho^2, pval);
+corr_text = ['\it' corr_text];
 text(140, 10, corr_text, ...
      'HorizontalAlignment', 'right', ...
      'VerticalAlignment', 'bottom', ...
