@@ -1,0 +1,20 @@
+function [hitRate, FA]    = summarizeBlockPerformance(startTrial, endTrial, idxOddballA, idxOddballV, response)
+    % sum up oddball presence and response
+boolOddballA              = zeros(1, length(response));
+boolOddballA(idxOddballA) = 1; % oddball presence
+boolRespA                 = ismember(response,[2,3]); % oddball response
+boolOddballA              = boolOddballA(startTrial:endTrial); 
+boolRespA                 = boolRespA(startTrial:endTrial); 
+% repeat for V
+boolOddballV              = zeros(1, length(response));
+boolOddballV(idxOddballV) = 1; % oddball presence
+boolRespV                 = ismember(response,[2,1]);% oddball response
+boolOddballV              = boolOddballV(startTrial:endTrial); 
+boolRespV                 = boolRespV(startTrial:endTrial); 
+% auditory summary
+hitRate(1,1)              = sum(boolOddballA & boolRespA)/sum(boolOddballA);
+FA(1,1)                   = sum(~boolOddballA  &  boolRespA)/sum(~boolOddballA); %sum((boolRespA - boolOddballA) == 1)/sum(~boolOddballA); 
+% visual summary
+hitRate(1,2)              = sum(boolOddballV & boolRespV)/sum(boolOddballV);
+FA(1,2)                   = sum(~boolOddballV & boolRespV)/sum(~boolOddballV); %sum((boolRespV - boolOddballV) == 1)/sum(~boolOddballV);
+end
