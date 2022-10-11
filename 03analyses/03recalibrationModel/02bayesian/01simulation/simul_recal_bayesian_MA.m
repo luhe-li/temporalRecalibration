@@ -13,7 +13,6 @@ sigma_c2            = 1;
 sigma_soa           = 0.16;
 alpha               = 0.01;
 
-
 %% initiation
 mu                  = NaN(numel(adaptor_soas), simTrial, expTrial+1);
 mu_shift            = NaN(numel(adaptor_soas), simTrial);
