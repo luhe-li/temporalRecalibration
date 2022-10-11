@@ -23,14 +23,14 @@ function data = organize_data(subjID, sess)
 
     %% %%% pre-test
     load(['pretest_sub' num2str(subjID) '_session' num2str(sess) '.mat'])
-    pre_s_unique                  = ExpInfo.SOA; % unique SOA levels, in s
-    data.pre_ms_unique                 = pre_s_unique * 1e3; % unique SOA levels, in ms
+    data.pre_s_unique                  = ExpInfo.SOA; % unique SOA levels, in s
+    data.pre_ms_unique                 = data.pre_s_unique * 1e3; % unique SOA levels, in ms
     data.pre_numTrials                 = ExpInfo.nTrials; % num of trials per SOA
     % inititate
-    pre_r_org                     = NaN(length(pre_s_unique), data.pre_numTrials);
-    pre_respCount                 = NaN(3, length(pre_s_unique));
-    for i                         = 1:length(pre_s_unique)
-        iSOA                          = pre_s_unique(i);
+    pre_r_org                     = NaN(length(data.pre_s_unique), data.pre_numTrials);
+    pre_respCount                 = NaN(3, length(data.pre_s_unique));
+    for i                         = 1:length(data.pre_s_unique)
+        iSOA                          = data.pre_s_unique(i);
         iResp                         = Response.order(ExpInfo.trialSOA == iSOA);
         pre_r_org(i,:)                = iResp; % this matrix has a size of length(s_unique) x numTrials
         for j                         = unique(Response.order) % 1 = V first, 2 = simultaneous, 3 = A first
@@ -45,14 +45,14 @@ function data = organize_data(subjID, sess)
     %% %%% post-test
     % load data and define key parameters
     load(['posttest_sub' num2str(subjID) '_session' num2str(sess) '.mat'])
-    post_s_unique                 = ExpInfo.SOA; % unique SOA levels, in ms
-    post_ms_unique                = post_s_unique * 1e3; % unique SOA levels, in s
+    data.post_s_unique                 = ExpInfo.SOA; % unique SOA levels, in ms
+    data.post_ms_unique                = data.post_s_unique * 1e3; % unique SOA levels, in s
     data.post_numTrials                = ExpInfo.nTrials; % num of trials per SOA
     % inititate
-    post_r_org                    = NaN(length(post_s_unique), data.post_numTrials);
-    post_respCount                = NaN(3, length(post_s_unique));
-    for i                         = 1:length(post_s_unique)
-        iSOA                          = post_s_unique(i);
+    post_r_org                    = NaN(length(data.post_s_unique), data.post_numTrials);
+    post_respCount                = NaN(3, length(data.post_s_unique));
+    for i                         = 1:length(data.post_s_unique)
+        iSOA                          = data.post_s_unique(i);
         iResp                         = Response.order(ExpInfo.trialSOA == iSOA);
         post_r_org(i,:)               = iResp; % this matrix has a size of length(s_unique) x numTrials
         for j                         = unique(Response.order) % 1 = V first, 2 = simultaneous, 3 = A first
