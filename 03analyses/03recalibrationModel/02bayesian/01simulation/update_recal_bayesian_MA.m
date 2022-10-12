@@ -1,4 +1,4 @@
-function mu = update_recal_bayesian_MA(expTrial, adaptor_soa, mu_pre, ...
+function mu_shift = update_recal_bayesian_MA(expTrial, adaptor_soa, mu_pre, ...
     p_common, sigma_soa, sigma_c1, sigma_c2, alpha)
 
 % compute constants (these will come in handy when writing the equations
@@ -47,4 +47,7 @@ for tt = 1:expTrial
 
     mu(tt+1) = mu(tt) - alpha * (shat - soa_m);
 end
+
+mu_shift = mu(end) - mu(1);
+
 end
