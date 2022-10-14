@@ -1,9 +1,5 @@
-% 2210
-
 % This script fits Bayesian causal inference model to the pre- and post-
 % TOJ data, for each session, each participant
-
-% make sure to install bads for optimization
 
 clear all; close all; clc; rng('Shuffle');
 subjID = 1;
@@ -29,6 +25,10 @@ model.num_bin = 100; % num bin to approximate mu_shift
 model.thre_r2 = 0.95; %if R2<0.95, we use KDE
 
 % define the grid for free parameters
+model.paraID = {'\mu_{pre}','\sigma_{pre}','c_{pre}','\lambda','\sigma_{post}',...
+    'c_{post}','p_{common}','\sigma_{soa}','\sigma_{c1}','\sigma_{c2}','alpha'};
+model.numPara = length(model.paraID);
+
 % hard bounds, the range for LB, UB, larger than soft bounds
 paraH.mu1 = [-0.3, 0.3]; % s
 paraH.sigma1 = [0.01, 0.35]; %s
@@ -63,6 +63,7 @@ for k = 1:numel(fn)
     model.plb(:,k) = paraS.(fn{k})(1);
     model.pub(:,k) = paraS.(fn{k})(2);
 end
+model.paraS = paraS; model.paraH = paraH;
 
 % set barrier function if needeed
 % model.nonbcon
@@ -105,15 +106,8 @@ parfor i = 1:model.num_runs
     end
 end
 
-%% save the data
+model.estimatedP = estimatedP;
+model.minNLL     = minNLL;
 
-model.paraID = {'\mu_{pre}','\sigma_{pre}','c_{pre}','\lambda','\sigma_{post}','c_{post}','p_{common}','\sigma_{soa}','\sigma_{c1}','\sigma_{c2}','alpha'};
-model.numPara = length(model.paraID);
-figure; hold on
-set(gcf, 'Position', get(0, 'Screensize'));
-set(gca, 'LineWidth', 1, 'FontSize', 15)
-for i = 1:model.numPara
-    subplot(3,4,i)
-    histogram(estimatedP(:,i), 10)
-    title(model.paraID{i})
-end
+%% save the data
+save("a1_modelFittingResults",'data','model')
