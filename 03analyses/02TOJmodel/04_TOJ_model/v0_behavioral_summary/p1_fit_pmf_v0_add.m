@@ -8,29 +8,26 @@ clear all; close all; clc; rng(1);
 
 % add data folder to the path
 currentDir = pwd;
-exptDir = currentDir(1:regexp(pwd,'03expCode')-1);
-folder1 = [exptDir '03ExpCode/01pretest/data'];
-folder2 = [exptDir '03ExpCode/04posttest/data'];
-
-addpath(genpath([exptDir '03ExpCode/05functions']));
-addpath(genpath([exptDir '03ExpCode/06helperFunctions']));
-addpath(genpath('function'))
-addpath(genpath(folder1));
-addpath(genpath(folder2));
+exptDir = currentDir(1:regexp(pwd,'03analyses')-1); % project folder
+addpath(genpath([exptDir '02data'])); % data folder, necessary to run organize_data
+addpath(genpath([exptDir '/03analyses/01analysesFunctions'])); % function folder
+addpath(genpath('function')) % function specific to this analysis
+folder1 = [exptDir '02data/02pretest'];
+folder2 = [exptDir '02data/04posttest'];
 
 filePattern1 = fullfile(folder1, 'pretest_sub*.mat');
 files1 = dir(filePattern1);
 filePattern2 = fullfile(folder2, 'posttest_sub*.mat');
 files2 = dir(filePattern2);
 
-load('best_para_2.mat')
+% load('best_para_2.mat')
 
 % define subjects and sessions to use
-sub2add = 2;
-sess2add = 1:9;
+sub2add = 1;
+sess2add = 1;
 
 % fit each session and each subject individually
-parfor i = sub2add
+for i = sub2add
 
     for j = sess2add
 

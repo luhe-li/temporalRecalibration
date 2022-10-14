@@ -14,10 +14,10 @@ function nLL = cal_nLL_CI(mu1, sigma1, c1, lambda,... % pretest free para
 % lambda    : lapse rate, shared in pretest & posttest % in s
 % sigma2    : sigma in posttest % in s
 % c2        : criterion in posttest % in s
-% p_common  : common-cause prior% between [0 1]
-% sigma_soa : sigma of perceiving SOA
-% sigma_c1  : width of the prior_C1
-% sigma_c2  : width of the prior_C2s
+% p_common  : common-cause prior % between [0 1]
+% sigma_soa : sigma of perceiving SOA % in s
+% sigma_c1  : width of the prior_C1 % in s
+% sigma_c2  : width of the prior_C2s % in s
 % alpha     : learning rate
 %--------------------------------------------------------------------------
 
@@ -78,6 +78,7 @@ r2 = R^2;
 if r2 > model.thre_r2
     pdf_delta = gauss_pdf;
 else % if not, use ksd
+    
     [pdf_delta, ~] = ksdensity(mu_shift, delta_mu_shift); % ksdensity evaluated at selected delta_mu_shift values
 end
 pdf_delta = pdf_delta./sum(pdf_delta);
@@ -98,19 +99,25 @@ pdf_delta = pdf_delta./sum(pdf_delta);
 
 % compute the likelihood of approxiamated delta: P(resp|delta_mu_shift, M,
 % \theta)
-L_delta = NaN(1, length(delta_mu_shift));
+LL_delta = NaN(1, length(delta_mu_shift));
 for i = 1:numel(delta_mu_shift)
     mu2 = mu1 + delta_mu_shift(i);
-    L_delta(i) = data.post_nT_A1st*log(P_Afirst(data.post_s_unique, mu2, sigma2, c2, lambda))'...
+    LL_delta(i) = data.post_nT_A1st*log(P_Afirst(data.post_s_unique, mu2, sigma2, c2, lambda))'...
         + data.post_nT_V1st*log(P_Vfirst(data.post_s_unique, mu2, sigma2, c2, lambda))'...
         + data.post_nT_simul*log(P_simultaneous(data.post_s_unique, mu2, sigma2, c2, lambda))';
 end
 
-% post nLL is the log sum of (likelihood of approximated delta x
+% post LL is the log sum of (likelihood of approximated delta x
 % probability of approximated delta)
-post_LL = log(sum(exp(L_delta) .* pdf_delta));
+% post_LL = log(sum(exp(LL_delta) .* pdf_delta)); 
 
-%% sum nll of pre and post test 
+% re-written to avoid underflow. Note that const can be
+% subracted to the exponent and added later because it is NOT summed, and
+% log(exp(const)) = const
+const = max(LL_delta + log(pdf_delta)); 
+post_LL = log(sum(exp(LL_delta + log(pdf_delta) - const))) + const;
+
+%% sum the negative likelihood of pre and post test 
 nLL = - pre_LL - post_LL;
 
 end

@@ -15,12 +15,6 @@ function data = organize_data(subjID, sess)
 %           (1x15)
 %--------------------------------------------------------------------------
     
-    %% add data path
-    currentDir = pwd;
-    exptDir = currentDir(1:regexp(pwd,'03analyses')-1); % project folder
-    addpath(genpath([exptDir '02data'])); % data folder
-    addpath(genpath([exptDir '/03analyses/01analysesFunctions'])); % function folder
-
     %% %%% pre-test
     load(['pretest_sub' num2str(subjID) '_session' num2str(sess) '.mat'])
     data.pre_s_unique                  = ExpInfo.SOA; % unique SOA levels, in s
