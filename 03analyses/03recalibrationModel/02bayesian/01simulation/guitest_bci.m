@@ -533,10 +533,8 @@ for i                 = 1:n_soas
 
     for t                 = 1:setup.sim_trial
 
-        mu(i,t,:) = update_recal_bayesian_MA(setup.exposure_trial, adaptor_soa, mu_pre,...
+        mu_shift(i,t) = update_recal_bayesian_MA(setup.exposure_trial, adaptor_soa, mu_pre,...
             param.p_c1, param.sigma_soa, param.sigma_c1, param.sigma_c2, param.alpha);
-
-        mu_shift(i,t)     =  mu(i, t, end) - mu(i, t, 1);
 
     end
 

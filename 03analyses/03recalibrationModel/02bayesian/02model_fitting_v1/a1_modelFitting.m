@@ -79,9 +79,9 @@ funcNLL = @(p) cal_nLL_CI(p(1), p(2), p(3), p(4), p(5), p(6), p(7), ...
 
 % get grid initializations
 numREachInit    = 1;
-numSections     = 3; 
+numSections     = 3;
 model.init      = gridInitializations_11d(model.plb, model.pub, numSections, ...
-                    model.num_runs, numREachInit);     
+    model.num_runs, numREachInit);
 
 % %% plug in parameters to test NLL function
 % for i = 1:10
@@ -94,17 +94,19 @@ model.init      = gridInitializations_11d(model.plb, model.pub, numSections, ...
 minNLL          = NaN(1, model.num_runs);
 estimatedP      = NaN(model.num_runs, length(model.lb));
 
+
 parfor i = 1:model.num_runs
     disp(i);
     try
         [estimatedP(i,:),minNLL(i)] = bads(funcNLL, model.init(i,:), model.lb,...
-            model.ub, model.plb, model.pub, [], OPTIONS); 
+            model.ub, model.plb, model.pub, [], OPTIONS);
         disp(estimatedP(i,:));
         disp(round(minNLL(i),4));
     catch e
         disp('Error!')
     end
 end
+
 
 model.estimatedP = estimatedP;
 model.minNLL     = minNLL;

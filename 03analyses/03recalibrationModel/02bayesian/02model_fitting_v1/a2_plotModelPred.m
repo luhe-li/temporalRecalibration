@@ -18,10 +18,10 @@ end
 %find the index that corresponds to the minimum nLL
 [fits.min_val, fits.min_idx] = min(model.minNLL);
 %find the corresponding estimated parameters
-fits.p                 = model.estimatedP(fits.min_idx,:);
+fits.p = model.estimatedP(fits.min_idx,:);
 p = fits.p;
 
-%% plot mu_shift prediction
+%% simulate mu_shift to obtain mu_post
 mu_shift = NaN(1, model.expo_num_sim);
 for t   = 1:model.expo_num_sim
     mu_shift(t)   = simulate_mu_shift_MA(model.expo_num_trial, data.adaptor_soa, fits.p(1),...

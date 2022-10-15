@@ -66,7 +66,7 @@ binsize = diff(delta_mu_shift(1:2));
 
 % fit a Gaussian and calculate R squared
 gauss_mu = mean(mu_shift);
-gauss_sigma = sqrt(sum((mu_shift - gauss_mu).^2)./numel(mu_shift)); % denominator is N
+gauss_sigma = sqrt(sum((mu_shift - gauss_mu).^2)./numel(mu_shift)); % denominator is N instead of N-1
 gauss_pdf = normpdf(delta_mu_shift, gauss_mu, gauss_sigma); % approximated gaussian pdf
 predicted_y = gauss_pdf./sum(gauss_pdf); % normalize
 delta_shift_mu_edges = [delta_mu_shift, delta_mu_shift(end) + binsize] - binsize/2; % create edges around delta_mu_shift
@@ -78,7 +78,6 @@ r2 = R^2;
 if r2 > model.thre_r2
     pdf_delta = gauss_pdf;
 else % if not, use ksd
-    
     [pdf_delta, ~] = ksdensity(mu_shift, delta_mu_shift); % ksdensity evaluated at selected delta_mu_shift values
 end
 pdf_delta = pdf_delta./sum(pdf_delta);
@@ -111,8 +110,8 @@ end
 % probability of approximated delta)
 % post_LL = log(sum(exp(LL_delta) .* pdf_delta)); 
 
-% re-written to avoid underflow. Note that const can be
-% subracted to the exponent and added later because it is NOT summed, and
+% re-written to avoid underflow of likelihood. Note that const can be
+% subtracted to the exponent and added later because it is NOT summed, and
 % log(exp(const)) = const
 const = max(LL_delta + log(pdf_delta)); 
 post_LL = log(sum(exp(LL_delta + log(pdf_delta) - const))) + const;
