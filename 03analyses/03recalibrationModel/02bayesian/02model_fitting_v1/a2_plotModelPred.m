@@ -107,9 +107,9 @@ for sub = all_sub
         xticklabels(strsplit(num2str(tick_soa)))
         yticks(tick_p)
         yticklabels(strsplit(num2str(tick_p)))
-        xlabel('SOA (ms)')
+        xlabel('SOA (s)')
         ylabel('proportion of responses')
-        title(['adaptor SOA = ' num2str(data(sub, ses).adaptor_soa)])
+        title(['adaptor SOA = ' num2str(data(sub, ses).adaptor_soa) 's'])
         
     end
     

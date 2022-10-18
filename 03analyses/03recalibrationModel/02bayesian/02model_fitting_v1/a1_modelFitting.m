@@ -10,12 +10,12 @@ addpath(genpath([exptDir '02data'])); % data folder, necessary to run organize_d
 addpath(genpath([exptDir '/03analyses/01analysesFunctions'])); % function folder
 addpath('/Users/luhe/Documents/GitHub/bads') % add bads to path, to be changed later
 
-all_sub = 1:10;
+all_sub = 1:1;
 all_ses = 1:9;
 
 for sub = all_sub
-    for  ses = all_ses 
-        
+    for  ses = all_ses
+
         %% organize data
         data(sub, ses)= organize_data(sub, ses);
 
@@ -42,8 +42,10 @@ for sub = all_sub
         paraH.c2 = [0.01, 0.35]; % s
         paraH.p_common = [1e-4, 1-1e-4]; % weight
         paraH.sigma_soa  = [0.01, 0.2]; % s
-        paraH.sigma_c1 = [1e-4, 0.05]; % s
-        paraH.sigma_c2  = [0.2, 3]; % s
+        %         paraH.sigma_c1 = [1e-4, 0.05]; % s
+        paraH.sigma_c1 = [0.001, 0.001]; % s
+        %         paraH.sigma_c2  = [0.2, 3]; % s
+        paraH.sigma_c2  = [0.8, 0.8]; % s
         paraH.alpha = [1e-3, 0.1]; % percentage
 
         % soft bounds, the range for PLB, PUB
@@ -55,8 +57,10 @@ for sub = all_sub
         paraS.c2 = [0.01, 0.3]; % s
         paraS.p_common = [0.2, 0.5]; % weight
         paraS.sigma_soa  = [0.01, 0.18]; % s
-        paraS.sigma_c1 = [1e-4, 0.03]; % s
-        paraS.sigma_c2  = [0.5, 2]; % s
+        %         paraS.sigma_c1 = [1e-4, 0.03]; % s
+        paraS.sigma_c1 = [0.001, 0.001]; % s
+        %         paraS.sigma_c2  = [0.5, 2]; % s
+        paraS.sigma_c2  = [0.8, 0.8]; % s
         paraS.alpha = [1e-3, 0.01]; % percentage
 
         % reorganize parameter bounds to feed to bads
@@ -116,7 +120,7 @@ for sub = all_sub
         model(sub, ses).minNLL     = minNLL;
 
         %% save the data
-        save("a1_modelFittingResults",'data','model')
+        save("a1_modelFittingResults_v2",'data','model')
         fprintf('sub %.0f sesion %.0f saved', sub, ses)
     end
 end
