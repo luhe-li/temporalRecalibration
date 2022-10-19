@@ -20,11 +20,11 @@ for i = 1:n_combi
     x = combi(i,1);
     y = combi(i,2);
 
-    plot(model.estimatedP(:,x), model.estimatedP(:,y),'o','Color',[repmat(0.3, 1, 3)])
-    [r, p] = corr(model.estimatedP(:,x), model.estimatedP(:,y));
+    plot(model(1,1).estimatedP(:,x), model(1,1).estimatedP(:,y),'o','Color',[repmat(0.3, 1, 3)])
+    [r, p] = corr(model(1,1).estimatedP(:,x), model(1,1).estimatedP(:,y));
     r2 = r^2;
     title(['r^2 = ' num2str(round(r2,2)) ', p = ' num2str(round(p,2))])
-    xlabel(model.paraID{x})
-    ylabel(model.paraID{y});
+    xlabel(model(1,1).paraID{x})
+    ylabel(model(1,1).paraID{y});
 
 end
