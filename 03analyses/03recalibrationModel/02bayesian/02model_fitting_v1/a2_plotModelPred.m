@@ -33,6 +33,7 @@ for sub = all_sub
         %find the corresponding estimated parameters
         fits.p = model(sub, ses).estimatedP(fits.min_idx,:);
         p = fits.p;
+        %         p_common(sub,ses) = p(7);
 
         %% simulate mu_shift to obtain mu_post
         mu_shift = NaN(1, model(sub, ses).expo_num_sim);
@@ -109,10 +110,10 @@ for sub = all_sub
         yticklabels(strsplit(num2str(tick_p)))
         xlabel('SOA (s)')
         ylabel('proportion of responses')
-        title(['adaptor SOA = ' num2str(data(sub, ses).adaptor_soa) 's'])
-        
+        title(['adaptor SOA = ' num2str(data(sub, ses).adaptor_soa) ' s'])
+
     end
-    
+
     % save figure
     flnm = ['sub' num2str(sub) 'ses' num2str(ses)];
     saveas(gca, fullfile(outDir, flnm),'epsc')

@@ -49,5 +49,6 @@ nLL = cal_nLL_CI(mu1, sigma1, c1, lambda,... % pretest free para
     p_common, sigma_soa, sigma_c1, sigma_c2, alpha, ... % recal simul para
     model, data); % fixed para, data
 
-## markdown configuration
-https://sublimetext-markdown.github.io/MarkdownEditing/config/#configuration
+## Results version
+- a1_modelFittingResults.mat: all subjects, all sessions
+- a1_modelFittingResults_v2.mat: subj1, all sessions, sig_c1 and sig_c2 fixed

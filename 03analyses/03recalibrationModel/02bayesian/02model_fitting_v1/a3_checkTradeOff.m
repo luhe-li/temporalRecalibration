@@ -3,7 +3,8 @@
 
 load("a1_modelFittingResults.mat")
 
-%% plot free parameters in the exposure phase
+%% plot free parameters in the exposure phase for one session, one subject
+
 figure; hold on
 set(gcf, 'Position', get(0, 'Screensize'));
 
