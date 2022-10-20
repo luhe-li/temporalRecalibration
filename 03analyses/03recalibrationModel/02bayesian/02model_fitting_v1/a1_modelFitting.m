@@ -79,8 +79,6 @@ for sub = all_sub
         % set OPTIONS to tell bads that my objective function is noisy
         OPTIONS.UncertaintyHandling = 1;
 
-
-
         %% run bads for optimization
 
         % define function calculating nll
