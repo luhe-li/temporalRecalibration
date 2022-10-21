@@ -31,19 +31,19 @@ for i               = 1:numel(adaptor_soas)
 end
 
 %% summarize recalibration effetct
-% mu_shift_iSOA_error = std(mu_shift, [], 2);
-% mu_shift_iSOA       = mean(mu_shift, 2);
-% 
-% %% plotting
-% figure; hold on; box off
-% set(gca,'FontSize',15,'linewidth',2)
-% set(gcf,'Position', [0, 0, 500, 400]);
-% errorbar(adaptor_soas, mu_shift_iSOA, mu_shift_iSOA_error,'.','LineWidth',2)
-% yline(0)
-% xticks(adaptor_soas)
-% xticklabels(adaptor_soas)
-% xlabel('adaptor SOA (s)')
-% ylabel('recalibration (s)')
+mu_shift_iSOA_error = std(mu_shift, [], 2);
+mu_shift_iSOA       = mean(mu_shift, 2);
+
+%% plotting
+figure; hold on; box off
+set(gca,'FontSize',15,'linewidth',2)
+set(gcf,'Position', [0, 0, 500, 400]);
+errorbar(adaptor_soas, mu_shift_iSOA, mu_shift_iSOA_error,'.','LineWidth',2)
+yline(0)
+xticks(adaptor_soas)
+xticklabels(adaptor_soas)
+xlabel('adaptor SOA (s)')
+ylabel('recalibration (s)')
 
 %% calculate r^2 for each soa
 model.num_bin = 100;
@@ -77,4 +77,6 @@ end
 
 figure; hold on
 set(gca,'FontSize',15,'linewidth',2)
-plot(adaptor_soas, r2,'o')
+plot(adaptor_soas, r2,'ko','MarkerFaceColor','k','MarkerSize',7)
+title(['r^2, sim trial = ' num2str(simTrial)])
+ylim([0.9, 1])
