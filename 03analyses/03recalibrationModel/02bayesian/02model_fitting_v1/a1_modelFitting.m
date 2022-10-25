@@ -44,8 +44,8 @@ for sub = all_sub
         paraH.sigma_soa  = [0.01, 0.2]; % s
         paraH.sigma_c1 = [1e-4, 0.05]; % s
         %         paraH.sigma_c1 = [0.001, 0.001]; % s
-        paraH.sigma_c2  = [0.2, 1]; % s
-        %         paraH.sigma_c2  = [0.8, 0.8]; % s
+%         paraH.sigma_c2  = [0.2, 1]; % s
+        paraH.sigma_c2  = [0.8, 0.8]; % s
         %         paraH.alpha = [1e-3, 0.1]; % percentage
         paraH.alpha = [0.01, 0.01];
 
@@ -60,8 +60,8 @@ for sub = all_sub
         paraS.sigma_soa  = [0.01, 0.18]; % s
         paraS.sigma_c1 = [1e-4, 0.03]; % s
         %         paraS.sigma_c1 = [0.001, 0.001]; % s
-        paraS.sigma_c2  = [0.5, 0.8]; % s
-        %         paraS.sigma_c2  = [0.8, 0.8]; % s
+%         paraS.sigma_c2  = [0.5, 0.8]; % s
+        paraS.sigma_c2  = [0.8, 0.8]; % s
         %         paraS.alpha = [1e-3, 0.01]; % percentage
         paraS.alpha = [0.01, 0.01];
 
@@ -120,7 +120,7 @@ for sub = all_sub
         model(sub, ses).minNLL     = minNLL;
 
         %% save the data
-        save("a1_modelFittingResults_v5",'data','model')
+        save("a1_modelFittingResults_v6",'data','model')
         fprintf('sub %.0f sesion %.0f saved', sub, ses)
     end
 end

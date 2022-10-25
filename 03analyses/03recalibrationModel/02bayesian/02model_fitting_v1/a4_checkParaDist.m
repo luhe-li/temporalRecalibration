@@ -5,7 +5,7 @@
 
 clear all; clc;
 
-load("a1_modelFittingResults_v2.mat")
+load("a1_modelFittingResults_v6.mat")
 
 all_sub = 1;
 all_ses = 1:9;
