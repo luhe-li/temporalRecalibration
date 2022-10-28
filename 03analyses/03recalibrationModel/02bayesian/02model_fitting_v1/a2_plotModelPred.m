@@ -4,44 +4,35 @@
 
 clear all; clc; close all;
 
-load("a1_modelFittingResults_v6.mat")
-
-% %% check distribution of fitted parameters
-% figure; hold on
-% set(gcf, 'Position', get(0, 'Screensize'));
-% set(gca, 'LineWidth', 1, 'FontSize', 15)
-% for i = 1:model.numPara
-%     subplot(3,4,i)
-%     histogram(model.estimatedP(:,i), 10)
-%     title(model.paraID{i})
-% end
+load("a1_modelFittingResults.mat")
 
 currentDir = pwd;
 outDir = [currentDir '/a2_figures'];
 all_sub = 1:10;
-sub_slc = 1;
+sub_slc = [1:4, 6:10];
 all_ses = 1:9;
 
 [p_common, delta_mu, mu2] = deal(NaN(length(all_sub), length(all_ses)));
 
-for sub = sub_slc
+%% extract the best-fitting parameters based on minNLL
 
-%     figure; set(gcf, 'Position', get(0, 'Screensize'));
+for sub = sub_slc
 
     for  ses = all_ses
 
-        %% extract the best-fitting parameters based on minNLL
         %find the index that corresponds to the minimum nLL
-        [fits(sub, ses).min_val, fits(sub, ses).min_idx] = min(model(sub, ses).minNLL);
+        [min_val, min_idx] = min(model(sub, ses).minNLL);
         %find the corresponding estimated parameters
-        fits(sub, ses).p = model(sub, ses).estimatedP(fits(sub, ses).min_idx,:);
-        
-        p = fits(sub, ses).p;
+        p = model(sub, ses).estimatedP(min_idx,:);
+        % assign it to the struct to store
+        fits(sub, ses).p = p;
+
+        % extract temporary variables for this script
         p_common(sub,ses) = p(7);
 
         %% simulate mu_shift to obtain mu_post
         mu_shift = NaN(1, model(sub, ses).expo_num_sim);
-        for t   = 1:model(sub, ses).expo_num_sim
+        for t   = 1: model(sub, ses).expo_num_sim
             mu_shift(t)   = simulate_mu_shift_MA(model(sub, ses).expo_num_trial, ...
                 data(sub, ses).adaptor_soa, p(1),...
                 p(7), p(8), p(9), p(10), p(11));
@@ -52,27 +43,31 @@ for sub = sub_slc
 
         % mu_post = mu_pre + simulated mean(mu_shift)
         mu2(sub, ses) = p(1) + delta_mu(sub, ses);
-        
+
     end
 end
 
 
 %% plot recalibration effect by person
 
-adaptor_soa = [-0.7, -0.3:0.1:0.3, 0.7];
+adaptor_soa = [-0.7, -0.3: 0.1: 0.3, 0.7];
 
 figure; hold on
 for i = 1:numel(sub_slc)
     sub = sub_slc(i);
+
     subplot(3,3,i)
     plot(adaptor_soa, delta_mu(sub,:),'-ko')
-    ylim([-0.2 0.2])
+    ylim([-0.3 0.3])
     xlim([-1 1])
     yline(0)
+    title(['sub' num2str(sub)])
 end
 
-
 %% plot group recalibration effect
+
+adaptor_soa = [-0.7, -0.3: 0.1: 0.3, 0.7];
+
 % calculate group mean
 mean_delta_criterion = mean(delta_mu(sub_slc, :), 1, 'omitnan');
 se_delta_criterion = std(delta_mu(sub_slc, :), [], 1, 'omitnan')./sqrt(numel(sub_slc));
@@ -94,33 +89,34 @@ ylabel('recalibration effect (ms)')
 
 % plot sorted gain excluding SOA=0
 nnz_idx =  adaptor_soa ~= 0;
-nnz_adaptor_soa = adaptor_soa(nnz_idx); 
+nnz_adaptor_soa = adaptor_soa(nnz_idx);
 gain = delta_mu(:,nnz_idx)./nnz_adaptor_soa;
 g_gain = mean(gain, 1, 'omitnan');
 sem_gain = std(gain,[],1,'omitnan')./sqrt(numel(sub_slc));
 
-yyaxis right
-e = errorbar(nnz_adaptor_soa + 20, g_gain, sem_gain, ...
-    'o','LineWidth', 1.5);
-e.CapSize = 0; e.MarkerFaceColor = 'auto';
-ylim([-1.5 1.5])
-yticks(linspace(-1.5, 1.5, 5))
-ylabel('gain')
+% yyaxis right
+% e = errorbar(nnz_adaptor_soa + 0.020, g_gain, sem_gain, ...
+%     'o','LineWidth', 1.5);
+% e.CapSize = 0; e.MarkerFaceColor = 'auto';
+% ylim([-1.5 1.5])
+% yticks(linspace(-1.5, 1.5, 5))
+% ylabel('gain')
 
 % look better
 xticks(adaptor_soa)
-xlim([min(adaptor_soa)-50, max(adaptor_soa)+50])
+xlim([min(adaptor_soa)-0.050, max(adaptor_soa)+0.050])
 xlabel('adaptor SOA (ms)')
 set(gca,'TickDir','out');
 
-% save figure
-fignm = 'model_prediction_mu_shift';
-saveas(gca, fullfile(outDir, fignm), 'epsc')
+% % save figure
+% fignm = 'model_prediction_mu_shift';
+% saveas(gca, fullfile(outDir, fignm), 'epsc')
+
 %% plot PMF predictions for each session, each subject
 
-for sub = all_sub
+for sub = sub_slc
     for  ses = all_ses
-        %m ake a finer grid for the timing difference between the auditory and the
+        %make a finer grid for the timing difference between the auditory and the
         %visual stimulus
         SOA_finer  = linspace(data(sub, ses).pre_s_unique(1), data(sub, ses).pre_s_unique(end), 1000);
 
@@ -131,13 +127,15 @@ for sub = all_sub
             1 - (lambda/3 + (1-lambda).*normcdf(-c, SOA - mu, sig)) ...
             - (lambda/3 + (1-lambda).*(1 - normcdf(c, SOA-mu, sig)));
 
+
+
         % fit PMF with best-fitting parameters
         pmf = {P_Vfirst(SOA_finer, p(1), p(2), p(3), p(4)), ...
             P_simultaneous(SOA_finer, p(1), p(2), p(3), p(4)), ...
             P_Afirst(SOA_finer, p(1), p(2), p(3), p(4)), ...
-            P_Vfirst(SOA_finer, mu2, p(5), p(6), p(4)), ...
-            P_simultaneous(SOA_finer, mu2, p(5), p(6), p(4)), ...
-            P_Afirst(SOA_finer, mu2, p(5), p(6), p(4))};
+            P_Vfirst(SOA_finer, mu2(sub, ses), p(5), p(6), p(4)), ...
+            P_simultaneous(SOA_finer, mu2(sub, ses), p(5), p(6), p(4)), ...
+            P_Afirst(SOA_finer, mu2(sub, ses), p(5), p(6), p(4))};
 
         % set plotting parameters
         cmp  = [229, 158, 168; 203, 227, 172; 171,223,235;...
@@ -171,7 +169,7 @@ for sub = all_sub
 
         % plot mu
         h1 = xline(p(1),':','LineWidth',2,'Color', repmat(0.3, 1, 3));
-        h2 = xline(mu2,'LineWidth',2,'Color', repmat(0.3, 1, 3));
+        h2 = xline(mu2(sub, ses),'LineWidth',2,'Color', repmat(0.3, 1, 3));
 
         % look better
         tick_soa = [-500, -300:100:300,500]./1000;
@@ -186,8 +184,8 @@ for sub = all_sub
 
     end
 
-    % save figure
-    flnm = ['sub' num2str(sub) 'ses' num2str(ses)];
-    saveas(gca, fullfile(outDir, flnm),'epsc')
+    %     % save figure
+    %     flnm = ['sub' num2str(sub)];
+    %     saveas(gca, fullfile(outDir, flnm),'epsc')
 
 end

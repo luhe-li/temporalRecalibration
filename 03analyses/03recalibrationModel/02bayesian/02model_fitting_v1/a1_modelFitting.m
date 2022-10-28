@@ -6,7 +6,7 @@ clear all; close all; clc; rng('Shuffle');
 %% manage paths
 currentDir = pwd;
 exptDir = currentDir(1:regexp(pwd,'03analyses')-1); % project folder
-addpath(genpath([exptDir '02data'])); % data folder, necessary to run organize_data
+addpath(genpath([exptDir '/02data'])); % data folder, necessary to run organize_data
 addpath(genpath([exptDir '/03analyses/01analysesFunctions'])); % function folder
 addpath('/Users/luhe/Documents/GitHub/bads') % add bads to path, to be changed later
 
