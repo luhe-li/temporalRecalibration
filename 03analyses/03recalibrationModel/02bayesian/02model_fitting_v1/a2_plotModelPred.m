@@ -2,9 +2,9 @@
 % the model prediction to check whether the best-fitting parameters are
 % reasonable
 
-clear all; clc;
+clear all; clc; close all;
 
-load("a1_modelFittingResults.mat")
+load("a1_modelFittingResults_v6.mat")
 
 % %% check distribution of fitted parameters
 % figure; hold on
@@ -19,35 +19,107 @@ load("a1_modelFittingResults.mat")
 currentDir = pwd;
 outDir = [currentDir '/a2_figures'];
 all_sub = 1:10;
+sub_slc = 1;
 all_ses = 1:9;
 
-for sub = all_sub
+[p_common, delta_mu, mu2] = deal(NaN(length(all_sub), length(all_ses)));
 
-    figure; set(gcf, 'Position', get(0, 'Screensize'));
+for sub = sub_slc
+
+%     figure; set(gcf, 'Position', get(0, 'Screensize'));
 
     for  ses = all_ses
 
         %% extract the best-fitting parameters based on minNLL
         %find the index that corresponds to the minimum nLL
-        [fits.min_val, fits.min_idx] = min(model(sub, ses).minNLL);
+        [fits(sub, ses).min_val, fits(sub, ses).min_idx] = min(model(sub, ses).minNLL);
         %find the corresponding estimated parameters
-        fits.p = model(sub, ses).estimatedP(fits.min_idx,:);
-        p = fits.p;
-        %         p_common(sub,ses) = p(7);
+        fits(sub, ses).p = model(sub, ses).estimatedP(fits(sub, ses).min_idx,:);
+        
+        p = fits(sub, ses).p;
+        p_common(sub,ses) = p(7);
 
         %% simulate mu_shift to obtain mu_post
         mu_shift = NaN(1, model(sub, ses).expo_num_sim);
         for t   = 1:model(sub, ses).expo_num_sim
             mu_shift(t)   = simulate_mu_shift_MA(model(sub, ses).expo_num_trial, ...
-                data(sub, ses).adaptor_soa, fits.p(1),...
-                fits.p(7), fits.p(8), fits.p(9), fits.p(10), fits.p(11));
+                data(sub, ses).adaptor_soa, p(1),...
+                p(7), p(8), p(9), p(10), p(11));
         end
 
+        % average simulated shift_mu
+        delta_mu(sub, ses) = mean(mu_shift);
+
         % mu_post = mu_pre + simulated mean(mu_shift)
-        mu2 = fits.p(1) + mean(mu_shift);
+        mu2(sub, ses) = p(1) + delta_mu(sub, ses);
+        
+    end
+end
 
-        %% plot PMF predictions
 
+%% plot recalibration effect by person
+
+adaptor_soa = [-0.7, -0.3:0.1:0.3, 0.7];
+
+figure; hold on
+for i = 1:numel(sub_slc)
+    sub = sub_slc(i);
+    subplot(3,3,i)
+    plot(adaptor_soa, delta_mu(sub,:),'-ko')
+    ylim([-0.2 0.2])
+    xlim([-1 1])
+    yline(0)
+end
+
+
+%% plot group recalibration effect
+% calculate group mean
+mean_delta_criterion = mean(delta_mu(sub_slc, :), 1, 'omitnan');
+se_delta_criterion = std(delta_mu(sub_slc, :), [], 1, 'omitnan')./sqrt(numel(sub_slc));
+
+% plot
+figure; hold on; box off;
+set(gca, 'FontSize', 20, 'LineWidth', 1.5)
+set(gcf, 'Position',[10 10 500 400])
+alpha = 0.6; cMAPgray = [0, 0, 0; alpha.*ones(1,3)]; colororder(cMAPgray);
+
+yyaxis left
+e = errorbar(adaptor_soa, mean_delta_criterion, se_delta_criterion, ...
+    'o','LineWidth', 1.5);
+e.CapSize = 0; e.MarkerFaceColor = 'k';
+% ylim([-150 150 ])
+yticks(linspace(-150, 150, 5))
+yline(0)
+ylabel('recalibration effect (ms)')
+
+% plot sorted gain excluding SOA=0
+nnz_idx =  adaptor_soa ~= 0;
+nnz_adaptor_soa = adaptor_soa(nnz_idx); 
+gain = delta_mu(:,nnz_idx)./nnz_adaptor_soa;
+g_gain = mean(gain, 1, 'omitnan');
+sem_gain = std(gain,[],1,'omitnan')./sqrt(numel(sub_slc));
+
+yyaxis right
+e = errorbar(nnz_adaptor_soa + 20, g_gain, sem_gain, ...
+    'o','LineWidth', 1.5);
+e.CapSize = 0; e.MarkerFaceColor = 'auto';
+ylim([-1.5 1.5])
+yticks(linspace(-1.5, 1.5, 5))
+ylabel('gain')
+
+% look better
+xticks(adaptor_soa)
+xlim([min(adaptor_soa)-50, max(adaptor_soa)+50])
+xlabel('adaptor SOA (ms)')
+set(gca,'TickDir','out');
+
+% save figure
+fignm = 'model_prediction_mu_shift';
+saveas(gca, fullfile(outDir, fignm), 'epsc')
+%% plot PMF predictions for each session, each subject
+
+for sub = all_sub
+    for  ses = all_ses
         %m ake a finer grid for the timing difference between the auditory and the
         %visual stimulus
         SOA_finer  = linspace(data(sub, ses).pre_s_unique(1), data(sub, ses).pre_s_unique(end), 1000);

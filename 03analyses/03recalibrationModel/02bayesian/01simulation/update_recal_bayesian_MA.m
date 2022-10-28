@@ -14,7 +14,7 @@ const2                = sigma_soa^2 + sigma_c2^2;
 mu = zeros(1, expTrial + 1);
 
 % mu_1 is mu_pre
-mu(1) = mu_pre;
+mu(1) = -mu_pre;
 
 for tt = 1:expTrial
 
@@ -43,11 +43,11 @@ for tt = 1:expTrial
     %Eq. 4 in Wozny et al., 2010
     shat = shat_C1 * post_C1 + shat_C2 * post_C2;
 
-    % update the mean of the measurement using three methods
+    % update the mean of the measurement
+    mu(tt+1) = mu(tt) + alpha * (shat - soa_m);
 
-    mu(tt+1) = mu(tt) - alpha * (shat - soa_m);
 end
 
-mu_shift = mu(end) - mu(1);
+mu_shift = mu(1) - mu(end);
 
 end

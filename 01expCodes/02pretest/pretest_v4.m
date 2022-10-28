@@ -28,7 +28,7 @@
 
 try
     %% enter subject's name
-    clear all; close all; clc; rng('shuffle');
+    clear all; close all; clc; rng('Shuffle');
     
     %enter subject's name
     ExpInfo.subjID                       = [];
@@ -41,7 +41,6 @@ try
     
     % choose device indices
     audDevices                           = PsychPortAudio('GetDevices');
-%     audDevicesEnd = size(audDevices, 2);
 %     ExpInfo.deviceIndices = [0, 1, 0]; % use internal display, speaker, keyboard;
     ExpInfo.deviceIndices                = [0, 4, 1]; % use external display, speaker, keyboard;
     ExpInfo.sittingDistance              = 10; %in cm, the distance between the screen and participants

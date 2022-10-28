@@ -9,7 +9,7 @@ mu_pre              = 0.06; % s
 %% get free parameters
 p_common            = 0.3;
 sigma_c1            = 0.01;
-sigma_c2            = 1;
+sigma_c2            = 0.8;
 sigma_soa           = 0.16;
 alpha               = 0.01;
 
