@@ -1,34 +1,39 @@
 % This scripts is based on 6 models specified in v5
 
-% The purpose is to simulate data from 6 models with a large number
-% of trials (ExpInfo.nTrials = 1e4, numTrials per SOA). 
-% Set counts = 100 for parameter recovery.
-% Set counts = 1 to debug.
+% The purpose is to generate fake data from each model and fit them with
+% all models to examine model identifiability
 
-% The simulated parameters are drawn from distributions from the fitted
-% parameters from a04_p1_model_comparison_v5.m
+% simulate data with real number of trials (ExpInfo.nTrials = 20, numTrials
+% per SOA) and counts = 1000
 
 clear all; close all; clc; rng(1);
 
 %% set fixed parameters
 
+% change output filename
+flnm = 'pr3_resulst_3';
+
 % set path
 currentDir = pwd;
-exptDir = currentDir(1:regexp(pwd,'v5_pr_mr_6models_new')-1);
+exptDir = currentDir(1:regexp(pwd,'TOJ_model_recovery')-1);
 outDir = [pwd '/pr1_figures'];
-addpath(genpath([exptDir 'v5_pr_mr_6models_new']));
+addpath(genpath([exptDir 'TOJ_model_recovery']));
+
+if ~exist(outDir, 'dir')
+    mkdir(outDir)
+end
 
 % simulation parameters
 nModel = 6;
 CM = zeros(nModel);
-counts = 100; % num of simulation
+counts = 1000; % num of simulation
 
 % experimental parameters
 ExpInfo.ifi              = 1000/60;
 ExpInfo.SOA              = [-0.5000, -0.3000, -0.2500, -0.2000, -0.1500, -0.1000,...
     -0.0500, 0, 0.0500, 0.1000, 0.1500, 0.2000, 0.2500, 0.3000, 0.5000]*1000; % in ms
 ExpInfo.lenS             = length(ExpInfo.SOA);
-ExpInfo.nTrials          = 1e4; % num of trials per SOA
+ExpInfo.nTrials          = 20; % num of trials per SOA
 paraLabel = {{'\mu_{pre}','\mu_{post}','\sigma_{pre}','\sigma_{post}','criterion_{pre}','criterion_{post}','\lambda_{pre}','\lambda_{post}'},...
     {'\mu_{pre}','\mu_{post}','\sigma','criterion_{pre}','criterion_{post}','\lambda_{pre}','\lambda_{post}'},...
     {'\mu_{pre}','\mu_{post}','\sigma_{pre}','\sigma_{post}','criterion','\lambda_{pre}','\lambda_{post}'},...
@@ -38,11 +43,11 @@ paraLabel = {{'\mu_{pre}','\mu_{post}','\sigma_{pre}','\sigma_{post}','criterion
 
 %% summarize fitted parameters
 % load model fitted parameters
-load('mc_results_v5_n9.mat.mat')
+load('mc_results_v5_n9.mat')
 
 % for each model, extract each parameter from ava_sub, 9 sessions
 nPara = [8,7,7,6,6,5];
-sub2use = [3,4,6,7,8,9,10];
+sub2use = [1,3,4,6,7,8,9,10];
 nSub = numel(sub2use);
 nSes = 9;
 realP = cell(1, nModel);
@@ -76,7 +81,7 @@ for m = 1:nModel
 end
 
 % calculate mean and sd for each model, each parameter
-[realP_mean, realP_SD] = deal(cell(1, nModel));
+[realP_mean, realP_SD, sampledP] = deal(cell(1, nModel));
 
 for m = 1:nModel
 
@@ -97,18 +102,18 @@ for m = 1:nModel
 
 end
 
-
-%% simulate and fit for each model
+%% start model recovery
 
 % preallocate
-[sampledP, estP, AIC, NLL] = deal(cell(counts, nModel));
+[estP, AIC, NLL, deltaAIC] = deal(cell(counts, nModel));
 
-parfor count = 1:counts
+for count = 1:counts
+
     disp(count)
 
-    for m = 1:nModel
+    parfor m = 1:nModel
 
-        %% sample simulated parameters for each model from fitted parameters
+        %% sample the true parameters from fitted parameters
 
         % number of parameters for this model
         m_nPara = nPara(m);
@@ -146,77 +151,45 @@ parfor count = 1:counts
 
             end
             % store sampled sampled parameters
-            sampledP{count, m}(1,p) = temp_sampledP;
+            sampledP{m}(1,p) = temp_sampledP;
         end
 
-        %% simulate fake data
+        %% simulate fake dataset
 
         % input: i_model, model-specific parameter, sim_trial
-        sim_r_org = sim_6M_v5(m, sampledP{count, m}, ExpInfo);
+        sim_r_org = sim_6M_v5(m, sampledP{m}, ExpInfo);
 
         %% fit fake data to all the models
 
         [AIC{count, m}, NLL{count, m}, estP{count, m}] = fit_6M_v5(sim_r_org, ExpInfo);
-    end
 
-end
-
-
-%% plotting parameter recovery results: sim vs fit
-
-for m = 1:6
-
-    % number of parameters for this model
-    m_nPara = nPara(m);
-
-    figure; hold on
-    sgtitle(['M' num2str(m)])
-    set(gcf, 'Position',[10 10 1500 1200])
-
-    % initiate idx for 'bad' simulation trials
-    bad_count = [];
-    [sim_p, fit_p] = deal(NaN(m_nPara, counts));
-
-    for p = 1:m_nPara
-
-        for count = 1:counts
-            % plot fit parameter against simulated parameter
-            sim_p(p, count) = sampledP{count,m}(p);
-            fit_p(p, count)= estP{count, m}{m}(p);
-
-        end
-
-        %% plot
-        subplot(3,3,p); hold on
-        set(gca, 'LineWidth', 1, 'FontSize', 10)
-        axis equal
-        scatter(sim_p(p,:), fit_p(p,:),40)
-        xl = get(gca, 'xlim');
-        plot(xl, xl, 'k--')
-        title(paraLabel{m}{p})
+        %% update confusion matrix
+        % iBest is the index of model that best fits this specific fake data set
+        deltaAIC{count, m} = AIC{count, m} - min(AIC{count, m});
+        [M iBEST] = min(deltaAIC{count, m});
+        BEST = deltaAIC{count, m} == M;
+        BEST = BEST / sum(BEST);
+        CM(m,:) = CM(m,:) + BEST;
 
     end
-
-%     %% plot 'bad' counts in red for all parameters
-%     % 'bad' as in simulated values exceeds reasonable range
-% 
-%     % find 'bad' criterion values > 350
-%     [~,idx] = find(sim_p>350);
-%     bad_count = [bad_count; idx];
-% 
-%     % find 'bad' lambda values > 0.06
-%     [~,idx] = find(sim_p((m_nPara-1):m_nPara,:)>0.06);
-%     bad_count = [bad_count; idx];
-%     bad_count = unique(bad_count);
-% 
-%     for p = 1:m_nPara
-%         subplot(3,3,p); hold on
-%         scatter(sim_p(p, bad_count), fit_p(p, bad_count),40,'red')
-%     end
-
-    % save figure
-    flnm = ['pr_sim_vs_fit_para_M' num2str(m) '_v5'];
-    saveas(gca, fullfile(outDir, flnm),'epsc')
-
-
 end
+
+save(flnm)
+
+%% plot confusion matrix
+
+figure; clf;
+FM = round(100*CM/sum(CM(1,:)))/100;
+t = imageTextMatrix(FM);
+colormap("bone")
+set(t(FM'<0.3), 'color', 'w')
+hold on;
+[l1, l2] = addFacetLines(CM);
+set(t, 'fontsize', 22)
+title(['count = ' num2str(count)]);
+set(gca, 'xtick', [1:6], 'ytick', [1:6], 'fontsize', 28, ...
+    'xaxislocation', 'top', 'tickdir', 'out')
+xlabel('fit model')
+
+saveas(gca, fullfile(outDir, flnm), 'epsc')
+

@@ -1,27 +1,30 @@
 % This scripts is based on 6 models specified in v5
 
 % The purpose is to simulate data from 6 models with a large number
-% of trials (ExpInfo.nTrials = 1e4, numTrials per SOA). 
-% Set counts = 100 for parameter recovery.
-% Set counts = 1 to debug.
+% of trials (ExpInfo.nTrials = 1e4, numTrials per SOA) and counts = 1 to
+% debug
 
 % The simulated parameters are drawn from distributions from the fitted
-% parameters from a04_p1_model_comparison_v5.m
+% parameters from 'mc_results_v5_n9.mat'
 
-clear all; close all; clc; rng(1);
+clear all; close all; clc; rng('shuffle');
 
 %% set fixed parameters
 
 % set path
 currentDir = pwd;
-exptDir = currentDir(1:regexp(pwd,'v5_pr_mr_6models_new')-1);
+exptDir = currentDir(1:regexp(pwd,'TOJ_model_recovery')-1);
 outDir = [pwd '/pr1_figures'];
-addpath(genpath([exptDir 'v5_pr_mr_6models_new']));
+addpath(genpath([exptDir 'TOJ_model_recovery']));
+
+if ~exist(outDir, 'dir')
+    mkdir(outDir)
+end
 
 % simulation parameters
 nModel = 6;
 CM = zeros(nModel);
-counts = 100; % num of simulation
+counts = 1; % num of simulation
 
 % experimental parameters
 ExpInfo.ifi              = 1000/60;
@@ -38,7 +41,7 @@ paraLabel = {{'\mu_{pre}','\mu_{post}','\sigma_{pre}','\sigma_{post}','criterion
 
 %% summarize fitted parameters
 % load model fitted parameters
-load('mc_results_v5_n9.mat.mat')
+load('mc_results_v5_n9.mat')
 
 % for each model, extract each parameter from ava_sub, 9 sessions
 nPara = [8,7,7,6,6,5];
@@ -214,9 +217,8 @@ for m = 1:6
 %         scatter(sim_p(p, bad_count), fit_p(p, bad_count),40,'red')
 %     end
 
-    % save figure
-    flnm = ['pr_sim_vs_fit_para_M' num2str(m) '_v5'];
-    saveas(gca, fullfile(outDir, flnm),'epsc')
-
+% save figure
+flnm = ['pr_sim_vs_fit_para_M' num2str(m) '_v5'];
+saveas(gca, fullfile(outDir, flnm),'epsc')
 
 end
