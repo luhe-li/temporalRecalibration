@@ -24,13 +24,13 @@ for i               = 1:numel(adaptor_soas)
 
     for t               = 1:simTrial
 
-        mu_shift(i,t)   = update_recal_bayesian_MA(expTrial, adaptor_soa, mu_pre,...
+        mu_shift(i,t)           = update_recal_bayesian_MA(expTrial, adaptor_soa, mu_pre,...
             p_common, sigma_soa, sigma_c1, sigma_c2, alpha);
 
     end
 end
 
-%% summarize recalibration effect
+%% summarize recalibration effetct
 mu_shift_iSOA_error = std(mu_shift, [], 2);
 mu_shift_iSOA       = mean(mu_shift, 2);
 
