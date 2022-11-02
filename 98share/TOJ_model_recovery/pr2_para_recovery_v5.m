@@ -19,9 +19,13 @@ clear all; close all; clc; %rng(1);
 
 % set path
 currentDir = pwd;
-exptDir = currentDir(1:regexp(pwd,'v5_pr_mr_6models_new')-1);
-outDir = [pwd '/pr2_figures'];
-addpath(genpath([exptDir 'v5_pr_mr_6models_new']));
+exptDir = currentDir(1:regexp(pwd,'TOJ_model_recovery')-1);
+outDir = [pwd '/pr1_figures'];
+addpath(genpath([exptDir 'TOJ_model_recovery']));
+
+if ~exist(outDir, 'dir')
+    mkdir(outDir)
+end
 
 % simulation parameters
 nModel = 6;
@@ -43,7 +47,7 @@ paraLabel = {{'\mu_{pre}','\mu_{post}','\sigma_{pre}','\sigma_{post}','criterion
 
 %% summarize fitted parameters
 % load model fitted parameters
-load('a04_mc_results_v5.mat')
+load('mc_results_v5_n9.mat')
 
 % for each model, extract each parameter from ava_sub, 9 sessions
 nPara = [8,7,7,6,6,5];
