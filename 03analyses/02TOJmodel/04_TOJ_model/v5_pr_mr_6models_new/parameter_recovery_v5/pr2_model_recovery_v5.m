@@ -185,7 +185,6 @@ save('pr2_results_2')
 clear all; close all; clc; 
 
 load('pr2_results_2.mat')
-
 %% plot the estimated parameter against the true parameters
 
 for m = 1:6 % for each model
