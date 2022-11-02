@@ -23,10 +23,11 @@ function nLL = cal_nLL_CI(mu1, sigma1, c1, lambda,... % pretest free para
 
 %--------------------------------------------------------------------------
 % Outputs:
-% nLL       : total nLL of pre and posttest
+% nLL   : total nLL of pre and posttest
 %--------------------------------------------------------------------------
 
-%% define psychometric function (PMF)
+%%
+% define psychometric function (PMF)
 P_Afirst = @(SOA, mu, sig, c, lambda) lambda/3 + (1-lambda).*normcdf(-c, SOA - mu, sig);
 P_Vfirst = @(SOA, mu, sig, c, lambda) lambda/3 + (1-lambda).*(1 - normcdf(c, SOA-mu, sig));
 P_simultaneous = @(SOA, mu, sig, c, lambda) ...
@@ -45,7 +46,7 @@ pre_LL = data.pre_nT_A1st*log(P_Afirst(data.pre_s_unique, mu1, sigma1, c1, lambd
 % shift of mu
 mu_shift = NaN(1, model.expo_num_sim);
 for t   = 1:model.expo_num_sim
-    mu_shift(t) = simulate_mu_shift_MA(model.expo_num_trial, data.adaptor_soa, mu1,...
+    mu_shift(t)   = simulate_mu_shift_MA(model.expo_num_trial, data.adaptor_soa, mu1,...
         p_common, sigma_soa, sigma_c1, sigma_c2, alpha);
 end
 
