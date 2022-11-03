@@ -43,10 +43,10 @@ for sub = all_sub
         paraH.p_common = [1e-4, 1-1e-4]; % weight
         paraH.sigma_soa  = [0.01, 0.2]; % s
         paraH.sigma_c1 = [1e-4, 0.05]; % s
-        %         paraH.sigma_c1 = [0.001, 0.001]; % s
+%         paraH.sigma_c1 = [0.001, 0.001]; % s
 %         paraH.sigma_c2  = [0.2, 1]; % s
         paraH.sigma_c2  = [0.8, 0.8]; % s
-        %         paraH.alpha = [1e-3, 0.1]; % percentage
+%         paraH.alpha = [1e-3, 0.1]; % percentage
         paraH.alpha = [0.01, 0.01];
 
         % soft bounds, the range for PLB, PUB
@@ -59,10 +59,10 @@ for sub = all_sub
         paraS.p_common = [0.2, 0.5]; % weight
         paraS.sigma_soa  = [0.01, 0.18]; % s
         paraS.sigma_c1 = [1e-4, 0.03]; % s
-        %         paraS.sigma_c1 = [0.001, 0.001]; % s
+%         paraS.sigma_c1 = [0.001, 0.001]; % s
 %         paraS.sigma_c2  = [0.5, 0.8]; % s
         paraS.sigma_c2  = [0.8, 0.8]; % s
-        %         paraS.alpha = [1e-3, 0.01]; % percentage
+%         paraS.alpha = [1e-3, 0.01]; % percentage
         paraS.alpha = [0.01, 0.01];
 
         % reorganize parameter bounds to feed to bads
