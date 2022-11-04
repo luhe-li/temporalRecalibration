@@ -2,6 +2,7 @@
 % TOJ data, for each sesion, each participant
 
 % corresponding pathway on hpc: #cd $/scratch/ll3981/project1/CI_model_fit
+
 clear all; close all; clc; rng('Shuffle'); parpool(8);
 
 %% manage paths
@@ -10,7 +11,7 @@ exptDir = currentDir(1:regexp(pwd,'01cau_inf')-1); % project folder
 addpath(genpath([exptDir 'data'])); % data folder, necessary to run organize_data
 addpath(genpath([exptDir 'bads']));% add bads to path, to be changed later
 
-all_sub = 1:10;
+all_sub = 1:5;
 all_ses = 1:9;
 
 for sub = all_sub
@@ -107,9 +108,10 @@ for sub = all_sub
         model(sub, ses).estimatedP = estimatedP;
         model(sub, ses).minNLL     = minNLL;
 
-        %% save the data
-        save(['a1ModelFitResults_',datestr(datetime('now'))],'data','model')
-        fprintf('sub %.0f sesion %.0f saved', sub, ses)
-
     end
+
+    %% save the data for each participant
+    save(['a1ModelFitResults_',datestr(datetime('now'))],'data','model')
+    fprintf('sub %.0f sesion %.0f saved', sub, ses)
+
 end
