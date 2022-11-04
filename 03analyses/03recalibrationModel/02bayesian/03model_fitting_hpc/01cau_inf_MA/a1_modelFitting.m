@@ -1,7 +1,7 @@
 % This script fits Bayesian causal inference model to the pre- and post-
 % TOJ data, for each sesion, each participant
 
-% corresponding pathway on hpc: #cd $/scratch/ll3981/project1/CI_model_fit
+% corresponding pathway on hpc: #cd $/scratch/ll3981/project1/model_fit/01ca
 
 clear all; close all; clc; rng('Shuffle'); parpool(8);
 

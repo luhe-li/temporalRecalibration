@@ -18,18 +18,17 @@ JP2                   = sigma_c2^-2;
 const1                = sigma_soa^2 + sigma_c1^2;
 const2                = sigma_soa^2 + sigma_c2^2;
 
-% We assume that mu are updated at the end of each
-% exposure trial i.
-mu = zeros(1, expTrial + 1);
-
-% mu_1 is mu_pre
-mu(1) = mu_pre;
+% We assume that delta_s are the cumulative shift of s' and is updated at
+% the end of each exposure trial i. delta_s(1) is delta_s before adaptation
+% (i.e., trial 0).
+delta_s = zeros(1, expTrial + 1);
 
 for tt = 1:expTrial
 
-    % In each trial (1 ≤ i ≤ 250), observer makes a noisy sensory measurement
-    % of SOA, soa_m, with a standard deviation sigma_soa centered on adaptor_soa + delta_s
-    soa_m = randn * sigma_soa + (adaptor_soa + mu(tt));
+    % In each trial (1 ≤ i ≤ 250), the observer makes a noisy sensory
+    % measurement of SOA (soa_m) with a standard deviation (sigma_soa),
+    % centered on s', where s' = s + delta_s - mu (shifted and remapped)
+    soa_m = randn * sigma_soa + adaptor_soa + delta_s(tt) - mu_pre;
 
     % The likelihood of a common source of SOA measurement in a trial i is:
     L_C1 = 1 / (2*pi*sqrt(const1)) * exp( -0.5 * soa_m^2 / (const1));
@@ -52,11 +51,14 @@ for tt = 1:expTrial
     %Eq. 4 in Wozny et al., 2010
     shat = shat_C1 * post_C1 + shat_C2 * post_C2;
 
-    % update the mean of the measurement using three methods
+    % update the mean of the measurement
+    delta_s(tt+1) = delta_s(tt) + alpha * (shat - soa_m);
 
-    mu(tt+1) = mu(tt) - alpha * (shat - soa_m);
 end
 
-mu_shift = mu(end) - mu(1);
+% after the exposure phase, the shift of s' is delta_s(end). delta_s(250) =
+% s'_250 - s'_0 = (s - mu_250) - (s - mu_0) = mu_0 - mu_250. Since we are
+% interested in the shift of mu:
+mu_shift = - delta_s(end);
 
 end
