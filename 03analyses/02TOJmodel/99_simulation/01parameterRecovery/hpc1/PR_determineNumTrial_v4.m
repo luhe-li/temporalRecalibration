@@ -5,7 +5,7 @@
 % trials to obtain the confidence interval of parameters, then repeat the
 % whole process for 20 times (20 fake datasets)
 
-clear all; close all; clc; rng(1); parpool(2);
+clear all; close all; clc; rng(1); %parpool(2);
 
 %% Experimental parameters
 %the levels of SOA

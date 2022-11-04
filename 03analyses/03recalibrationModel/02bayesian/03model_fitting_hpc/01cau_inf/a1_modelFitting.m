@@ -1,7 +1,8 @@
 % This script fits Bayesian causal inference model to the pre- and post-
 % TOJ data, for each sesion, each participant
 
-clear all; close all; clc; rng('Shuffle'); %parpool(8);
+% corresponding pathway on hpc: #cd $/scratch/ll3981/project1/CI_model_fit
+clear all; close all; clc; rng('Shuffle'); parpool(8);
 
 %% manage paths
 currentDir = pwd;
@@ -9,8 +10,8 @@ exptDir = currentDir(1:regexp(pwd,'01cau_inf')-1); % project folder
 addpath(genpath([exptDir 'data'])); % data folder, necessary to run organize_data
 addpath(genpath([exptDir 'bads']));% add bads to path, to be changed later
 
-all_sub = 1:1;
-all_ses = 1:1;
+all_sub = 1:10;
+all_ses = 1:9;
 
 for sub = all_sub
     for  ses = all_ses
@@ -23,7 +24,7 @@ for sub = all_sub
         % set fixed & set-up parameters
         model(sub, ses).expo_num_sim = 1e3; % number of simulation for exposure phase
         model(sub, ses).expo_num_trial = 250; % number of *real* trials in exposure phase
-        model(sub, ses).num_runs = 2; %fit the model 100 times, each with a different initialization
+        model(sub, ses).num_runs = 100; %fit the model 100 times, each with a different initialization
         model(sub, ses).num_bin = 100; % num bin to approximate mu_shift
         model(sub, ses).thre_r2 = 0.95; %if R2<0.95, we use KDE
 
