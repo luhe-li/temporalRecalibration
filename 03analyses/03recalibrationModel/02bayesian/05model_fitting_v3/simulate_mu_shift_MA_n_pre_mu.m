@@ -1,4 +1,4 @@
-function mu_shift = update_recal_bayesian_MA(expTrial, adaptor_soa, mu_pre, ...
+function mu_shift = simulate_mu_shift_MA_n_pre_mu(expTrial, adaptor_soa, ...
     p_common, sigma_soa, sigma_c1, sigma_c2, alpha)
 
 % compute constants (these will come in handy when writing the equations
@@ -19,7 +19,7 @@ for tt = 1:expTrial
     % In each trial (1 ≤ i ≤ 250), the observer makes a noisy sensory
     % measurement of SOA (soa_m) with a standard deviation (sigma_soa),
     % centered on s', where s' = s + delta_s - mu (shifted and remapped)
-    soa_m = randn * sigma_soa + adaptor_soa + delta_s(tt) - mu_pre;
+    soa_m = randn * sigma_soa + adaptor_soa + delta_s(tt);
 
     % The likelihood of a common source of SOA measurement in a trial i is:
     L_C1 = 1 / (2*pi*sqrt(const1)) * exp( -0.5 * soa_m^2 / (const1));

@@ -4,7 +4,7 @@
 function nLL = cal_nLL_CI(mu1, sigma1, c1, lambda,... % pretest free para
     sigma2, c2, ... % posttest free para
     p_common, sigma_soa, sigma_c1, sigma_c2, alpha, ... % recal simul para
-    model, data) % fixed para, data
+    model, data, include_pre_mu) % fixed para, data
 
 %--------------------------------------------------------------------------
 % Inputs:
@@ -45,9 +45,14 @@ pre_LL = data.pre_nT_A1st*log(P_Afirst(data.pre_s_unique, mu1, sigma1, c1, lambd
 %% simulate shift_mu through the full exposure phase and return the final
 % shift of mu
 mu_shift = NaN(1, model.expo_num_sim);
-for t   = 1:model.expo_num_sim
-    mu_shift(t)   = simulate_mu_shift_MA_y_pre_mu(model.expo_num_trial, data.adaptor_soa, mu1,...
-        p_common, sigma_soa, sigma_c1, sigma_c2, alpha);
+for t  = 1:model.expo_num_sim
+    if include_pre_mu == 1
+        mu_shift(t)   = simulate_mu_shift_MA_y_pre_mu(model.expo_num_trial, data.adaptor_soa, mu1,...
+            p_common, sigma_soa, sigma_c1, sigma_c2, alpha);
+    else
+        mu_shift(t)   = simulate_mu_shift_MA_n_pre_mu(model.expo_num_trial, data.adaptor_soa,...
+            p_common, sigma_soa, sigma_c1, sigma_c2, alpha);
+    end
 end
 
 %% approximate the probability of shift_mu by either Gaussian or KDE,
@@ -108,15 +113,15 @@ end
 
 % post LL is the log sum of (likelihood of approximated delta x
 % probability of approximated delta)
-% post_LL = log(sum(exp(LL_delta) .* pdf_delta)); 
+% post_LL = log(sum(exp(LL_delta) .* pdf_delta));
 
 % re-written to avoid underflow of likelihood. Note that const can be
 % subtracted to the exponent and added later because it is NOT summed, and
 % log(exp(const)) = const
-const = max(LL_delta + log(pdf_delta)); 
+const = max(LL_delta + log(pdf_delta));
 post_LL = log(sum(exp(LL_delta + log(pdf_delta) - const))) + const;
 
-%% sum the negative likelihood of pre and post test 
+%% sum the negative likelihood of pre and post test
 nLL = - pre_LL - post_LL;
 
 end

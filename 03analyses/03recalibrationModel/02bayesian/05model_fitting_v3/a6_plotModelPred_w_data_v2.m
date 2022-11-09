@@ -59,9 +59,6 @@ for sub = sub_slc
     i_adaptor_soa = randomAdaptorOrder(sub,:);
     [sorted_adaptor_soa, order] = sort(i_adaptor_soa);
 
-    % use counter in ALL OUTPUT VARIABLE to order them by adaptor SOA
-    adaptor = 1;
-
     for  ses = order
 
         %% extract the best-fitting parameters based on minNLL
