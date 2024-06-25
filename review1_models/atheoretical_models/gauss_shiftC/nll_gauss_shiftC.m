@@ -2,27 +2,6 @@
 function out         = nll_gauss_shiftC(mu, sigma, c_pre, dc_post1, dc_post2, dc_post3, dc_post4, dc_post5, dc_post6, dc_post7, dc_post8, dc_post9, lambda, ...
     model, data)
 
-%--------------------------------------------------------------------------
-% Inputs:
-%--------------------------------------------------------------------------
-
-%--------------------------------------------------------------------------
-% out:
-
-% if model.mode     = 'initialize'
-% nLL               : total nLL of pre and posttest, all sessions
-
-% if model.mode     = 'optimize'
-% nLL               : total nLL of pre and posttest, all sessions
-
-% if model.mode     = 'predict'
-% out.pre_pmf       : psychometric function of pre-test
-% out.all_pss_shift : simulated all mu_shift
-% out.R2            : R^2 of using Gaussian to approxiamte mu_shift pdf
-% out.post_pmf      : psychometric function of post-test;
-
-%--------------------------------------------------------------------------
-
 %% pre-compute
 
 dc_post = [dc_post1, dc_post2, dc_post3, dc_post4, dc_post5, dc_post6, dc_post7, dc_post8, dc_post9];
@@ -53,10 +32,10 @@ if strcmp(model.mode, 'optimize')
             + data(adaptor).pre_nT_simul*log(pre_simul)';
 
         if adaptor_soa > uc_pre
-            uc_post = uc_pre + dc_post(i);
+            uc_post = uc_pre + dc_post(adaptor);
             lc_post = lc_pre;
         elseif adaptor_soa < lc_pre
-            lc_post = lc_pre - dc_post(i);
+            lc_post = lc_pre - dc_post(adaptor);
             uc_post = uc_pre;
         else
             uc_post = uc_pre;
@@ -97,15 +76,15 @@ elseif strcmp(model.mode,'predict')
         if adaptor_soa > uc_pre
             uc_post = uc_pre + dc_post(adaptor);
             lc_post = lc_pre;
-            c_shift(adaptor_soa) = dc_post(adaptor);
+            c_shift(adaptor) = dc_post(adaptor);
         elseif adaptor_soa < lc_pre
             lc_post = lc_pre - dc_post(adaptor);
             uc_post = uc_pre;
-            c_shift(adaptor_soa) = -dc_post(adaptor);
+            c_shift(adaptor) = -dc_post(adaptor);
         else
             uc_post = uc_pre;
             lc_post = lc_pre;
-            c_shift(adaptor_soa) = 0;
+            c_shift(adaptor) = 0;
         end
 
         [post_afirst, post_simul, post_vfirst] = pmf_gauss(model.test_soa,...

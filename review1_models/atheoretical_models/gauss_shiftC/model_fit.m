@@ -95,7 +95,7 @@ OPTIONS.TolMesh = 1e-5;
 
 %% fit model
 
-for i_sub = 1:10
+for i_sub = 1%:10
 
     %% organize data
     for  ses         = 1:model.num_ses
@@ -118,11 +118,14 @@ for i_sub = 1:10
     minNLL = NaN(1, model.num_runs);
     estimatedP = NaN(model.num_runs, length(model.lb));
 
+        params = num2cell([model.init(1,:)]);  
+    test = nll_gauss_shiftC(params{:}, model, data);
+
     parfor i         = 1:model.num_runs
         disp(i);
         try
             tempModel = model;
-            [estimatedP(i,:),minNLL(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
+            [estimatedP(i,:),minNLL(i), ~, ~, OPTIMSTATE(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
                 tempModel.ub, tempModel.plb, tempModel.pub, [], OPTIONS);
         catch
             sprintf('Skipped invalid NLL\n')
@@ -148,7 +151,7 @@ for i_sub = 1:10
 
    %% save by subject
 
-   save(['sub-%s_%s' i_sub, datestr(datetime('now'))],'data','model','pred')
+   save(sprintf('sub-%i_%s', i_sub, datestr(datetime('now'))),'data','model','pred')
 
 end
 

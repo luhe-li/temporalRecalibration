@@ -153,7 +153,7 @@ for i_sub = 1:10
 
    %% save by subject
 
-   save(['sub-%s_%s' i_sub, datestr(datetime('now'))],'data','model','pred')
+   save(sprintf('sub-%i_%s', i_sub, datestr(datetime('now'))),'data','model','pred')
 
 end
 

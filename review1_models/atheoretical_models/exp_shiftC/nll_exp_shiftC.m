@@ -32,10 +32,10 @@ if strcmp(model.mode, 'optimize')
             + data(adaptor).pre_nT_simul*log(pre_simul)';
 
         if adaptor_soa > uc_pre
-            uc_post = uc_pre + dc_post(i);
+            uc_post = uc_pre + dc_post(adaptor);
             lc_post = lc_pre;
         elseif adaptor_soa < lc_pre
-            lc_post = lc_pre - dc_post(i);
+            lc_post = lc_pre - dc_post(adaptor);
             uc_post = uc_pre;
         else
             uc_post = uc_pre;
