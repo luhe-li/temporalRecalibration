@@ -41,7 +41,7 @@ n_ses          = 9;
 
 % set fixed & set-up parameters
 model.num_ses    = 9;
-model.num_runs   = 100; % fit the model 100 times, each with a different initialization
+model.num_runs   = 80; % fit the model 100 times, each with a different initialization
 model.bound      = 10; % in second, the bound for prior axis
 model.bound_int  = 1.5; % in second, where estimates are likely to reside
 model.test_soa   = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
@@ -125,7 +125,7 @@ for i_sub = 1:10
 %     test = nll_exp_shiftMu(params{:}, model, data);
 
     parfor i         = 1:model.num_runs
-        sprintf('[%s] Start fitting run-%i', mfilename, i);
+        fprintf('[%s] Start fitting run-%i', mfilename, i);
         try
             tempModel = model;
             [estimatedP(i,:), minNLL(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
@@ -140,7 +140,7 @@ for i_sub = 1:10
     [min_val, min_idx]   = min(minNLL);
     model.minNLL = min_val;
     model.bestP = estimatedP(min_idx,:);
-
+ 
     % store all fits
     model.NLL = minNLL;
     model.estP = estimatedP;
