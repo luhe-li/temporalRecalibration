@@ -115,7 +115,7 @@ for i_sub = 1:10
     model.init      = getInit(model.lb, model.ub, model.num_sections, model.num_runs);
 
     %initialize matrices that store negative log likelihood and best-fit paramters
-    minNLL = NaN(1, model.num_runs);
+    NLL = NaN(1, model.num_runs);
     estimatedP = NaN(model.num_runs, length(model.lb));
 
 %     params = num2cell([model.init(1,:)]);  
@@ -125,7 +125,7 @@ for i_sub = 1:10
         disp(i);
         try
             tempModel = model;
-            [estimatedP(i,:), minNLL(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
+            [estimatedP(i,:), NLL(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
                 tempModel.ub, tempModel.plb, tempModel.pub, [], OPTIONS);
         catch
             disp('Skipped invalid NLL')
@@ -134,12 +134,12 @@ for i_sub = 1:10
     end
 
     % store the estimated p with min nll
-    [min_val, min_idx]   = min(minNLL);
+    [min_val, min_idx]   = min(NLL);
     model.minNLL = min_val;
     model.bestP = estimatedP(min_idx,:);
 
     % store all fits
-    model.NLL = minNLL;
+    model.NLL = NLL;
     model.estP = estimatedP;
 
    %% model prediction by best-fitting parameters
