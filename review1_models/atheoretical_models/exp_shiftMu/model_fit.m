@@ -149,7 +149,7 @@ for i_sub = 1:10
    model.mode       = 'predict';
    model.test_axis_finer = 1;
    params = num2cell([model.bestP]);  
-   pred =  nll_gauss_shiftMu(params{:}, model, data);
+   pred =  nll_exp_shiftMu(params{:}, model, data);
 
    %% save by subject
 
