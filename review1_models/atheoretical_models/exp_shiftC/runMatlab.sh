@@ -3,7 +3,7 @@
 #SBATCH --job-name=FitExpShiftC
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=20
 #SBATCH --mem=32GB
 #SBATCH --time=20:00:00
 #SBATCH --mail-type=END

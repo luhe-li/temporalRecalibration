@@ -21,9 +21,9 @@ end
 % make sure Matlab does not exceed this
 fprintf('Number of cores: %i  \n', numCores);
 maxNumCompThreads(numCores);
-if isempty(gcp('nocreate'))
-    parpool(numCores-1);
-end
+% if isempty(gcp('nocreate'))
+%     parpool(numCores-1);
+% end
 
 %% manage paths
 
@@ -94,6 +94,7 @@ model.paraS      = paraS; model.paraH = paraH;
 % set OPTIONS to tell bads that my objective function is noisy
 OPTIONS.UncertaintyHandling = 1;
 OPTIONS.TolMesh = 1e-5;
+OPTIONS.Display = 'off';
 
 %% fit model
 
@@ -120,11 +121,11 @@ for i_sub = 1:10
     minNLL = NaN(1, model.num_runs);
     estimatedP = NaN(model.num_runs, length(model.lb));
 
-    parfor i         = 1:model.num_runs
-        disp(i);
+    for i         = 1:model.num_runs
+        fprintf('[%s] Start fitting run-%i', mfilename, i);
         try
             tempModel = model;
-            [estimatedP(i,:),minNLL(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
+            [estimatedP(i,:),minNLL(i),~,~,OPTIMSTATE(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
                 tempModel.ub, tempModel.plb, tempModel.pub, [], OPTIONS);
         catch
             sprintf('Skipped invalid NLL\n')
@@ -140,6 +141,7 @@ for i_sub = 1:10
     % store all fits
     model.NLL = minNLL;
     model.estP = estimatedP;
+    model.OPTIMSTATE = OPTIMSTATE;
 
    %% model prediction by best-fitting parameters
 

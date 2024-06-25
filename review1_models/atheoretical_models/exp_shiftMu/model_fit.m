@@ -94,6 +94,7 @@ model.paraS      = paraS; model.paraH = paraH;
 % set OPTIONS to tell bads that my objective function is noisy
 OPTIONS.UncertaintyHandling = 1;
 OPTIONS.TolMesh = 1e-5;
+OPTIONS.Display = 'off';
 
 %% fit model
 
@@ -124,7 +125,7 @@ for i_sub = 1:10
 %     test = nll_exp_shiftMu(params{:}, model, data);
 
     parfor i         = 1:model.num_runs
-        disp(i);
+        sprintf('[%s] Start fitting run-%i', mfilename, i);
         try
             tempModel = model;
             [estimatedP(i,:), minNLL(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
@@ -143,6 +144,7 @@ for i_sub = 1:10
     % store all fits
     model.NLL = minNLL;
     model.estP = estimatedP;
+    model.OPTIMSTATE = OPTIMSTATE;
 
    %% model prediction by best-fitting parameters
 
