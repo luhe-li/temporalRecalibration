@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=FitExpShiftC
+#SBATCH --job-name=FitAtheoreticalModels
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=20
 #SBATCH --mem=64GB
 #SBATCH --time=10:00:00
@@ -15,6 +15,6 @@ module load matlab/2022a
 
 matlab <<EOF
 
-model_fit
+model_per_job
 
 EOF
