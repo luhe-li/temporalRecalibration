@@ -95,7 +95,7 @@ OPTIONS.TolMesh = 1e-5;
 
 %% fit model
 
-for i_sub = 1%:10
+for i_sub = 1:10
 
     %% organize data
     for  ses         = 1:model.num_ses
