@@ -12,3 +12,4 @@ For product information, visit www.mathworks.com.
 >> Number of cores: 20  
 Starting parallel pool (parpool) using the 'local' profile ...
 Connected to the parallel pool (number of workers: 19).
+[model_fit] Start fitting sub-1 run-1 

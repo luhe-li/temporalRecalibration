@@ -1,4 +1,3 @@
-
 clear; clc; close all; rng('Shuffle');
 
 %% set up
@@ -123,10 +122,10 @@ for i_sub = 1:10
 %     test = nll_gauss_shiftC(params{:}, model, data);
 
     parfor i         = 1:model.num_runs
-        fprintf('[%s] Start fitting run-%i', mfilename, i);
+        fprintf('[%s] Start fitting sub-%i run-%i \n', mfilename, i_sub, i);
         try
             tempModel = model;
-            [estimatedP(i,:),minNLL(i), ~, ~, OPTIMSTATE(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
+            [estimatedP(i,:),minNLL(i)] = bads(funcNLL, tempModel.init(i,:), tempModel.lb,...
                 tempModel.ub, tempModel.plb, tempModel.pub, [], OPTIONS);
         catch
             sprintf('Skipped invalid NLL\n')
@@ -142,7 +141,6 @@ for i_sub = 1:10
     % store all fits
     model.NLL = minNLL;
     model.estP = estimatedP;
-    model.OPTIMSTATE = OPTIMSTATE;
 
    %% model prediction by best-fitting parameters
 

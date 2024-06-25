@@ -1,0 +1,33 @@
+MATLAB is selecting SOFTWARE OPENGL rendering.
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2022 The MathWorks, Inc.
+                  R2022a (9.12.0.1884302) 64-bit (glnxa64)
+                             February 16, 2022
+
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+>> Number of cores: 20  
+Starting parallel pool (parpool) using the 'local' profile ...
+Connected to the parallel pool (number of workers: 19).
+[] Start fitting sub-1 run-1 
+[] Start fitting sub-1 run-2 
+[] Start fitting sub-1 run-3 
+[] Start fitting sub-1 run-4 
+[] Start fitting sub-1 run-5 
+[] Start fitting sub-1 run-6 
+[] Start fitting sub-1 run-7 
+[] Start fitting sub-1 run-8 
+[] Start fitting sub-1 run-9 
+[] Start fitting sub-1 run-10 
+[] Start fitting sub-1 run-11 
+[] Start fitting sub-1 run-12 
+[] Start fitting sub-1 run-13 
+[] Start fitting sub-1 run-14 
+[] Start fitting sub-1 run-15 
+[] Start fitting sub-1 run-16 
+[] Start fitting sub-1 run-17 
+[] Start fitting sub-1 run-18 
+[] Start fitting sub-1 run-19 
