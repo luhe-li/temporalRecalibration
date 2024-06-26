@@ -87,8 +87,8 @@ for i_sub = 1:n_sub
     NLL                         = NaN(1, model.num_runs);
     estP                        = NaN(model.num_runs, Val.num_para);
 
-    for i  = 1:model.num_runs
-        fprintf('[%s] Start fitting sub-%i run-%i \n', mfilename, i_sub, i);
+    parfor i  = 1:model.num_runs
+        fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, i_sub, i);
         try
             tempModel            = model;
             tempVal              = Val;

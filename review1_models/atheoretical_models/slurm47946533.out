@@ -1,0 +1,46 @@
+MATLAB is selecting SOFTWARE OPENGL rendering.
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2022 The MathWorks, Inc.
+                  R2022a (9.12.0.1884302) 64-bit (glnxa64)
+                             February 16, 2022
+
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+>> job number: 2 
+Number of cores: 21  
+Starting parallel pool (parpool) using the 'local' profile ...
+Connected to the parallel pool (number of workers: 20).
+[fit_atheo_model] Start fitting sub-1 run-1 
+[fit_atheo_model] Start fitting sub-1 run-2 
+[fit_atheo_model] Start fitting sub-1 run-3 
+[fit_atheo_model] Start fitting sub-1 run-4 
+[fit_atheo_model] Start fitting sub-1 run-5 
+[fit_atheo_model] Start fitting sub-1 run-6 
+[fit_atheo_model] Start fitting sub-1 run-7 
+[fit_atheo_model] Start fitting sub-1 run-8 
+[fit_atheo_model] Start fitting sub-1 run-9 
+[fit_atheo_model] Start fitting sub-1 run-10 
+[fit_atheo_model] Start fitting sub-1 run-11 
+[fit_atheo_model] Start fitting sub-1 run-12 
+[fit_atheo_model] Start fitting sub-1 run-13 
+[fit_atheo_model] Start fitting sub-1 run-14 
+[fit_atheo_model] Start fitting sub-1 run-15 
+[fit_atheo_model] Start fitting sub-1 run-16 
+[fit_atheo_model] Start fitting sub-1 run-17 
+[fit_atheo_model] Start fitting sub-1 run-18 
+[fit_atheo_model] Start fitting sub-1 run-19 
+[fit_atheo_model] Start fitting sub-1 run-20 
+[fit_atheo_model] Start fitting sub-1 run-21 
+[fit_atheo_model] Start fitting sub-1 run-22 
+[fit_atheo_model] Start fitting sub-1 run-23 
+[fit_atheo_model] Start fitting sub-1 run-24 
+[fit_atheo_model] Start fitting sub-1 run-25 
+[fit_atheo_model] Start fitting sub-1 run-26 
+[fit_atheo_model] Start fitting sub-1 run-27 
+[fit_atheo_model] Start fitting sub-1 run-28 
+[fit_atheo_model] Start fitting sub-1 run-29 
+[fit_atheo_model] Start fitting sub-1 run-30 
+slurmstepd: error: *** JOB 47946533 ON cs062 CANCELLED AT 2024-06-25T20:43:51 ***
