@@ -63,13 +63,13 @@ end
 
 % set fixed & set-up parameters
 model.thres_R2 = 0.95;
-model.expo_num_sim= 1e3; % number of simulation for exposure phase
+model.expo_num_sim = 1e3; % number of simulation for exposure phase
 model.expo_num_trial = 250; % number of *real* trials in exposure phase
 model.num_runs = numCores-1; % fit the model 100 times, each with a different initialization
 model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
 model.bound_full = 10*1e3; % in second, the bound for prior axis
-model.bound_int = 1*1e3; % in second, where measurements are likely to reside
-model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference
+model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
+model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
 model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
 model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; 
 model.toj_axis_finer = 1; % simulate pmf with finer axis
@@ -82,8 +82,8 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS to tell bads that my objective function is noisy
 OPTIONS.UncertaintyHandling = 1;
-OPTIONS.TolMesh = 1e-5;
-if useCluster; OPTIONS.Display = 'off'; end
+OPTIONS.TolMesh = 1e-3;
+% if useCluster; OPTIONS.Display = 'off'; end
 
 %% model fitting
 

@@ -1,0 +1,43 @@
+function tau_shift = sim_recal_heu(exp_trial, adaptor_soa, ...
+    tau, sigma_a, sigma_v, criterion, alpha)
+
+checkPlot                    = 0;
+
+% Initiate delta_mu as zero before the exposure phase
+num_adaptor_soa              = numel(adaptor_soa);
+delta_tau                    = zeros(num_adaptor_soa, exp_trial+1);
+
+% probability of perceiving simultaneity
+p_simul = 1 - expCDF(adaptor_soa, tau, -criterion, sigma_a, sigma_v) + expCDF(adaptor_soa, tau, criterion, sigma_a, sigma_v);
+
+for tt = 1:exp_trial
+
+    
+
+end
+
+
+
+
+
+
+
+% last tau of recalibration phase is the recalibrated tau in the post-test
+% phase
+tau_shift                    = delta_tau(:, end);
+
+end
+
+% CDF of doueble exponential distribution
+% Eq.3 in García-Pérez & Alcalá-Quintana (2012)
+function p_resp = expCDF(SOAs, tau, m, sigma_a, sigma_v)
+    p_resp = NaN(size(SOAs));
+    for i = 1:length(SOAs)
+        SOA = SOAs(i); % evaluate function at each level of SOA
+        if m <= SOA + tau
+            p_resp(i) =   sigma_v/(sigma_a + sigma_v) * exp(1/sigma_v * (m - SOA - tau));
+        else
+            p_resp(i) = 1 -  sigma_a/(sigma_a + sigma_v) * exp(- 1/sigma_a * (m - SOA - tau));
+        end
+    end
+end

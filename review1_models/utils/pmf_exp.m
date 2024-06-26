@@ -14,7 +14,8 @@ p_simul_lapse         = 1 - p_afirst_lapse - p_vfirst_lapse;
 
 end
 
-%  Eq.3 in García-Pérez & Alcalá-Quintana (2012)
+% CDF of doueble exponential distribution
+% Eq.3 in García-Pérez & Alcalá-Quintana (2012)
 function p_resp = expCDF(SOAs, tau, m, sigma_a, sigma_v)
     p_resp = NaN(size(SOAs));
     for i = 1:length(SOAs)

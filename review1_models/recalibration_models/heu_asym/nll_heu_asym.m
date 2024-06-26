@@ -1,9 +1,9 @@
 
-function out   = nll_cauInf_asym(freeParam, model, data)
+function out   = nll_heu_asym(freeParam, model, data)
 
 if strcmp(model.mode, 'initialize')
 
-    out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
+    out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','\lambda','\alpha'};
     out.num_para = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
@@ -12,10 +12,7 @@ if strcmp(model.mode, 'initialize')
     paraH.sigma_v  = [  10,   200]; % ms
     paraH.criterion= [   1,   350]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
-    paraH.p_common = [1e-4, 1-1e-4]; % weight
     paraH.alpha    = [1e-4,  0.02]; % percentage
-    paraH.sigma_C1 = [   1,   300]; % ms
-    paraH.sigma_C2 = [ 100,   1e3]; % ms
 
     % soft bounds, the range for PLB, PUB
     paraS.tau= [ -50,    50]; % ms
@@ -23,10 +20,7 @@ if strcmp(model.mode, 'initialize')
     paraS.sigma_v  = [  20,   120]; % ms
     paraS.criterion= [  30,   150]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
-    paraS.p_common = [ 0.3,   0.7]; % weight
     paraS.alpha    = [1e-3,  2e-3]; % percentage
-    paraS.sigma_C1 = [  10,   100]; % ms
-    paraS.sigma_C2 = [ 500,   700]; % ms
 
     % reorganize parameter bounds to feed to bads
     fn = fieldnames(paraH);
@@ -50,54 +44,18 @@ else
     sigma_v = freeParam(3);
     criterion = freeParam(4);
     lambda = freeParam(5);
-    p_common = freeParam(6);
     alpha = freeParam(7);
-    sigma_C1 = freeParam(8);
-    sigma_C2 = freeParam(9);
-
-    %% pre-compute
 
     checkPlot = 0;
-
-    % prior
-    fixP.x_axis     = -model.bound_full:1:model.bound_full;
-    fixP.x_axis_int = -model.bound_int:1:model.bound_int;
-    fixP.l_window   = find(fixP.x_axis == fixP.x_axis_int(1));
-    fixP.r_window   = find(fixP.x_axis == fixP.x_axis_int(end));
-    fixP.prior_C1   = normpdf(fixP.x_axis_int, 0, sigma_C1);
-    fixP.prior_C2   = normpdf(fixP.x_axis_int, 0, sigma_C2);
-
-    % likelihood that centers around 0
-    idx_peak   = ceil(length(fixP.x_axis)/2);
-
-    lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (fixP.x_axis(1:idx_peak)));
-    rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (fixP.x_axis(idx_peak+1:end)));
-    fixP.df_likelihood     = [lf, rf] + realmin;
-    %     fixP.df_likelihood_int = fixP.df_likelihood(fixP.l_window:fixP.r_window);
-
-    % pre-calculate possible likelihoods by shifting default likelihood
-    fixP.shift_bound = model.bound_int;
-    shiftRange = -fixP.shift_bound:1:fixP.shift_bound;
-    numShifts = numel(shiftRange);
-    indices = (fixP.l_window - shiftRange(:)) + (0:(fixP.r_window - fixP.l_window));
-    indices = max(min(indices, length(fixP.df_likelihood)), 1);
-    fixP.likelihoods = fixP.df_likelihood(indices);
-
-    % pre-calculate two posteriors
-    fixP.protopost_C1s = fixP.likelihoods .* repmat(fixP.prior_C1, numShifts, 1);
-    fixP.protopost_C2s = fixP.likelihoods .* repmat(fixP.prior_C2, numShifts, 1);
-
-    % iCDF
-    fixP.y_criterion = sigma_v/(sigma_a + sigma_v);
-    fixP.num_sample = model.num_sample;
 
     %% loop for each session
 
     if strcmp(model.mode, 'optimize')
 
         %%  prediction of probability of three responses is shared across sessions
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI(model.test_soa, fixP,...
-            tau, sigma_a, sigma_v, criterion, lambda, p_common);
+
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(model.test_soa,...
+            tau, sigma_a, sigma_v, -criterion, criterion, lambda);
 
         if checkPlot
             figure; plot(model.test_soa, [pre_afirst; pre_simul; pre_vfirst],'-o');
@@ -107,12 +65,12 @@ else
 
         % simulate using adaptor_soa in session order
         adaptor_soas = [data(1:model.num_ses).adaptor_soa];
-        i_tau_shift = NaN(numel(adaptor_soas), model.expo_num_sim);
+        tau_shift = NaN(numel(adaptor_soas), model.expo_num_sim);
 
         for t    = 1:model.expo_num_sim
 
             % simulate by adaptor soas in each session, unsorted
-            tau_shift(:, t)  = sim_recalibration(model.expo_num_trial, adaptor_soas, fixP,...
+            tau_shift(:, t)  = sim_recal_hue(model.expo_num_trial, adaptor_soas, fixP,...
                 tau, sigma_a, sigma_v, p_common, alpha);
 
         end
@@ -134,7 +92,7 @@ else
 
             %% extract the simulated mu_shift for this session
 
-            i_tau_shift = i_tau_shift(ses, :);
+            i_tau_shift = tau_shift(ses, :);
 
             %% approximate the probability of shift_pss by Gaussian
 
@@ -150,7 +108,7 @@ else
 
             % fit a Gaussian by using empirical mean and s.d.
             gauss_tau = mean(i_tau_shift);
-            gauss_sigma    = sqrt(sum((i_tau_shift - gauss_tau).^2)./numel(i_tau_shift)); % denominator is N instead of N-1
+            gauss_sigma = sqrt(sum((i_tau_shift - gauss_tau).^2)./numel(i_tau_shift)); % denominator is N instead of N-1
             gauss_pdf= normpdf(delta_tau_shift, gauss_tau, gauss_sigma); % approximated gaussian pdf
 
             % compute R2 of using Gaussian to approxiamte pss_shift pdf
@@ -162,7 +120,7 @@ else
             R2 = R^2;
 
             %if R2 is big enough, we fit a Gaussian, else use ksdensity
-            if R2 > model.thres_R2; pdf_delta = gauss_pdf;
+            if R2 > model.thres_R2; pdf_delta = gauss_pdf; 
             else; pdf_delta = ksdensity(i_tau_shift); end
             pdf_delta = pdf_delta./sum(pdf_delta);
 
@@ -180,9 +138,8 @@ else
             for i    = 1:numel(delta_tau_shift)
 
                 % delta_tau = tau_pre - tau_post, use tau_post to predict probability of three responses
-
-                [post_afirst, post_simul, post_vfirst] = pmf_exp_CI(model.test_soa, fixP,...
-                    tau + delta_tau_shift(i), sigma_a, sigma_v, criterion, lambda, p_common);
+                [post_afirst, post_simul, post_vfirst] = pmf_exp(model.test_soa,...
+                    tau + delta_tau_shift(i), sigma_a, sigma_v, -criterion, criterion, lambda);
 
                 if checkPlot
                     figure; plot(model.test_soa, [post_afirst; post_simul; post_vfirst] ,'-o');
@@ -240,9 +197,10 @@ else
             out.num_adaptor = numel(model.sim_adaptor_soa);
         end
 
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI(out.test_soa, fixP,...
-            tau, sigma_a, sigma_v, criterion, lambda, p_common);
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(out.test_soa,...
+            tau, sigma_a, sigma_v, -criterion, criterion, lambda);
         out.pre_pmf     = [pre_vfirst; pre_simul; pre_afirst];
+\
 
         if checkPlot
             figure; plot(out.test_soa, out.pre_pmf)
@@ -255,7 +213,7 @@ else
         for t    = 1:model.expo_num_sim
 
             % simulate by sorted adaptor soas
-            [out.tau_shift(:,t), out.post_C1(:,t), out.shat(:,t)] = sim_recalibration(model.expo_num_trial, out.adaptor_soa, fixP,...
+            [out.tau_shift(:,t), out.shat(:,t)] = sim_recal_CI(model.expo_num_trial, out.adaptor_soa, fixP,...
                 tau, sigma_a, sigma_v, p_common, alpha);
 
         end
@@ -296,8 +254,8 @@ else
 
             %% posttest TOJ
 
-            [post_afirst, post_simul, post_vfirst] = pmf_exp_CI(out.test_soa, fixP,...
-                tau + mean(i_tau_shift), sigma_a, sigma_v, criterion, lambda, p_common);
+            [post_afirst, post_simul, post_vfirst] = pmf_exp(out.test_soa,...
+                tau + mean(i_tau_shift), sigma_a, sigma_v, -criterion, criterion, lambda);
 
             out.post_tau(jj) = tau + mean(i_tau_shift);
             out.post_pmf(jj, :, :) = [post_vfirst; post_simul; post_afirst];

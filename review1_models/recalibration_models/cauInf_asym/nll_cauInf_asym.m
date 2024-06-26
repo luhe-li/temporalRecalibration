@@ -66,26 +66,13 @@ else
     fixP.r_window   = find(fixP.x_axis == fixP.x_axis_int(end));
     fixP.prior_C1   = normpdf(fixP.x_axis_int, 0, sigma_C1);
     fixP.prior_C2   = normpdf(fixP.x_axis_int, 0, sigma_C2);
+    fixP.bound_int  = model.bound_int;
 
     % likelihood that centers around 0
     idx_peak   = ceil(length(fixP.x_axis)/2);
-
     lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (fixP.x_axis(1:idx_peak)));
     rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (fixP.x_axis(idx_peak+1:end)));
     fixP.df_likelihood     = [lf, rf] + realmin;
-    %     fixP.df_likelihood_int = fixP.df_likelihood(fixP.l_window:fixP.r_window);
-
-    % pre-calculate possible likelihoods by shifting default likelihood
-    fixP.shift_bound = model.bound_int;
-    shiftRange = -fixP.shift_bound:1:fixP.shift_bound;
-    numShifts = numel(shiftRange);
-    indices = (fixP.l_window - shiftRange(:)) + (0:(fixP.r_window - fixP.l_window));
-    indices = max(min(indices, length(fixP.df_likelihood)), 1);
-    fixP.likelihoods = fixP.df_likelihood(indices);
-
-    % pre-calculate two posteriors
-    fixP.protopost_C1s = fixP.likelihoods .* repmat(fixP.prior_C1, numShifts, 1);
-    fixP.protopost_C2s = fixP.likelihoods .* repmat(fixP.prior_C2, numShifts, 1);
 
     % iCDF
     fixP.y_criterion = sigma_v/(sigma_a + sigma_v);
@@ -96,7 +83,7 @@ else
     if strcmp(model.mode, 'optimize')
 
         %%  prediction of probability of three responses is shared across sessions
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI(model.test_soa, fixP,...
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
             tau, sigma_a, sigma_v, criterion, lambda, p_common);
 
         if checkPlot
@@ -107,12 +94,12 @@ else
 
         % simulate using adaptor_soa in session order
         adaptor_soas = [data(1:model.num_ses).adaptor_soa];
-        i_tau_shift = NaN(numel(adaptor_soas), model.expo_num_sim);
+        tau_shift = NaN(numel(adaptor_soas), model.expo_num_sim);
 
         for t    = 1:model.expo_num_sim
 
             % simulate by adaptor soas in each session, unsorted
-            tau_shift(:, t)  = sim_recalibration(model.expo_num_trial, adaptor_soas, fixP,...
+            tau_shift(:, t)  = sim_recal_CI(model.expo_num_trial, adaptor_soas, fixP,...
                 tau, sigma_a, sigma_v, p_common, alpha);
 
         end
@@ -162,7 +149,7 @@ else
             R2 = R^2;
 
             %if R2 is big enough, we fit a Gaussian, else use ksdensity
-            if R2 > model.thres_R2; pdf_delta = gauss_pdf;
+            if R2 > model.thres_R2; pdf_delta = gauss_pdf; 
             else; pdf_delta = ksdensity(i_tau_shift); end
             pdf_delta = pdf_delta./sum(pdf_delta);
 
@@ -181,7 +168,7 @@ else
 
                 % delta_tau = tau_pre - tau_post, use tau_post to predict probability of three responses
 
-                [post_afirst, post_simul, post_vfirst] = pmf_exp_CI(model.test_soa, fixP,...
+                [post_afirst, post_simul, post_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
                     tau + delta_tau_shift(i), sigma_a, sigma_v, criterion, lambda, p_common);
 
                 if checkPlot
@@ -240,7 +227,7 @@ else
             out.num_adaptor = numel(model.sim_adaptor_soa);
         end
 
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI(out.test_soa, fixP,...
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI_noSim(out.test_soa, fixP,...
             tau, sigma_a, sigma_v, criterion, lambda, p_common);
         out.pre_pmf     = [pre_vfirst; pre_simul; pre_afirst];
 
@@ -255,7 +242,7 @@ else
         for t    = 1:model.expo_num_sim
 
             % simulate by sorted adaptor soas
-            [out.tau_shift(:,t), out.post_C1(:,t), out.shat(:,t)] = sim_recalibration(model.expo_num_trial, out.adaptor_soa, fixP,...
+            [out.tau_shift(:,t), out.shat(:,t), out.post_C1(:,t)] = sim_recal_CI(model.expo_num_trial, out.adaptor_soa, fixP,...
                 tau, sigma_a, sigma_v, p_common, alpha);
 
         end
@@ -296,7 +283,7 @@ else
 
             %% posttest TOJ
 
-            [post_afirst, post_simul, post_vfirst] = pmf_exp_CI(out.test_soa, fixP,...
+            [post_afirst, post_simul, post_vfirst] = pmf_exp_CI_noSim(out.test_soa, fixP,...
                 tau + mean(i_tau_shift), sigma_a, sigma_v, criterion, lambda, p_common);
 
             out.post_tau(jj) = tau + mean(i_tau_shift);
