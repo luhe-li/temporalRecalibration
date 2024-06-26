@@ -44,7 +44,7 @@ else
     sigma_v = freeParam(3);
     criterion = freeParam(4);
     lambda = freeParam(5);
-    alpha = freeParam(7);
+    alpha = freeParam(6);
 
     checkPlot = 0;
 
@@ -70,8 +70,8 @@ else
         for t    = 1:model.expo_num_sim
 
             % simulate by adaptor soas in each session, unsorted
-            tau_shift(:, t)  = sim_recal_hue(model.expo_num_trial, adaptor_soas, fixP,...
-                tau, sigma_a, sigma_v, p_common, alpha);
+            tau_shift(:, t)  = sim_recal_heu(model.expo_num_trial, adaptor_soas, ...
+                tau, sigma_a, sigma_v, criterion, alpha);
 
         end
 
@@ -200,7 +200,6 @@ else
         [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(out.test_soa,...
             tau, sigma_a, sigma_v, -criterion, criterion, lambda);
         out.pre_pmf     = [pre_vfirst; pre_simul; pre_afirst];
-\
 
         if checkPlot
             figure; plot(out.test_soa, out.pre_pmf)
@@ -208,18 +207,18 @@ else
         %% simulate shift_mu of all adaptors
 
         % simulate in ordered adaptor_soa
-        out.i_tau_shift  = NaN(out.num_adaptor , model.expo_num_sim);
+        out.tau_shift  = NaN(out.num_adaptor , model.expo_num_sim);
 
         for t    = 1:model.expo_num_sim
 
             % simulate by sorted adaptor soas
-            [out.tau_shift(:,t), out.shat(:,t)] = sim_recal_CI(model.expo_num_trial, out.adaptor_soa, fixP,...
-                tau, sigma_a, sigma_v, p_common, alpha);
+            out.tau_shift(:,t) = sim_recal_heu(model.expo_num_trial, out.adaptor_soa, ...
+                tau, sigma_a, sigma_v, criterion, alpha);
 
         end
 
         % pss shift = -tau shift
-        out.pss_shift = -out.i_tau_shift;
+        out.pss_shift = -out.tau_shift;
 
         for jj = 1:out.num_adaptor
 

@@ -1,6 +1,6 @@
 % function fit_recal_model(i_model, useCluster)
 
-i_model = 3;
+i_model = 1;
 
 %% select models
 
@@ -97,8 +97,11 @@ model.mode                  = 'optimize';
 NLL                         = NaN(1, model.num_runs);
 estP                        = NaN(model.num_runs, Val.num_para);
 
-p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
-test = currModel(p, model, data);
+% p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
+% test = currModel(p, model, data);
+% model.mode       = 'predict';
+% bestP = [-60, 80, 40, 50, 0.06, 0.02];
+% pred =  currModel(bestP, model, data);
 
 for i  = 1%:model.num_runs
     fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);

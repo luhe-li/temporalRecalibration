@@ -237,7 +237,7 @@ else
         %% simulate shift_mu of all adaptors
 
         % simulate in ordered adaptor_soa
-        out.i_tau_shift  = NaN(out.num_adaptor , model.expo_num_sim);
+        out.tau_shift  = NaN(out.num_adaptor , model.expo_num_sim);
 
         for t    = 1:model.expo_num_sim
 
@@ -248,7 +248,7 @@ else
         end
 
         % pss shift = -tau shift
-        out.pss_shift = -out.i_tau_shift;
+        out.pss_shift = -out.tau_shift;
 
         for jj = 1:out.num_adaptor
 
