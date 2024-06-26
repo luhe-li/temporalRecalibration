@@ -134,7 +134,7 @@ else
 
             %% extract the simulated mu_shift for this session
 
-            i_tau_shift = tau_shift(ses, :);
+            i_tau_shift = i_tau_shift(ses, :);
 
             %% approximate the probability of shift_pss by Gaussian
 
@@ -150,7 +150,7 @@ else
 
             % fit a Gaussian by using empirical mean and s.d.
             gauss_tau = mean(i_tau_shift);
-            gauss_sigma = sqrt(sum((i_tau_shift - gauss_tau).^2)./numel(i_tau_shift)); % denominator is N instead of N-1
+            gauss_sigma    = sqrt(sum((i_tau_shift - gauss_tau).^2)./numel(i_tau_shift)); % denominator is N instead of N-1
             gauss_pdf= normpdf(delta_tau_shift, gauss_tau, gauss_sigma); % approximated gaussian pdf
 
             % compute R2 of using Gaussian to approxiamte pss_shift pdf

@@ -1,4 +1,6 @@
-function fit_recal_model(i_model, useCluster)
+% function fit_recal_model(i_model, useCluster)
+
+i_model = 3;
 
 %% select models
 
@@ -65,8 +67,8 @@ model.expo_num_sim= 1e3; % number of simulation for exposure phase
 model.expo_num_trial = 250; % number of *real* trials in exposure phase
 model.num_runs = numCores-1; % fit the model 100 times, each with a different initialization
 model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
-model.bound_full = 10*1e3; % in second, the bound for prior axis and the full likelihood
-model.bound_int = 1.5*1e3; % in second, where estimates are likely to reside
+model.bound_full = 10*1e3; % in second, the bound for prior axis
+model.bound_int = 1*1e3; % in second, where measurements are likely to reside
 model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference
 model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
 model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; 
@@ -135,4 +137,4 @@ if ~isempty(gcp('nocreate'))
     delete(gcp('nocreate'));
 end
 
-end
+% end

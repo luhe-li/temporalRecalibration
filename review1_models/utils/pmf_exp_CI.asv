@@ -35,7 +35,7 @@ end
 clamped_soa_m = max(min(round(soa_m), fixP.shift_bound), -fixP.shift_bound);
 idx_soa_m = clamped_soa_m + fixP.shift_bound + 1;
 
-[protopost_C1, protopost_C2] = deal(NaN(n_test_soa, n_sample, length(fixP.x_axis_int)));
+[protopost_C1, protopost_C2] = deal(NaN());
 for mm = 1:n_test_soa
     
     i_idx = idx_soa_m(mm, :);

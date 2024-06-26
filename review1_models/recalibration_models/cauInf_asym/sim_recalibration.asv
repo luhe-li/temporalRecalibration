@@ -26,17 +26,25 @@ for tt                       = 1:exp_trial
     soa_m(bool_y)                = adaptor_soa(bool_y)' + i_tau(bool_y) + sigma_v .* log((sigma_a + sigma_v)/ sigma_v.* y(bool_y));
     % for y larger than threshod:
     soa_m(~bool_y)               = adaptor_soa(~bool_y)' + i_tau(~bool_y) - sigma_a .* log((sigma_a + sigma_v)/sigma_a .* (1 - y(~bool_y)));
-    
-    %% now we turn to the observer's perspective to make inference
+    % find closest index
+    soa_m = round(soa_m + adaptor_soa + i_tau);
 
-    % find closest index of shift to use the closest propoposterior
-    clamped_soa_m = max(min(round(soa_m), fixP.shift_bound), -fixP.shift_bound);
-    idx_soa_m = clamped_soa_m  + fixP.shift_bound + 1;
+    %% now we turn to the observer's perspective to make inference
 
     % shift default likelihood and calculates posterior for each adaptor
     % soa
-    protopost_C1 = fixP.protopost_C1s(idx_soa_m, :);
-    protopost_C2 = fixP.protopost_C2s(idx_soa_m, :);
+    protopost_C1 = fixP.protopost_C1s(soa_m, :);
+    protopost_C2 = fixP.protopost_C2s(soa_m, :);
+
+%     for i = 1:num_adaptor_soa
+%         
+%         shift = round(soa_m(i));
+% 
+%         likelihood        = fixP.df_likelihood((fixP.l_window-shift):(fixP.r_window-shift));
+%         protopost_C1(i,:) = likelihood.*fixP.prior_C1;
+%         protopost_C2(i,:) = likelihood.*fixP.prior_C2;
+% 
+%     end
 
     [~,idx_C1] = max(protopost_C1,[],2);
     [~,idx_C2] = max(protopost_C2,[],2);
