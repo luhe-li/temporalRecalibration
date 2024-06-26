@@ -8,6 +8,7 @@ folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym', 'atheo'}; % Colum
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
+
 %% set environment
 
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -66,14 +67,17 @@ model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
 model.bound    = 10; % in second, the bound for prior axis
 model.bound_int= 1.5; % in second, where estimates are likely to reside
 model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
-model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
-model.toj_axis_finer = 1;
-model.adaptor_axis_finer = 0;
+model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; 
+model.toj_axis_finer = 1; % simulate pmf with finer axis
+model.adaptor_axis_finer = 0; 
+model.model_info = model_info; % save all model information
+model.i_model = i_model; % current model index
+model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS to tell bads that my objective function is noisy
 OPTIONS.UncertaintyHandling = 1;
 OPTIONS.TolMesh = 1e-5;
-OPTIONS.Display = 'off';
+if useCluster; OPTIONS.Display = 'off'; end
 
 %% model fitting
 
@@ -91,9 +95,7 @@ estP                        = NaN(model.num_runs, Val.num_para);
 % test = currModel(p, model, data);
 
 for i  = 1:model.num_runs
-
     fprintf('[%s] Start fitting sub-%i run-%i \n', mfilename, sub, i);
-
     try
         tempModel            = model;
         tempVal              = Val;

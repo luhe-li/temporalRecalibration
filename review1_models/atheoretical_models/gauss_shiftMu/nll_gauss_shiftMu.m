@@ -112,14 +112,14 @@ else
         end
         out.adaptor_soa      = model.sim_adaptor_soa;
 
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_gauss(model.test_soa,...
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_gauss(out.test_soa,...
             mu, sigma, mu - c, mu + c, lambda);
 
         for adaptor = 1:9
 
             out.pre_pmf{adaptor}     = [pre_vfirst; pre_simul; pre_afirst];
 
-            [post_afirst, post_simul, post_vfirst] = pmf_gauss(model.test_soa,...
+            [post_afirst, post_simul, post_vfirst] = pmf_gauss(out.test_soa,...
                 mu_post(adaptor), sigma, mu_post(adaptor) - c, mu_post(adaptor) + c, lambda);
             out.post_pmf{adaptor}    = [post_vfirst; post_simul; post_afirst];
 

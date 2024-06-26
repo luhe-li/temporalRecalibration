@@ -133,7 +133,7 @@ else
         lc_pre = tau - c_pre;
         uc_pre = tau + c_pre;
 
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(model.test_soa,...
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(out.test_soa,...
             tau, sigma_a, sigma_v, lc_pre, uc_pre, lambda);
 
         c_shift = NaN(1, model.num_ses);
@@ -144,25 +144,25 @@ else
             if adaptor_soa > uc_pre
                 uc_post = uc_pre + dc_post(adaptor);
                 lc_post = lc_pre;
-                c_shift(adaptor_soa) = dc_post(adaptor);
+                c_shift(adaptor) = dc_post(adaptor);
             elseif adaptor_soa < lc_pre
                 lc_post = lc_pre - dc_post(adaptor);
                 uc_post = uc_pre;
-                c_shift(adaptor_soa) = -dc_post(adaptor);
+                c_shift(adaptor) = -dc_post(adaptor);
             else
                 uc_post = uc_pre;
                 lc_post = lc_pre;
-                c_shift(adaptor_soa) = 0;
+                c_shift(adaptor) = 0;
             end
 
-            [post_afirst, post_simul, post_vfirst] = pmf_exp(model.test_soa,...
+            [post_afirst, post_simul, post_vfirst] = pmf_exp(out.test_soa,...
                 tau, sigma_a, sigma_v, lc_post, uc_post, lambda);
 
             out.post_pmf{adaptor}    = [post_vfirst; post_simul; post_afirst];
 
         end
 
-        out.pss_shift = zeros(1:model.num_ses);
+        out.pss_shift = zeros(1, model.num_ses);
         out.c_shift = c_shift;
 
     end

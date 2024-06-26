@@ -130,7 +130,7 @@ else
         lc_pre = mu - c_pre;
         uc_pre = mu + c_pre;
 
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_gauss(model.test_soa,...
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_gauss(out.test_soa,...
             mu, sigma, lc_pre, uc_pre, lambda);
 
         c_shift = NaN(1, model.num_ses);
@@ -152,14 +152,14 @@ else
                 c_shift(adaptor) = 0;
             end
 
-            [post_afirst, post_simul, post_vfirst] = pmf_gauss(model.test_soa,...
+            [post_afirst, post_simul, post_vfirst] = pmf_gauss(out.test_soa,...
                 mu, sigma, lc_post, uc_post, lambda);
 
             out.post_pmf{adaptor}    = [post_vfirst; post_simul; post_afirst];
 
         end
 
-        out.pss_shift = zeros(1:model.num_ses);
+        out.pss_shift = zeros(1, model.num_ses);
         out.c_shift = c_shift;
 
     end

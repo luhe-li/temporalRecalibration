@@ -1,4 +1,4 @@
-function atheo_model_fit(i_model, useCluster)
+function fit_atheo_model(i_model, useCluster)
 
 %% select models
 
@@ -47,25 +47,27 @@ outDir = fullfile(currentDir, currModelStr);
 
 % subject and session
 n_sub          = 10;
-n_ses          = 9;
 
 % set fixed & set-up parameters
 model.num_ses    = 9;
-model.num_runs   = 80; % fit the model 100 times, each with a different initialization
+model.num_runs   = 40; % fit the model multiple times, each with a different initialization
 model.bound      = 10; % in second, the bound for prior axis
 model.bound_int  = 1.5; % in second, where estimates are likely to reside
 model.test_soa   = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
 model.sim_adaptor_soa = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; % in ms
-model.test_axis_finer = 1; 
+model.test_axis_finer = 1; % simulate with finer axis
+model.model_info = model_info; % save all model information
+model.i_model = i_model; % current model index
+model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS to tell bads that my objective function is noisy
 OPTIONS.UncertaintyHandling = 1;
 OPTIONS.TolMesh = 1e-5;
-OPTIONS.Display = 'off';
+if useCluster; OPTIONS.Display = 'off'; end
 
 %% fit model
 
-for i_sub = 1:10
+for i_sub = 1:n_sub
 
     %% organize data
 
@@ -86,9 +88,7 @@ for i_sub = 1:10
     estP                        = NaN(model.num_runs, Val.num_para);
 
     for i  = 1:model.num_runs
-
         fprintf('[%s] Start fitting sub-%i run-%i \n', mfilename, i_sub, i);
-
         try
             tempModel            = model;
             tempVal              = Val;

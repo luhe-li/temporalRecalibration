@@ -130,7 +130,8 @@ else
         end
 
         % pss shift = - tau shift
-        out.all_pss_shift = - (tau_post - tau_pre);
+        out.pss_shift = - (tau_post - tau_pre);
+        out.c_shift = zeros(1, model.num_ses);
 
     end
 
