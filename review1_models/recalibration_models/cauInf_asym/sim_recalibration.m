@@ -1,26 +1,5 @@
-% This function simulates the shift of mu accumulated through the exposure
-% phase using the Bayesian causal inference model (model average strategy).
-
-function [tau_shift, post_C1, shat] = simTauShift(exp_trial, adaptor_soa, fixP, ...
+function [tau_shift, post_C1, shat] = sim_recalibration(exp_trial, adaptor_soa, fixP, ...
     tau, sigma_a, sigma_v, p_common, alpha)
-
-%--------------------------------------------------------------------------
-% Inputs:
-
-% tau               : % systematic processing delay between vision and audition.
-% τ = τ_v − τ_a is a processing advantage such
-% that τ > 0 indicates faster auditory processing
-% and τ < 0 indicates faster visual processing; in
-% second
-% sigma_a           : % shape parameter of auditory processing, left side of
-% pdf of SOA, larger sigma, slower decay; in second
-% sigma_v           : % shape parameter of visual processing, right side of
-% pdf of SOA, larger sigma, slower decay; in second
-% p_common          : common-cause prior % between [0 1]
-% alpha             : learning rate
-% sigma_C1          : sigma for Gaussian prior for C1; in second
-% sigma_C2          : sigma for Gaussian prior for C2; in second
-%--------------------------------------------------------------------------
 
 checkPlot                    = 0;
 
@@ -29,7 +8,7 @@ checkPlot                    = 0;
 % zero before the exposure phase.
 num_adaptor_soa              = numel(adaptor_soa);
 delta_tau                    = zeros(num_adaptor_soa, exp_trial+1);
-[protopost_C1,protopost_C2]  = deal(NaN(num_adaptor_soa, length(fixP.df_likelihood_int)));
+[protopost_C1,protopost_C2]  = deal(NaN(num_adaptor_soa, length(fixP.x_axis_int)));
 
 for tt                       = 1:exp_trial
 
@@ -45,9 +24,9 @@ for tt                       = 1:exp_trial
 
     % sample from iCDF of measurement distribution (eq.5)
     % if sampled y is smaller than the criterion
-    soa_m(bool_y)                = (adaptor_soa(bool_y)' + i_tau(bool_y)) + sigma_v .* log((sigma_a + sigma_v)/ sigma_v.* y(bool_y));
+    soa_m(bool_y)                = (adaptor_soa(bool_y)' + i_tau(bool_y)) + sigma_v .* log((sigma_a + sigma_v)./ sigma_v.* y(bool_y));
     % otherwise
-    soa_m(~bool_y)               = (adaptor_soa(~bool_y)' + i_tau(~bool_y)) - sigma_a .* log((sigma_a + sigma_v)/sigma_a .* (1 - y(~bool_y)));
+    soa_m(~bool_y)               = (adaptor_soa(~bool_y)' + i_tau(~bool_y)) - sigma_a .* log((sigma_a + sigma_v)./sigma_a .* (1 - y(~bool_y)));
 
     %% now we turn to the observer's perspective to make inference
 

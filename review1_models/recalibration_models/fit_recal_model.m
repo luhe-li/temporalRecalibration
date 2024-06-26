@@ -1,4 +1,4 @@
-function recal_model_fit(i_model, useCluster)
+function fit_recal_model(i_model, useCluster)
 
 %% select models
 
@@ -28,15 +28,16 @@ switch useCluster
         sub  = hpc_job_number;
     case false
         numCores = feature('numcores');
-        sub = str2num(input('Enter Subject ID to analyze: ', 's'));
+        sub = 1;
+%         sub = str2num(input('Enter Subject ID to analyze: ', 's'));
 end
 
-% make sure Matlab does not exceed this
-fprintf('Number of cores: %i  \n', numCores);
-maxNumCompThreads(numCores);
-if isempty(gcp('nocreate'))
-    parpool(numCores-1);
-end
+% % make sure Matlab does not exceed this
+% fprintf('Number of cores: %i  \n', numCores);
+% maxNumCompThreads(numCores);
+% if isempty(gcp('nocreate'))
+%     parpool(numCores-1);
+% end
 
 %% manage paths
 
@@ -64,13 +65,16 @@ model.expo_num_sim= 1e3; % number of simulation for exposure phase
 model.expo_num_trial = 250; % number of *real* trials in exposure phase
 model.num_runs = numCores-1; % fit the model 100 times, each with a different initialization
 model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
-model.bound    = 10; % in second, the bound for prior axis
-model.bound_int= 1.5; % in second, where estimates are likely to reside
+model.bound_full = 10*1e3; % in second, the bound for prior axis and the full likelihood
+model.bound_int = 1.5*1e3; % in second, where estimates are likely to reside
+model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference
 model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
 model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; 
 model.toj_axis_finer = 1; % simulate pmf with finer axis
 model.adaptor_axis_finer = 0; 
-model.model_info = model_info; % save all model information
+
+% save all model information
+model.model_info = model_info; 
 model.i_model = i_model; % current model index
 model.currModelStr = currModelStr; % current model folder
 
@@ -91,11 +95,11 @@ model.mode                  = 'optimize';
 NLL                         = NaN(1, model.num_runs);
 estP                        = NaN(model.num_runs, Val.num_para);
 
-% p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
-% test = currModel(p, model, data);
+p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
+test = currModel(p, model, data);
 
-for i  = 1:model.num_runs
-    fprintf('[%s] Start fitting sub-%i run-%i \n', mfilename, sub, i);
+for i  = 1%:model.num_runs
+    fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
     try
         tempModel            = model;
         tempVal              = Val;

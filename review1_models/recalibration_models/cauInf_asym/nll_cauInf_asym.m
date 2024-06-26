@@ -1,5 +1,5 @@
 
-function out         = nll_cauInf_asym(freeParam, model, data)
+function out   = nll_cauInf_asym(freeParam, model, data)
 
 if strcmp(model.mode, 'initialize')
 
@@ -7,7 +7,7 @@ if strcmp(model.mode, 'initialize')
     out.num_para = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
-    paraH.tau      = [-100,   100]; % ms
+    paraH.tau= [-100,   100]; % ms
     paraH.sigma_a  = [  10,   120]; % ms
     paraH.sigma_v  = [  10,   200]; % ms
     paraH.criterion= [   1,   350]; % criterion, s
@@ -18,7 +18,7 @@ if strcmp(model.mode, 'initialize')
     paraH.sigma_C2 = [ 100,   1e3]; % ms
 
     % soft bounds, the range for PLB, PUB
-    paraS.tau      = [ -50,    50]; % ms
+    paraS.tau= [ -50,    50]; % ms
     paraS.sigma_a  = [  20,    50]; % ms
     paraS.sigma_v  = [  20,   120]; % ms
     paraS.criterion= [  30,   150]; % criterion, s
@@ -60,24 +60,24 @@ else
     checkPlot = 0;
 
     % prior
-    fixP.bound_int              = model.bound_int*1e3;
-    fixP.x_axis                 = -model.bound * 1e3:1:model.bound * 1e3;
-    fixP.x_axis_int             = -fixP.bound_int:1:fixP.bound_int;
-    fixP.l_window               = find(fixP.x_axis == fixP.x_axis_int(1));
-    fixP.r_window               = find(fixP.x_axis == fixP.x_axis_int(end));
-    fixP.prior_C1               = normpdf(fixP.x_axis_int, 0, sigma_C1);
-    fixP.prior_C2               = normpdf(fixP.x_axis_int, 0, sigma_C2);
+    fixP.x_axis     = -model.bound_full:1:model.bound_full;
+    fixP.x_axis_int = -model.bound_int:1:model.bound_int;
+    fixP.l_window   = find(fixP.x_axis == fixP.x_axis_int(1));
+    fixP.r_window   = find(fixP.x_axis == fixP.x_axis_int(end));
+    fixP.prior_C1   = normpdf(fixP.x_axis_int, 0, sigma_C1);
+    fixP.prior_C2   = normpdf(fixP.x_axis_int, 0, sigma_C2);
 
     % likelihood that centers around 0
-    idx_peak                     = ceil(length(fixP.x_axis)/2);
+    idx_peak   = ceil(length(fixP.x_axis)/2);
 
     lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (fixP.x_axis(1:idx_peak)));
     rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (fixP.x_axis(idx_peak+1:end)));
-    fixP.df_likelihood           = [lf, rf] + 1e-40;
-    fixP.df_likelihood_int       = fixP.df_likelihood(fixP.l_window:fixP.r_window);
+    fixP.df_likelihood     = [lf, rf] + realmin;
+    %     fixP.df_likelihood_int = fixP.df_likelihood(fixP.l_window:fixP.r_window);
 
     % iCDF
-    fixP.y_criterion             = sigma_v/(sigma_a + sigma_v);
+    fixP.y_criterion = sigma_v/(sigma_a + sigma_v);
+    fixP.num_sample = model.num_sample;
 
     %% loop for each session
 
@@ -90,22 +90,24 @@ else
         if checkPlot
             figure; plot(model.test_soa, [pre_afirst; pre_simul; pre_vfirst],'-o');
         end
+
         %% simulate shift_mu of all adaptors
 
         % simulate using adaptor_soa in session order
-        adaptor_soas             = [data(1:model.num_ses).adaptor_soa];
-        all_tau_shift             = NaN(numel(adaptor_soas), model.expo_num_sim);
+        adaptor_soas = [data(1:model.num_ses).adaptor_soa];
+        tau_shift = NaN(numel(adaptor_soas), model.expo_num_sim);
 
-        for t                = 1:model.expo_num_sim
+        for t    = 1:model.expo_num_sim
 
-            all_tau_shift(:, t)          = simTauShift(model.expo_num_trial, adaptor_soas, fixP,...
+            % simulate by adaptor soas in each session, unsorted
+            tau_shift(:, t)  = sim_recalibration(model.expo_num_trial, adaptor_soas, fixP,...
                 tau, sigma_a, sigma_v, p_common, alpha);
 
         end
 
         if checkPlot
             [~, order] = sort(adaptor_soas);
-            figure; plot(-mean(all_tau_shift(order,:),2))
+            figure; plot(-mean(tau_shift(order,:),2))
             title('PSS shift')
         end
 
@@ -120,32 +122,32 @@ else
 
             %% extract the simulated mu_shift for this session
 
-            tau_shift             = all_tau_shift(ses, :);
+            tau_shift = tau_shift(ses, :);
 
             %% approximate the probability of shift_pss by Gaussian
 
             % find the max and min of pss_shift
-            shift_min            = min(tau_shift);
-            shift_max            = max(tau_shift);
-            shift_range          = shift_max - shift_min;
+            shift_min= min(tau_shift);
+            shift_max= max(tau_shift);
+            shift_range    = shift_max - shift_min;
 
             % define the lower and upper boundaries (i.e., min-(max-min), max+(max-min))
-            shift_lb             = shift_min - shift_range;
-            shift_ub             = shift_max + shift_range;
-            delta_tau_shift       = linspace(shift_lb, shift_ub, model.num_bin);
+            shift_lb = shift_min - shift_range;
+            shift_ub = shift_max + shift_range;
+            delta_tau_shift = linspace(shift_lb, shift_ub, model.num_bin);
 
             % fit a Gaussian by using empirical mean and s.d.
-            gauss_tau             = mean(tau_shift);
-            gauss_sigma          = sqrt(sum((tau_shift - gauss_tau).^2)./numel(tau_shift)); % denominator is N instead of N-1
-            gauss_pdf            = normpdf(delta_tau_shift, gauss_tau, gauss_sigma); % approximated gaussian pdf
+            gauss_tau = mean(tau_shift);
+            gauss_sigma    = sqrt(sum((tau_shift - gauss_tau).^2)./numel(tau_shift)); % denominator is N instead of N-1
+            gauss_pdf= normpdf(delta_tau_shift, gauss_tau, gauss_sigma); % approximated gaussian pdf
 
             % compute R2 of using Gaussian to approxiamte pss_shift pdf
-            binsize              = diff(delta_tau_shift(1:2));
-            predicted_y          = gauss_pdf./sum(gauss_pdf); % normalize
+            binsize  = diff(delta_tau_shift(1:2));
+            predicted_y    = gauss_pdf./sum(gauss_pdf); % normalize
             delta_shift_tau_edges = [delta_tau_shift, delta_tau_shift(end) + binsize] - binsize/2; % create edges around delta_pss_shift
-            observed_y           = histcounts(tau_shift, delta_shift_tau_edges)./numel(tau_shift); % manually normalize counts to probability
-            R                    = corr(predicted_y(:), observed_y(:));
-            R2                   = R^2;
+            observed_y     = histcounts(tau_shift, delta_shift_tau_edges)./numel(tau_shift); % manually normalize counts to probability
+            R  = corr(predicted_y(:), observed_y(:));
+            R2 = R^2;
 
             %if R2 is big enough, we fit a Gaussian, else use ksdensity
             if R2 > model.thres_R2; pdf_delta = gauss_pdf;
@@ -156,13 +158,14 @@ else
                 figure;
                 plot(delta_tau_shift, pdf_delta)
             end
+
             %% calculate posttest nLL
 
             % compute the likelihood of approxiamated delta: P(resp|delta_pss_shift, M,
             % \theta)
-            LL_delta             = NaN(1, length(delta_tau_shift));
+            LL_delta = NaN(1, length(delta_tau_shift));
 
-            for i                = 1:numel(delta_tau_shift)
+            for i    = 1:numel(delta_tau_shift)
 
                 % delta_tau = tau_pre - tau_post, use tau_post to predict probability of three responses
 
@@ -186,14 +189,15 @@ else
             % re-written to avoid underflow of likelihood. Note that const can be
             % subtracted to the exponent and added later because it is NOT summed, and
             % log(exp(const)) = const
-            const           = max(LL_delta + log(pdf_delta));
-            post_LL         = log(sum(exp(LL_delta + log(pdf_delta) - const))) + const;
+            const     = max(LL_delta + log(pdf_delta));
+            post_LL   = log(sum(exp(LL_delta + log(pdf_delta) - const))) + const;
 
             % sum the negative likelihood of pre and post test
-            nLL_ses(ses)         = - pre_LL - post_LL;
+            nLL_ses(ses)   = - pre_LL - post_LL;
 
         end
-        out                  = nansum(nLL_ses);
+
+        out= nansum(nLL_ses);
 
         if checkPlot
             [~, order] = sort(adaptor_soas);
@@ -234,23 +238,24 @@ else
         %% simulate shift_mu of all adaptors
 
         % simulate in ordered adaptor_soa
-        out.all_tau_shift        = NaN(out.num_adaptor , model.expo_num_sim);
+        out.tau_shift  = NaN(out.num_adaptor , model.expo_num_sim);
 
-        for t                = 1:model.expo_num_sim
+        for t    = 1:model.expo_num_sim
 
-            [out.all_tau_shift(:, t), out.post_C1(:,t), out.shat(:,t)]           = simTauShift(model.expo_num_trial, out.adaptor_soa, fixP,...
+            % simulate by sorted adaptor soas
+            [out.tau_shift(:,t), out.post_C1(:,t), out.shat(:,t)] = sim_recalibration(model.expo_num_trial, out.adaptor_soa, fixP,...
                 tau, sigma_a, sigma_v, p_common, alpha);
 
         end
 
         % pss shift = -tau shift
-        out.all_pss_shift = -out.all_tau_shift;
+        out.pss_shift = -out.tau_shift;
 
         for jj = 1:out.num_adaptor
 
             %% extract the simulated mu_shift for this session
 
-            tau_shift             = out.all_tau_shift(jj, :);
+            tau_shift = out.tau_shift(jj, :);
 
             %% approximate the probability of shift_mu by Gaussian
 
@@ -265,17 +270,17 @@ else
             delta_tau_shift = linspace(shift_lb, shift_ub, model.num_bin);
 
             % fit a Gaussian by using empirical mean and s.d.
-            gauss_tau             = mean(tau_shift);
-            gauss_sigma          = sqrt(sum((tau_shift - gauss_tau).^2)./numel(tau_shift)); % denominator is N instead of N-1
-            gauss_pdf            = normpdf(delta_tau_shift, gauss_tau, gauss_sigma); % approximated gaussian pdf
+            gauss_tau = mean(tau_shift);
+            gauss_sigma    = sqrt(sum((tau_shift - gauss_tau).^2)./numel(tau_shift)); % denominator is N instead of N-1
+            gauss_pdf= normpdf(delta_tau_shift, gauss_tau, gauss_sigma); % approximated gaussian pdf
 
             % compute R2 of using Gaussian to approxiamte mu_shift pdf
-            binsize              = diff(delta_tau_shift(1:2));
-            predicted_y          = gauss_pdf./sum(gauss_pdf); % normalize
+            binsize  = diff(delta_tau_shift(1:2));
+            predicted_y    = gauss_pdf./sum(gauss_pdf); % normalize
             delta_shift_mu_edges = [delta_tau_shift, delta_tau_shift(end) + binsize] - binsize/2; % create edges around delta_mu_shift
-            observed_y           = histcounts(tau_shift, delta_shift_mu_edges)./numel(tau_shift); % manually normalize counts to probability
-            R                    = corr(predicted_y(:), observed_y(:));
-            out.R2(jj)           = R^2;
+            observed_y     = histcounts(tau_shift, delta_shift_mu_edges)./numel(tau_shift); % manually normalize counts to probability
+            R  = corr(predicted_y(:), observed_y(:));
+            out.R2(jj)     = R^2;
 
             %% posttest TOJ
 
@@ -283,7 +288,7 @@ else
                 tau + mean(tau_shift), sigma_a, sigma_v, criterion, lambda, p_common);
 
             out.post_tau(jj) = tau + mean(tau_shift);
-            out.post_pmf{jj} = [post_vfirst; post_simul; post_afirst];
+            out.post_pmf(jj, :, :) = [post_vfirst; post_simul; post_afirst];
 
         end
 
