@@ -1,6 +1,8 @@
-function out = sim_cauInf_asym(param, ~, model)
+function out = sim_cauInf_asym(param, T, model)
 
 % response is a vector of [session[pretest[test_soa[trial]]]] [session[posttest[test_soa[trial]]]]
+if ~exist("T",'var'); T=1:numel(model.vec_resp); end
+
 if strcmp(model.mode, 'initialize')
 
     out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
@@ -86,8 +88,8 @@ else
 
     end
 
-    out = [reshape(pre_resp, 1, numel(pre_resp)), reshape(post_resp, 1, numel(post_resp))]';
-
+    resp = [reshape(pre_resp, 1, numel(pre_resp)), reshape(post_resp, 1, numel(post_resp))]';
+    out = resp(T);
 end
 
 end
