@@ -27,7 +27,8 @@ for tt = 1:exp_trial
         + expCDF(soa_m, i_tau, criterion, sigma_a, sigma_v);
 
     % alpha is modulated by probability of perceiving simultaneity. If it
-    % is high, there 
+    % is high, the system should recalibrate more since the
+    % measurement is likely due to the perepcetual misalignment
     delta_tau(:,tt+1) = delta_tau(:,tt) - alpha .* p_simul .* soa_m;
 
 end

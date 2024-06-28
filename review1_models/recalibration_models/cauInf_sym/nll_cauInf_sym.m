@@ -1,26 +1,30 @@
 
-function out   = nll_heu_asym(freeParam, model, data)
+function out   = nll_cauInf_sym(freeParam, model, data)
 
 if strcmp(model.mode, 'initialize')
 
-    out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','\lambda','\alpha'};
+    out.paraID   = {'\tau','\sigma','c','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
     out.num_para = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
     paraH.tau= [-100,   100]; % ms
-    paraH.sigma_a  = [  10,   120]; % ms
-    paraH.sigma_v  = [  10,   200]; % ms
+    paraH.sigma    = [  10,   200]; % ms
     paraH.criterion= [   1,   350]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
+    paraH.p_common = [1e-4, 1-1e-4]; % weight
     paraH.alpha    = [1e-4,  0.02]; % percentage
+    paraH.sigma_C1 = [   1,   300]; % ms
+    paraH.sigma_C2 = [ 100,   1e3]; % ms
 
     % soft bounds, the range for PLB, PUB
     paraS.tau= [ -50,    50]; % ms
-    paraS.sigma_a  = [  20,    50]; % ms
-    paraS.sigma_v  = [  20,   120]; % ms
+    paraS.sigma    = [  20,   120]; % ms
     paraS.criterion= [  30,   150]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
+    paraS.p_common = [ 0.3,   0.7]; % weight
     paraS.alpha    = [1e-3,  2e-3]; % percentage
+    paraS.sigma_C1 = [  10,   100]; % ms
+    paraS.sigma_C2 = [ 500,   700]; % ms
 
     % reorganize parameter bounds to feed to bads
     fn = fieldnames(paraH);
@@ -41,21 +45,44 @@ else
 
     tau = freeParam(1);
     sigma_a = freeParam(2);
-    sigma_v = freeParam(3);
-    criterion = freeParam(4);
-    lambda = freeParam(5);
+    sigma_v = freeParam(2);
+    criterion = freeParam(3);
+    lambda = freeParam(4);
+    p_common = freeParam(5);
     alpha = freeParam(6);
+    sigma_C1 = freeParam(7);
+    sigma_C2 = freeParam(8);
+
+    %% pre-compute
 
     checkPlot = 0;
+
+    % prior
+    fixP.x_axis     = -model.bound_full:1:model.bound_full;
+    fixP.x_axis_int = -model.bound_int:1:model.bound_int;
+    fixP.l_window   = find(fixP.x_axis == fixP.x_axis_int(1));
+    fixP.r_window   = find(fixP.x_axis == fixP.x_axis_int(end));
+    fixP.prior_C1   = normpdf(fixP.x_axis_int, 0, sigma_C1);
+    fixP.prior_C2   = normpdf(fixP.x_axis_int, 0, sigma_C2);
+    fixP.bound_int  = model.bound_int;
+
+    % likelihood that centers around 0
+    idx_peak   = ceil(length(fixP.x_axis)/2);
+    lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (fixP.x_axis(1:idx_peak)));
+    rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (fixP.x_axis(idx_peak+1:end)));
+    fixP.df_likelihood     = [lf, rf] + realmin;
+
+    % iCDF
+    fixP.y_criterion = sigma_v/(sigma_a + sigma_v);
+    fixP.num_sample = model.num_sample;
 
     %% loop for each session
 
     if strcmp(model.mode, 'optimize')
 
         %%  prediction of probability of three responses is shared across sessions
-
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(model.test_soa,...
-            tau, sigma_a, sigma_v, -criterion, criterion, lambda);
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
+            tau, sigma_a, sigma_v, criterion, lambda, p_common);
 
         if checkPlot
             figure; plot(model.test_soa, [pre_afirst; pre_simul; pre_vfirst],'-o');
@@ -70,8 +97,8 @@ else
         for t    = 1:model.expo_num_sim
 
             % simulate by adaptor soas in each session, unsorted
-            tau_shift(:, t)  = sim_recal_heu(model.expo_num_trial, adaptor_soas, ...
-                tau, sigma_a, sigma_v, criterion, alpha);
+            tau_shift(:, t)  = sim_recal_CI(model.expo_num_trial, adaptor_soas, fixP,...
+                tau, sigma_a, sigma_v, p_common, alpha);
 
         end
 
@@ -138,8 +165,9 @@ else
             for i    = 1:numel(delta_tau_shift)
 
                 % delta_tau = tau_pre - tau_post, use tau_post to predict probability of three responses
-                [post_afirst, post_simul, post_vfirst] = pmf_exp(model.test_soa,...
-                    tau + delta_tau_shift(i), sigma_a, sigma_v, -criterion, criterion, lambda);
+
+                [post_afirst, post_simul, post_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
+                    tau + delta_tau_shift(i), sigma_a, sigma_v, criterion, lambda, p_common);
 
                 if checkPlot
                     figure; plot(model.test_soa, [post_afirst; post_simul; post_vfirst] ,'-o');
@@ -197,8 +225,8 @@ else
             out.num_adaptor = numel(model.sim_adaptor_soa);
         end
 
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(out.test_soa,...
-            tau, sigma_a, sigma_v, -criterion, criterion, lambda);
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI_noSim(out.test_soa, fixP,...
+            tau, sigma_a, sigma_v, criterion, lambda, p_common);
         out.pre_pmf     = [pre_vfirst; pre_simul; pre_afirst];
 
         if checkPlot
@@ -212,8 +240,8 @@ else
         for t    = 1:model.expo_num_sim
 
             % simulate by sorted adaptor soas
-            out.tau_shift(:,t) = sim_recal_heu(model.expo_num_trial, out.adaptor_soa, ...
-                tau, sigma_a, sigma_v, criterion, alpha);
+            [out.tau_shift(:,t), out.shat(:,t), out.post_C1(:,t)] = sim_recal_CI(model.expo_num_trial, out.adaptor_soa, fixP,...
+                tau, sigma_a, sigma_v, p_common, alpha);
 
         end
 
@@ -253,8 +281,8 @@ else
 
             %% posttest TOJ
 
-            [post_afirst, post_simul, post_vfirst] = pmf_exp(out.test_soa,...
-                tau + mean(i_tau_shift), sigma_a, sigma_v, -criterion, criterion, lambda);
+            [post_afirst, post_simul, post_vfirst] = pmf_exp_CI_noSim(out.test_soa, fixP,...
+                tau + mean(i_tau_shift), sigma_a, sigma_v, criterion, lambda, p_common);
 
             out.post_tau(jj) = tau + mean(i_tau_shift);
             out.post_pmf(jj, :, :) = [post_vfirst; post_simul; post_afirst];

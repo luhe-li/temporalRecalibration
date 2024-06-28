@@ -1,17 +1,18 @@
-% function fit_recal_model(i_model, useCluster)
-
-i_model = 1;
+function fit_recal_model(i_model, useCluster)
 
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric', 'Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym', 'atheo'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
 
 %% set environment
+
+% exclude outlier
+sub_slc = [1:4, 6:10];
 
 if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster= false;
@@ -25,21 +26,20 @@ switch useCluster
         end
         hpc_job_number = str2double(getenv('SLURM_ARRAY_TASK_ID'));
         if isnan(hpc_job_number), error('Problem with array assigment'); end
-        numJob    = numel(hpc_job_number);
-        fprintf('job number: %i \n', hpc_job_number);
-        sub  = hpc_job_number;
+        fprintf('Job number: %i \n', hpc_job_number);
+        sub  = sub_slc(hpc_job_number);
     case false
         numCores = feature('numcores');
         sub = 1;
 %         sub = str2num(input('Enter Subject ID to analyze: ', 's'));
 end
 
-% % make sure Matlab does not exceed this
-% fprintf('Number of cores: %i  \n', numCores);
-% maxNumCompThreads(numCores);
-% if isempty(gcp('nocreate'))
-%     parpool(numCores-1);
-% end
+% make sure Matlab does not exceed this
+fprintf('Number of cores: %i  \n', numCores);
+maxNumCompThreads(numCores);
+if isempty(gcp('nocreate'))
+    parpool(numCores-1);
+end
 
 %% manage paths
 
@@ -82,8 +82,8 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS to tell bads that my objective function is noisy
 OPTIONS.UncertaintyHandling = 1;
-OPTIONS.TolMesh = 1e-3;
-% if useCluster; OPTIONS.Display = 'off'; end
+% OPTIONS.MaxIterations = 20; % for debug
+OPTIONS.TolMesh = 1e-5;
 
 %% model fitting
 
@@ -97,13 +97,12 @@ model.mode                  = 'optimize';
 NLL                         = NaN(1, model.num_runs);
 estP                        = NaN(model.num_runs, Val.num_para);
 
-% p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
-% test = currModel(p, model, data);
 % model.mode       = 'predict';
+% p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
 % bestP = [-60, 80, 40, 50, 0.06, 0.02];
-% pred =  currModel(bestP, model, data);
+% test = currModel(p, model, data);
 
-for i  = 1%:model.num_runs
+parfor i  = 1:model.num_runs
     fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
     try
         tempModel            = model;
@@ -122,7 +121,7 @@ end
 model.estP            = estP;
 model.NLL             = NLL;
 
-% find the parameter with the least NLL
+% find the parameter with the least NLL 
 [model.minNLL, best_idx] = min(NLL);
 bestP = estP(best_idx, :);
 model.bestP = bestP;
@@ -133,7 +132,7 @@ model.mode       = 'predict';
 pred =  currModel(bestP, model, data);
 
 %% save the data for each participant
-save(fullfile(outDir, sprintf('sub-%i_%s', i_sub, datestr(datetime('now')))),'data','model','pred')
+save(fullfile(outDir, sprintf('sub-%i_%s', sub, datestr(datetime('now')))),'data','model','pred')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))

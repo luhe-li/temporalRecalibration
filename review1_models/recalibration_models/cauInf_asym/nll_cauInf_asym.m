@@ -214,7 +214,7 @@ else
         %% pre-test TOJ
 
         if model.toj_axis_finer == 1
-            out.test_soa = linspace(model.test_soa(1), model.test_soa(end), 1e3);
+            out.test_soa = linspace(model.test_soa(1), model.test_soa(end), 500);
         else
             out.test_soa = model.test_soa;
         end

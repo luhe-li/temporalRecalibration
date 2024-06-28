@@ -84,7 +84,7 @@ colorbar;
 
 h.YDisplayLabels = specifications;
 h.XDisplayLabels = num2cell(1:numel(sub_slc));
-% 
+
 % save figure
 set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
