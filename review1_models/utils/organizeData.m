@@ -36,6 +36,7 @@ function data = organizeData(subjID, sess)
     data.pre_nT_V1st                   = pre_respCount(1,:);
     data.pre_nT_simul                  = pre_respCount(2,:);
     data.pre_nT_A1st                   = pre_respCount(3,:);
+    data.pre_r_org = pre_r_org;
 
     %% %%% post-test
     % load data and define key parameters
@@ -58,6 +59,7 @@ function data = organizeData(subjID, sess)
     data.post_nT_V1st                  = post_respCount(1,:);
     data.post_nT_simul                 = post_respCount(2,:);
     data.post_nT_A1st                  = post_respCount(3,:);
+    data.post_r_org = post_r_org;
 
     %% exposure phase
     data.adaptor_soa = ExpInfo.adaptor * 1e3; % in ms
