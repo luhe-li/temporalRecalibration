@@ -49,7 +49,7 @@ if strcmp(model.mode, 'initialize')
 
     % get grid initializations
     numSections = model.num_runs * 2;
-    out.init = getInit(out.lb, out.ub, numSections, model.num_runs);
+    out.init = getInit(out.plb, out.pub, numSections, model.num_runs);
 
 else
 
@@ -117,7 +117,7 @@ else
                 + data(adaptor).post_nT_V1st*log(post_vfirst)'...
                 + data(adaptor).post_nT_simul*log(post_simul)';
 
-            nLL_ses(adaptor)         = - pre_LL - post_LL;
+            nLL_ses(adaptor)         = pre_LL + post_LL;
 
         end
         out                  = nansum(nLL_ses);
