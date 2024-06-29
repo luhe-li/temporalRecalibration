@@ -7,23 +7,23 @@ if strcmp(model.mode, 'initialize')
     out.num_para   = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
-    paraH.mu         = [-300,   300]; % ms
-    paraH.sigma      = [0.01,   300]; % ms
-    paraH.c          = [0.01,   350]; % ms
-    paraH.mu_post1   = [-300,   300]; % ms
-    paraH.mu_post2   = [-300,   300]; % ms
-    paraH.mu_post3   = [-300,   300]; % ms
-    paraH.mu_post4   = [-300,   300]; % ms
-    paraH.mu_post5   = [-300,   300]; % ms
-    paraH.mu_post6   = [-300,   300]; % ms
-    paraH.mu_post7   = [-300,   300]; % ms
-    paraH.mu_post8   = [-300,   300]; % ms
-    paraH.mu_post9   = [-300,   300]; % ms
+    paraH.mu         = [-200,   200]; % ms
+    paraH.sigma      = [   1,   200]; % ms
+    paraH.c          = [   1,   350]; % ms
+    paraH.mu_post1   = [-200,   200]; % ms
+    paraH.mu_post2   = [-200,   200]; % ms
+    paraH.mu_post3   = [-200,   200]; % ms
+    paraH.mu_post4   = [-200,   200]; % ms
+    paraH.mu_post5   = [-200,   200]; % ms
+    paraH.mu_post6   = [-200,   200]; % ms
+    paraH.mu_post7   = [-200,   200]; % ms
+    paraH.mu_post8   = [-200,   200]; % ms
+    paraH.mu_post9   = [-200,   200]; % ms
     paraH.lambda     = [1e-4,  0.06]; % percentage
 
     % soft bounds, the range for PLB, PUB
-    paraS.mu         = [-100,   100]; % ms
-    paraS.sigma      = [  10,   100]; % ms
+    paraS.mu         = [ -40,    40]; % ms
+    paraS.sigma      = [  10,    40]; % ms
     paraS.c          = [  10,   100]; % ms
     paraS.mu_post1   = [-100,   100]; % ms
     paraS.mu_post2   = [-100,   100]; % ms

@@ -22,7 +22,7 @@ if strcmp(model.mode, 'initialize')
     paraH.lambda                = [1e-4,  0.06]; % percentage
 
     % soft bounds, the range for PLB, PUB
-    paraS.tau_pre               = [ -70,    70]; % ms
+    paraS.tau_pre               = [ -40,    40]; % ms
     paraS.tau1                  = [-100,   100]; % ms
     paraS.tau2                  = [-100,   100]; % ms
     paraS.tau3                  = [-100,   100]; % ms

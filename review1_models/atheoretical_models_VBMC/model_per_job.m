@@ -5,6 +5,6 @@ if isnan(hpc_job_number), error('Problem with array assigment'); end
 fprintf('job number: %i \n', hpc_job_number);
 
 % job = i_model
-fit_atheo_model(hpc_job_number, 1)
+fit_atheo_model_VBMC(hpc_job_number, 1)
 
 end

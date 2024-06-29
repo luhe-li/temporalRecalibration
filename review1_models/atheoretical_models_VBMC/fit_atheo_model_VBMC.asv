@@ -1,4 +1,6 @@
-function fit_atheo_model_VBMC(i_model, useCluster)
+% function fit_atheo_model_VBMC(i_model, useCluster)
+
+i_model = 3;
 
 %% select models
 
@@ -10,27 +12,27 @@ model_info = table(numbers, specifications', folders', 'VariableNames', {'Number
 currModelStr = model_info.FolderName{i_model};
 
 %% set environment
-
-if ~exist('useCluster', 'var') || isempty(useCluster)
-    useCluster = false;
-end
-
-% job = model, core = run, each job runs all subjects
-switch useCluster
-    case true
-        if ~exist('numCores', 'var') || isempty(numCores)
-            numCores         = maxNumCompThreads;
-        end
-    case false
-        numCores = feature('numcores');
-end
-
-% make sure Matlab does not exceed this
-fprintf('Number of cores: %i  \n', numCores);
-maxNumCompThreads(numCores);
-if isempty(gcp('nocreate'))
-    parpool(numCores-1);
-end
+% 
+% if ~exist('useCluster', 'var') || isempty(useCluster)
+%     useCluster = false;
+% end
+% 
+% % job = model, core = run, each job runs all subjects
+% switch useCluster
+%     case true
+%         if ~exist('numCores', 'var') || isempty(numCores)
+%             numCores         = maxNumCompThreads;
+%         end
+%     case false
+%         numCores = feature('numcores');
+% end
+% 
+% % make sure Matlab does not exceed this
+% fprintf('Number of cores: %i  \n', numCores);
+% maxNumCompThreads(numCores);
+% if isempty(gcp('nocreate'))
+%     parpool(numCores-1);
+% end
 
 %% manage paths
 
@@ -50,7 +52,7 @@ n_sub          = 10;
 
 % set fixed & set-up parameters
 model.num_ses    = 9;
-model.num_runs   = 40; % fit the model multiple times, each with a different initialization
+model.num_runs   = 10; % fit the model multiple times, each with a different initialization
 model.bound      = 10; % in second, the bound for prior axis
 model.bound_int  = 1.5; % in second, where estimates are likely to reside
 model.test_soa   = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
@@ -61,13 +63,12 @@ model.i_model = i_model; % current model index
 model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS to tell bads that my objective function is noisy
-OPTIONS.UncertaintyHandling = 1;
-OPTIONS.TolMesh = 1e-5;
-if useCluster; OPTIONS.Display = 'off'; end
+options = vbmc('defaults');
+options.MaxFunEvals = 50;
 
 %% fit model
 
-for i_sub = 1:n_sub
+for i_sub = 1%:n_sub
 
     %% organize data
 
@@ -79,47 +80,58 @@ for i_sub = 1:n_sub
 
     currModel = str2func(['nll_' currModelStr]);
 
+    % initialize starting points
     model.mode = 'initialize';
     Val = currModel([], model, data);
     model.initVal = Val;
 
     % set priors
-    lpriorfun = @(x) msplinetrapezlogpdf(x,Val.LB,Val.PLB,Val.PUB,Val.UB);
+    lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 
-    model.mode                  = 'optimize';
-    fun = @(x) lpostfun(x, llfun, lpriorfun);
+    % set likelihood
+    model.mode = 'optimize';
+    llfun = @(x) currModel(x, model, data);
 
-    NLL                         = NaN(1, model.num_runs);
-    estP                        = NaN(model.num_runs, Val.num_para);
+    fun = @(x) llfun(x) + lpriorfun(x);
 
-    parfor i  = 1:model.num_runs
+%     p = [-0.269469843924707 -0.373644351395858 0.0506209680419048 -0.0506209680419047 0.153135114221747 -0.373644351395858 -0.259666155363739 0.259666155363739 0.373644351395858 0.153135114221747 0.187225591143454 0.089219381856417 0.336266931803151 0.21974053784385] ;
+%     test = fun(p);
+
+    [elbo,elbo_sd,exitflag,output] = deal(NaN(1,model.num_runs));
+
+    for i  = 1%:model.num_runs
+
         fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, i_sub, i);
-        try
-            tempModel            = model;
-            tempVal              = Val;
-            tempFunc             = currModel;
+        tempVal = Val;
 
-            [estP(i,:),NLL(i)] = bads(@(p) tempFunc(p, tempModel, data),...
-                tempVal.init(i,:), tempVal.lb,...
-                tempVal.ub, tempVal.plb, tempVal.pub, [], OPTIONS);
-        catch
-            sprintf('Skipped invalid NLL\n')
-            continue;
-        end
+        % vp: variational posterior
+        % elbo: Variational Evidence Lower Bound
+        [temp_vp, elbo(i),elbo_sd(i),exitflag(i),output{i}] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
+            tempVal.ub, tempVal.plb, tempVal.pub, options);
+        vp{i}
     end
 
-    model.estP            = estP;
-    model.NLL             = NLL;
+    % save all outputs
+    model.vp = vp;
+    model.elbo = elbo;
+    model.elbo_sd = elbo_sd;
+    model.exitflag = exitflag;
+    model.output = output;
 
-    % find the parameter with the least NLL
-    [model.minNLL, best_idx] = min(NLL);
-    bestP = estP(best_idx, :);
-    model.bestP = bestP;
+    % pick the variational solution with highest ELCBO (lower confidence bound on the ELBO)
+    model.beta_lcb = 3;       % Standard confidence parameter 
+    elcbo = elbo - model.beta_lcb*elbo_sd;
+    [model.maxELCBO,idx_best] = max(elcbo);
+
+    % find the posterior with higherst model evidence and take its mode as
+    % the best-fitting parameter
+    model.best_vp = vp(idx_best);
+    model.bestP = vmbc_mode(model.best_vp);
 
     %% model prediction by best-fitting parameters
 
     model.mode       = 'predict';
-    pred =  currModel(bestP, model, data);
+    pred =  currModel(model.bestP, model, data);
 
     %% save the data for each participant
 
@@ -132,4 +144,4 @@ if ~isempty(gcp('nocreate'))
     delete(gcp('nocreate'));
 end
 
-end
+% end

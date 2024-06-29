@@ -1,6 +1,5 @@
-% function fit_atheo_model_VBMC(i_model, useCluster)
+function fit_atheo_model_VBMC(i_model, useCluster)
 
-i_model = 2;
 %% select models
 
 rng('Shuffle');
@@ -10,7 +9,7 @@ numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
 
-%% set environment
+% set environment
 
 if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster = false;
@@ -26,12 +25,12 @@ switch useCluster
         numCores = feature('numcores');
 end
 
-% % make sure Matlab does not exceed this
-% fprintf('Number of cores: %i  \n', numCores);
-% maxNumCompThreads(numCores);
-% if isempty(gcp('nocreate'))
-%     parpool(numCores-1);
-% end
+% make sure Matlab does not exceed this
+fprintf('Number of cores: %i  \n', numCores);
+maxNumCompThreads(numCores);
+if isempty(gcp('nocreate'))
+    parpool(numCores-1);
+end
 
 %% manage paths
 
@@ -51,7 +50,7 @@ n_sub          = 10;
 
 % set fixed & set-up parameters
 model.num_ses    = 9;
-model.num_runs   = 4; % fit the model multiple times, each with a different initialization
+model.num_runs   = numCores-1; % fit the model multiple times, each with a different initialization
 model.bound      = 10; % in second, the bound for prior axis
 model.bound_int  = 1.5; % in second, where estimates are likely to reside
 model.test_soa   = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
@@ -63,8 +62,7 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS to tell bads that my objective function is noisy
 options = vbmc('defaults');
-options.SpecifyTargetNoise = true;
-% if useCluster; OPTIONS.Display = 'off'; end
+% options.MaxFunEvals = 50; % for debug
 
 %% fit model
 
@@ -86,38 +84,51 @@ for i_sub = 1:n_sub
     model.initVal = Val;
 
     % set priors
-    lpriorfun = @(x) msplinetrapezlogpdf(x,Val.lb,Val.plb,Val.pub,Val.ub);
+    lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 
     % set likelihood
-    model.mode                  = 'optimize';
+    model.mode = 'optimize';
     llfun = @(x) currModel(x, model, data);
 
     fun = @(x) llfun(x) + lpriorfun(x);
 
-%     testp = [-0.206790284646954 0.340071929623188 -0.0651280006225672 0.0651280006225673 -0.340071929623188 0.198121792259214 -0.340071929623188 0.340071929623188 -0.340071929623188 0.198121792259214 0.200370483380783 -0.257255749371589 -0.5 0.0022695536032044];
-%     test = fun(testp);
+%     p = [-0.269469843924707 -0.373644351395858 0.0506209680419048 -0.0506209680419047 0.153135114221747 -0.373644351395858 -0.259666155363739 0.259666155363739 0.373644351395858 0.153135114221747 0.187225591143454 0.089219381856417 0.336266931803151 0.21974053784385] ;
+%     test = fun(p);
 
-    for i  = 1:model.num_runs
+    [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
+
+    parfor i  = 1:model.num_runs
 
         fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, i_sub, i);
-        tempVal              = Val;
+        tempVal = Val;
 
-        [vp(i),elbo(i),elbo_sd(i)] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
+        % vp: variational posterior
+        % elbo: Variational Evidence Lower Bound
+        [temp_vp{i}, elbo(i),elbo_sd(i),exitflag(i),temp_output{i}] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
             tempVal.ub, tempVal.plb, tempVal.pub, options);
     end
 
-%     model.estP            = estP;
-%     model.NLL             = NLL;
-% 
-%     % find the parameter with the least NLL
-%     [model.minNLL, best_idx] = min(NLL);
-%     bestP = estP(best_idx, :);
-%     model.bestP = bestP;
-% 
-%     %% model prediction by best-fitting parameters
-% 
-%     model.mode       = 'predict';
-%     pred =  currModel(bestP, model, data);
+    % save all outputs
+    model.vp = temp_vp;
+    model.elbo = elbo;
+    model.elbo_sd = elbo_sd;
+    model.exitflag = exitflag;
+    model.output = temp_output;
+
+    % pick the variational solution with highest ELCBO (lower confidence bound on the ELBO)
+    model.beta_lcb = 3;       % Standard confidence parameter 
+    elcbo = elbo - model.beta_lcb*elbo_sd;
+    [model.maxELCBO,idx_best] = max(elcbo);
+
+    % find the posterior with higherst model evidence and take its mode as
+    % the best-fitting parameter
+    model.best_vp = vp(idx_best);
+    model.bestP = vbmc_mode(model.best_vp);
+
+    %% model prediction by best-fitting parameters
+
+    model.mode       = 'predict';
+    pred =  currModel(model.bestP, model, data);
 
     %% save the data for each participant
 
@@ -130,4 +141,4 @@ if ~isempty(gcp('nocreate'))
     delete(gcp('nocreate'));
 end
 
-% end
+end
