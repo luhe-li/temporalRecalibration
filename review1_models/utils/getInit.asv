@@ -12,5 +12,5 @@ function inits = getInit(lb, ub, numSections, numRuns)
     %parameter 
     Indices = arrayfun(@(idx) randsample(numSections, numRuns, true), 1:numP,...
                 'UniformOutput', false);
-    for i = 1:numP; inits(:,i) = no_bound_midVals{i}(Indices{i}); end
+    for i = 1:numP; inits(:,i) = midVals{i}(Indices{i}); end
 end

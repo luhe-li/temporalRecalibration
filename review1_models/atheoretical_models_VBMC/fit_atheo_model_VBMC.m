@@ -21,15 +21,16 @@ switch useCluster
         if ~exist('numCores', 'var') || isempty(numCores)
             numCores         = maxNumCompThreads;
         end
+
+        % make sure Matlab does not exceed this
+        fprintf('Number of cores: %i  \n', numCores);
+        maxNumCompThreads(numCores);
+        if isempty(gcp('nocreate'))
+            parpool(numCores-1);
+        end
+
     case false
         numCores = feature('numcores');
-end
-
-% make sure Matlab does not exceed this
-fprintf('Number of cores: %i  \n', numCores);
-maxNumCompThreads(numCores);
-if isempty(gcp('nocreate'))
-    parpool(numCores-1);
 end
 
 %% manage paths
@@ -92,12 +93,12 @@ for i_sub = 1:n_sub
 
     fun = @(x) llfun(x) + lpriorfun(x);
 
-%     p = [-0.269469843924707 -0.373644351395858 0.0506209680419048 -0.0506209680419047 0.153135114221747 -0.373644351395858 -0.259666155363739 0.259666155363739 0.373644351395858 0.153135114221747 0.187225591143454 0.089219381856417 0.336266931803151 0.21974053784385] ;
-%     test = fun(p);
+    %     p = [-0.269469843924707 -0.373644351395858 0.0506209680419048 -0.0506209680419047 0.153135114221747 -0.373644351395858 -0.259666155363739 0.259666155363739 0.373644351395858 0.153135114221747 0.187225591143454 0.089219381856417 0.336266931803151 0.21974053784385] ;
+    %     test = fun(p);
 
     [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 
-    parfor i  = 1:model.num_runs
+    for i  = 1:model.num_runs
 
         fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, i_sub, i);
         tempVal = Val;
@@ -116,13 +117,13 @@ for i_sub = 1:n_sub
     model.output = temp_output;
 
     % pick the variational solution with highest ELCBO (lower confidence bound on the ELBO)
-    model.beta_lcb = 3;       % Standard confidence parameter 
+    model.beta_lcb = 3;       % Standard confidence parameter
     elcbo = elbo - model.beta_lcb*elbo_sd;
     [model.maxELCBO,idx_best] = max(elcbo);
 
     % find the posterior with higherst model evidence and take its mode as
     % the best-fitting parameter
-    model.best_vp = vp(idx_best);
+    model.best_vp = temp_vp(idx_best);
     model.bestP = vbmc_mode(model.best_vp);
 
     %% model prediction by best-fitting parameters

@@ -26,15 +26,15 @@ if strcmp(model.mode, 'initialize')
     paraS.sigma_a    = [  20,    50]; % ms
     paraS.sigma_v    = [  20,    80]; % ms
     paraS.c1         = [  30,    80]; % ms
-    paraS.dc_post1   = [   1,   100]; % ms
-    paraS.dc_post2   = [   1,   100]; % ms
-    paraS.dc_post3   = [   1,   100]; % ms
-    paraS.dc_post4   = [   1,   100]; % ms
-    paraS.dc_post5   = [   1,   100]; % ms
-    paraS.dc_post6   = [   1,   100]; % ms
-    paraS.dc_post7   = [   1,   100]; % ms
-    paraS.dc_post8   = [   1,   100]; % ms
-    paraS.dc_post9   = [   1,   100]; % ms
+    paraS.dc_post1   = [  30,   100]; % ms
+    paraS.dc_post2   = [  30,   100]; % ms
+    paraS.dc_post3   = [  30,   100]; % ms
+    paraS.dc_post4   = [  30,   100]; % ms
+    paraS.dc_post5   = [  30,   100]; % ms
+    paraS.dc_post6   = [  30,   100]; % ms
+    paraS.dc_post7   = [  30,   100]; % ms
+    paraS.dc_post8   = [  30,   100]; % ms
+    paraS.dc_post9   = [  30,   100]; % ms
     paraS.lambda     = [0.01,  0.03]; % percentage
 
     % reorganize parameter bounds to feed to bads
