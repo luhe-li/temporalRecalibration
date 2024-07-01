@@ -1,0 +1,24 @@
+MATLAB is selecting SOFTWARE OPENGL rendering.
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2022 The MathWorks, Inc.
+                  R2022a (9.12.0.1884302) 64-bit (glnxa64)
+                             February 16, 2022
+
+ 
+To get started, type doc.
+For product information, visit www.mathworks.com.
+ 
+>> job number: 2 
+Number of cores: 21  
+Starting parallel pool (parpool) using the 'local' profile ...
+Connected to the parallel pool (number of workers: 20).
+{Undefined function 'vbmc' for input arguments of type 'char'.
+
+Error in fit_atheo_model_VBMC (line 64)
+options = vbmc('defaults');
+
+Error in model_per_job (line 8)
+fit_atheo_model_VBMC(hpc_job_number, 1)
+} 
+>> >> 

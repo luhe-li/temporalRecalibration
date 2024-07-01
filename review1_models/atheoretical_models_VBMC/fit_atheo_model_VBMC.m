@@ -98,7 +98,7 @@ for i_sub = 1:n_sub
 
     [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 
-    for i  = 1:model.num_runs
+    parfor i  = 1:model.num_runs
 
         fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, i_sub, i);
         tempVal = Val;
@@ -123,7 +123,7 @@ for i_sub = 1:n_sub
 
     % find the posterior with higherst model evidence and take its mode as
     % the best-fitting parameter
-    model.best_vp = temp_vp(idx_best);
+    model.best_vp = temp_vp{idx_best};
     model.bestP = vbmc_mode(model.best_vp);
 
     %% model prediction by best-fitting parameters
