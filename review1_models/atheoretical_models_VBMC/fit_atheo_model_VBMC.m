@@ -67,7 +67,7 @@ options = vbmc('defaults');
 
 %% fit model
 
-for i_sub = 1:n_sub
+for i_sub = 9:10%1:n_sub
 
     %% organize data
 
