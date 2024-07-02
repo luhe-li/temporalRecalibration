@@ -28,8 +28,8 @@ maxELCBO = zeros(n_model, numel(sub_slc));
 elbos = zeros(n_model, numel(sub_slc));
 bestP = cell(n_model, numel(sub_slc));
 
-diag_flnm = sprintf('VBMC_diag_results.m');
-if ~exist(fullfile(out_dir, diag_file),'file')
+diag_flnm = sprintf('VBMC_diag_results.mat');
+if ~exist(fullfile(out_dir, diag_flnm),'file')
 
     for mm = 1:n_model
 
@@ -47,7 +47,7 @@ if ~exist(fullfile(out_dir, diag_file),'file')
         end
     end
 
-    save(fullfile(out_dir, diag_flnm), "exitflag", 'bestELCBO', 'idx_best', 'stats', 'DATA');
+    save(fullfile(out_dir, diag_flnm), 'exitflag', 'bestELCBO', 'idx_best', 'stats', 'DATA');
 
 else
 end
@@ -75,7 +75,6 @@ set(gcf, 'Position',[0 0 400 110])
 
 flnm = 'AIC_atheo_models';
 saveas(gca, fullfile(out_dir, flnm),'pdf')
-
 
 %% 2. check each model's posterior agaisnt prior to validate prior selection
 % if posterior is too narrow, narrown the prior and fit again
