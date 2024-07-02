@@ -107,6 +107,7 @@ for i_sub = 9:10%1:n_sub
         % elbo: Variational Evidence Lower Bound
         [temp_vp{i}, elbo(i),elbo_sd(i),exitflag(i),temp_output{i}] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
             tempVal.ub, tempVal.plb, tempVal.pub, options);
+
     end
 
     % save all outputs

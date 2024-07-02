@@ -82,7 +82,7 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS to tell bads that my objective function is noisy
 OPTIONS.UncertaintyHandling = 1;
-% OPTIONS.MaxIterations = 20; % for debug
+OPTIONS.MaxIterations = 1e3; % mesh around 1e-4~1e-5, 80 hours
 OPTIONS.TolMesh = 1e-5;
 
 %% model fitting
@@ -101,6 +101,7 @@ estP                        = NaN(model.num_runs, Val.num_para);
 % p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
 % bestP = [-60, 80, 40, 50, 0.06, 0.02];
 % test = currModel(p, model, data);
+svnm = sprintf('sub-%i', i_sub);
 
 parfor i  = 1:model.num_runs
     fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
@@ -112,6 +113,7 @@ parfor i  = 1:model.num_runs
         [estP(i,:),NLL(i)] = bads(@(p) tempFunc(p, tempModel, data),...
             tempVal.init(i,:), tempVal.lb,...
             tempVal.ub, tempVal.plb, tempVal.pub, [], OPTIONS);
+ 
     catch
         sprintf('Skipped invalid NLL\n')
         continue;
