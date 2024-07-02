@@ -14,59 +14,61 @@ currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
+addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load
 
 n_model = numel(folders);
-sub_slc = 1:10;%[1:4,6:10];
+sub_slc = [1:4,6:10];
 beta_lcb = 3;
 
 maxELCBO = zeros(n_model, numel(sub_slc));
 elbos = zeros(n_model, numel(sub_slc));
 bestP = cell(n_model, numel(sub_slc));
 
-for i_model = 1:n_model
+diag_flnm = sprintf('VBMC_diag_results.m');
+if ~exist(fullfile(out_dir, diag_file),'file')
 
-    curr_folder = fullfile(pwd, folders{i_model});
-    files = dir(fullfile(curr_folder, 'sub-*'));
+    for mm = 1:n_model
 
-    for idx_sub = 1:numel(sub_slc)
+        curr_folder = fullfile(pwd, folders{mm});
+        files = dir(fullfile(curr_folder, 'sub-*'));
 
-        i_sub = sub_slc(idx_sub);
-        i_data = load(fullfile(curr_folder, files(i_sub).name));
-        DATA(i_model, i_sub) = i_data;
-%         vps{i_model, i_sub, :} = i_data.model.vp;
+        for ss = 1:numel(sub_slc)
 
-        % use runs where exitflag is true and find the largest ELCBO among
-        % them, store the posterior
-        success_flag = logical(i_data.model.exitflag);
-        [maxELCBO, idx_best] = max(i_data.model.elbo(success_flag) - beta_lcb * i_data.model.elbo_sd(success_flag));
-        temp_vp = i_data.model.vp(success_flag);
-        elbos(i_model, i_sub) = maxELCBO;
-        vps{i_model, i_sub} = temp_vp(idx_best);
+            fprintf('VBMC diagnostics for model-%i, sub-%i \n',mm, ss);
+            i_sub = sub_slc(ss);
+            i_data = load(fullfile(curr_folder, files(i_sub).name));
+            DATA(mm, i_sub) = i_data;
+            [exitflag(mm, ss),bestELCBO(mm, ss),idx_best,stats{mm, ss}] = vbmc_diagnostics(i_data.model.vp);
 
+        end
     end
+
+    save(fullfile(out_dir, diag_flnm), "exitflag", 'bestELCBO', 'idx_best', 'stats', 'DATA');
+
+else
 end
 
 
 %% 1. plot model evidence
 
 % subtract min across models
-deltaELCBO = max(elbos, [], 1) - elbos;
+deltaELCBO = max(bestELCBO, [], 1) - bestELCBO;
 
 figure
 h = heatmap(round(deltaELCBO, 1), 'XLabel','Participant', ...
     'Colormap', flipud(bone),...
     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
-    'FontSize', 8); 
+    'FontSize', 8);
 colorbar;
 %     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
 
 h.YDisplayLabels = specifications;
 h.XDisplayLabels = num2cell(1:numel(sub_slc));
-% 
+%
 % save figure
 set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
