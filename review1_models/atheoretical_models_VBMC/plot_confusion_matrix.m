@@ -77,7 +77,7 @@ h.XDisplayLabels = num2cell(1:numel(sub_slc));
 set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
 
-flnm = 'AIC_atheo_models';
+flnm = 'ModelEvidence_atheo_models';
 saveas(gca, fullfile(out_dir, flnm),'pdf')
 
 %% 2. check each model's posterior agaisnt prior to validate prior selection
