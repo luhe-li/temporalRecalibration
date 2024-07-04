@@ -47,7 +47,7 @@ if strcmp(model.mode, 'initialize')
     end
     model.paraS      = paraS; model.paraH = paraH;
 
-    % get grid initializations
+    % get grid initializations (bounds not included)
     numSections = model.num_runs * 2;
     out.init = getInit(out.plb, out.pub, numSections, model.num_runs);
 

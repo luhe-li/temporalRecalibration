@@ -61,7 +61,7 @@ model.model_info = model_info; % save all model information
 model.i_model = i_model; % current model index
 model.currModelStr = currModelStr; % current model folder
 
-% set OPTIONS to tell bads that my objective function is noisy
+% set OPTIONS
 options = vbmc('defaults');
 % options.MaxFunEvals = 50; % for debug
 

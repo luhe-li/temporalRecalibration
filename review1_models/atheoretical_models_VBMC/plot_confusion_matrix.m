@@ -42,12 +42,12 @@ if ~exist(fullfile(out_dir, diag_flnm),'file')
             i_sub = sub_slc(ss);
             i_data = load(fullfile(curr_folder, files(i_sub).name));
             DATA(mm, ss) = i_data;
-            [exitflag(mm, ss),bestELCBO(mm, ss),idx_best,stats{mm, ss}] = vbmc_diagnostics(i_data.model.vp);
+            [exitflag(mm, ss),bestELBO(mm, ss),idx_best,stats{mm, ss}] = vbmc_diagnostics(i_data.model.vp);
 
         end
     end
 
-    save(fullfile(out_dir, diag_flnm), 'exitflag', 'bestELCBO', 'idx_best', 'stats', 'DATA');
+    save(fullfile(out_dir, diag_flnm), 'exitflag', 'bestELBO', 'idx_best', 'stats', 'DATA');
 
 else
 
@@ -59,8 +59,8 @@ end
 %% 1. plot model evidence
 
 % subtract min across models
-bestELBO = reshape([bestELCBO.elbo] - 3*[bestELCBO.elbo_sd],[n_model,numel(sub_slc)]);
-deltaELBO = max(bestELBO, [], 1) - bestELBO;
+bestELCBO = reshape([bestELBO.elbo] - 3*[bestELBO.elbo_sd],[n_model,numel(sub_slc)]);
+deltaELCBO = max(bestELCBO, [], 1) - bestELCBO; % LOG MODEL EVIDENCE
 
 figure
 h = heatmap(round(deltaELBO, 1), 'XLabel','Participant', ...
@@ -90,7 +90,7 @@ for mm = 1:n_model
     for ss = 1:numel(sub_slc)
 
         % sample posterior
-        Xs = vbmc_rnd(bestELCBO(mm, ss).vp,1e5);
+        Xs = vbmc_rnd(bestELBO(mm, ss).vp,1e5);
         Vals = DATA(mm,ss).model.initVal;
 
         % best estimates
