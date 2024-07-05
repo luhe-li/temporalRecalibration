@@ -6,7 +6,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=41
 #SBATCH --mem=128GB
-#SBATCH --time=48:00:00
+#SBATCH --time=72:00:00
 #SBATCH --mail-type=END
 #SBATCH --mail-user=ll3981@nyu.edu
 #SBATCH --output=slurm%j.out

@@ -23,19 +23,20 @@ athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
 
 %% load recal models
 
-model_slc = [1,2];
+model_slc = [1,2];%[1,2,5];
 n_model = numel(model_slc);
 sub_slc = [1:4,6:10];
 
 for mm = 1:n_model
 
     curr_folder = fullfile(pwd, folders{mm});
-    if mm == n_model;    curr_folder = athe_path;    end
+    if mm == 5;    curr_folder = athe_path;    end
     files = dir(fullfile(curr_folder, 'sub-*'));
 
     for ss = 1:numel(sub_slc)
 
         fprintf('Extract results of model-%i, sub-%i \n',mm, ss);
+
         i_sub = sub_slc(ss);
         i_data = load(fullfile(curr_folder, files(ss).name));
         DATA(mm, ss) = i_data;
@@ -67,13 +68,13 @@ set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
 
 flnm = 'ModelEvidence_recal_models';
-saveas(gca, fullfile(out_dir, flnm),'pdf')
+% saveas(gca, fullfile(out_dir, flnm),'pdf')
 
 %% 2. plot group average log model evidence
 
 aa = 1;
 
-delta_LME
+
 %% 3. check each model's posterior agaisnt prior to validate prior selection
 
 for mm = model_slc

@@ -92,7 +92,7 @@ exitflag = zeros(model.n_btst, model.num_runs);
 temp_output = cell(model.n_btst, model.num_runs);
 btstData = struct([]);
 
-for i = 1:model.n_btst
+parfor i = 1:model.n_btst
 
     tempModel = model;
     tempCurrModel = currModel;
@@ -155,7 +155,7 @@ bestELCBO = zeros(1, model.n_btst);
 bestP = cell(1, model.n_btst);
 pred = cell(1, model.n_btst);
 
-for jj = 1:model.n_btst
+parfor jj = 1:model.n_btst
 
     tempCurrModel = currModel;
     tempModel = model;
