@@ -37,9 +37,9 @@ switch useCluster
         end
 
     case false
+        % for local debug
         numCores = feature('numcores');
         sub = 1;
-%         sub = str2num(input('Enter Subject ID to analyze: ', 's'));
 end
 
 
@@ -53,6 +53,9 @@ addpath(genpath(fullfile(projectDir, 'vbmc')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
 outDir = fullfile(currentDir, currModelStr);
+
+% atheoretical model for baseline
+athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
 
 %% organize data
 
@@ -149,4 +152,4 @@ if ~isempty(gcp('nocreate'))
     delete(gcp('nocreate'));
 end
 
-% end
+end

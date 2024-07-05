@@ -1,0 +1,52 @@
+function btstData = bootstrapData(sub)
+
+for ses = 1:9
+    
+   data = organizeData(sub, ses);
+
+   %% pre-test
+   
+    %initialize resampled responses
+    pre_r_btst = NaN(length(data.pre_ms_unique), data.pre_numTrials);
+    
+    %for each stimulus location, we resample the responses
+    for j = 1:length(data.pre_ms_unique)
+        %randomly select trial indices (indices are allowed to occur more
+        %than once, since we resample with replacement).
+        idx        = randi([1 data.pre_numTrials],[1 data.pre_numTrials]);
+        %store the resampled responses
+        pre_r_btst(j,:) = data.pre_r_org(j,idx);
+    end
+    %compute the total number of comparison-more responses given each
+    %intensity level
+    btstData.pre_nT_V1st=  sum(pre_r_slc == 1,2)';
+    btstData.pre_nT_simul = sum(pre_r_slc == 2,2)';
+    btstData.pre_nT_A1st = sum(pre_r_slc == 3,2)';
+    btstData.pre_r_org = pre_r_btst;
+    btstData.pre_s_unique = data.pre_s_unique;
+    btstData.pre_ms_unique = data.pre_ms_unique;
+    btstData.pre_numTrials = data.pre_numTrials;
+    btstData.pre_pResp = [btstData.pre_nT_V1st]
+
+    %% post-test
+
+    %initialize resampled responses
+    post_r_slc = NaN(length(data.post_ms_unique), data.post_numTrials);
+    %for each stimulus location, we resample the responses
+    for j = 1:length(post_ms_unique)
+        %randomly select trial indices (indices are allowed to occur more
+        %than once, since we resample with replacement).
+        idx        = randi([1 data.post_numTrials],[1 data.post_numTrials]);
+        %store the resampled responses
+        post_r_slc(j,:) = data.post_r_org(j,idx);
+    end
+    %compute the total number of comparison-more responses given each
+    %intensity level
+    post_nT_Vfirst_btst = sum(post_r_slc == 1,2)';
+    post_nT_simultaneous_btst = sum(post_r_slc == 2,2)';
+    post_nT_Afirst_btst = sum(post_r_slc == 3,2)';
+
+    %% organize bootstrapped data per session in a similar format as data
+    btstData.
+
+end

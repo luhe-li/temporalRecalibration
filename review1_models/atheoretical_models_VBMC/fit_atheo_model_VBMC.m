@@ -63,16 +63,16 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS
 options = vbmc('defaults');
-% options.MaxFunEvals = 50; % for debug
+options.TolStableCount = 30;
 
 %% fit model
 
-for i_sub = 9:10%1:n_sub
+for sub = 1:n_sub
 
     %% organize data
 
     for  ses         = 1:model.num_ses
-        data(ses)        = organizeData(i_sub, ses);
+        data(ses)        = organizeData(sub, ses);
     end
 
     %% set model
@@ -93,14 +93,11 @@ for i_sub = 9:10%1:n_sub
 
     fun = @(x) llfun(x) + lpriorfun(x);
 
-    %     p = [-0.269469843924707 -0.373644351395858 0.0506209680419048 -0.0506209680419047 0.153135114221747 -0.373644351395858 -0.259666155363739 0.259666155363739 0.373644351395858 0.153135114221747 0.187225591143454 0.089219381856417 0.336266931803151 0.21974053784385] ;
-    %     test = fun(p);
-
     [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 
     parfor i  = 1:model.num_runs
 
-        fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, i_sub, i);
+        fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
         tempVal = Val;
 
         % vp: variational posterior
@@ -117,24 +114,31 @@ for i_sub = 9:10%1:n_sub
     model.exitflag = exitflag;
     model.output = temp_output;
 
-    % pick the variational solution with highest ELCBO (lower confidence bound on the ELBO)
-    model.beta_lcb = 3;       % Standard confidence parameter
-    elcbo = elbo - model.beta_lcb*elbo_sd;
-    [model.maxELCBO,idx_best] = max(elcbo);
+    % save incase diagnosis fails
+    save(fullfile(outDir, sprintf('sub-%i_%s', sub)),'data','model')
 
-    % find the posterior with higherst model evidence and take its mode as
-    % the best-fitting parameter
-    model.best_vp = temp_vp{idx_best};
-    model.bestP = vbmc_mode(model.best_vp);
+    %% evaluate fits
 
-    %% model prediction by best-fitting parameters
+    try
+        [diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
+        diag.bestELCBO = diag.bestELBO.elbo - 3*diag.bestELBO.elbo_sd;
 
-    model.mode       = 'predict';
-    pred =  currModel(model.bestP, model, data);
+        % find best-fitting parameters
+        diag.Xs = vbmc_rnd(diag.bestELBO.vp,1e5);
+        diag.post_mean = mean(diag.Xs,1);
+
+        % model prediction by best-fitting parameters
+        model.mode       = 'predict';
+        pred =  currModel(diag.post_mean, model, data);
+
+    catch
+        sprintf('No solution has converged. Skip model prediction. \n')
+        continue;
+    end
 
     %% save the data for each participant
 
-    save(fullfile(outDir, sprintf('sub-%i_%s', i_sub, datestr(datetime('now')))),'data','model','pred')
+    save(fullfile(outDir, sprintf('sub-%i_%s', sub)),'data','model','diag','pred')
 
 end
 
