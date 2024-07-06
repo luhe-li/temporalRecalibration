@@ -8,6 +8,7 @@ currModelStr = 'exp_shiftMu';
 
 % exclude outlier
 sub_slc = [1:4, 6:10];
+useCluster = true;
 
 if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster= false;

@@ -28,13 +28,13 @@ sub_slc = [1:4,6:10];
 
 for mm = 1:n_model
 
-    curr_folder = fullfile(pwd, folders{mm});
-    files = dir(fullfile(curr_folder, 'sub-*'));
+    recal_folder = fullfile(projectDir, 'recalibration_models_VBMC', folders{mm});
+    files = dir(fullfile(recal_folder, 'sub-*'));
 
     for ss = 1:numel(sub_slc)
 
         i_sub = sub_slc(ss);
-        i_data = load(fullfile(curr_folder, files(ss).name));
+        i_data = load(fullfile(recal_folder, files(ss).name));
         DATA(mm, ss) = i_data;
         log_model_evi(mm, ss) = i_data.diag.bestELCBO;
         bestP{mm, ss} = i_data.diag.post_mean;
@@ -50,6 +50,7 @@ end
 
 athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
 files = dir(fullfile(athe_path, 'sub-*'));
+
 for ss = 1:numel(sub_slc)
     i_sub = sub_slc(ss);
     i_data = load(fullfile(athe_path, files(ss).name));

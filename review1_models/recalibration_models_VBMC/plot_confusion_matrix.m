@@ -74,7 +74,6 @@ flnm = 'ModelEvidence_recal_models';
 
 aa = 1;
 
-
 %% 3. check each model's posterior agaisnt prior to validate prior selection
 
 for mm = model_slc

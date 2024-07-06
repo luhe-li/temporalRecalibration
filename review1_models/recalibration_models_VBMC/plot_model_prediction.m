@@ -1,4 +1,5 @@
-
+% fig S1: model prediction of the causal-inference model with
+% modality-specific uncertainty
 clear; clc; close all;
 
 %% model info
@@ -19,22 +20,22 @@ addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
-
 %% load recal models
 
-model_slc = [1,2];%[1,2,5];
+model_slc = [1,2];
 n_model = numel(model_slc);
 sub_slc = [1:4,6:10];
+save_fig = 1;
 
 for mm = 1:n_model
 
-    curr_folder = fullfile(pwd, folders{mm});
-    files = dir(fullfile(curr_folder, 'sub-*'));
+    recal_folder = fullfile(pwd, folders{mm});
+    files = dir(fullfile(recal_folder, 'sub-*'));
 
     for ss = 1:numel(sub_slc)
 
         i_sub = sub_slc(ss);
-        i_data = load(fullfile(curr_folder, files(ss).name));
+        i_data = load(fullfile(recal_folder, files(ss).name));
         DATA(mm, ss) = i_data;
         log_model_evi(mm, ss) = i_data.diag.bestELCBO;
         bestP{mm, ss} = i_data.diag.post_mean;
@@ -50,6 +51,7 @@ end
 
 athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
 files = dir(fullfile(athe_path, 'sub-*'));
+
 for ss = 1:numel(sub_slc)
     i_sub = sub_slc(ss);
     i_data = load(fullfile(athe_path, files(ss).name));
@@ -59,6 +61,7 @@ end
 % calculate group mean
 mean_toj_pss   = mean(toj_pss, 1, 'omitnan');
 se_toj_pss     = std(toj_pss, [], 1, 'omitnan')./sqrt(numel(sub_slc));
+
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -71,6 +74,7 @@ lw = 0.5;
 fontSZ = 7;
 titleSZ = 9;
 dotSZ = 10;
+adaptor_soa = pred{1,1}.adaptor_soa; %ms
 
 %% plot recalibration prediction
 figure;
@@ -81,13 +85,11 @@ set(gcf, 'DefaultTextFontName', 'Helvetica Neue');
 set(gcf, 'DefaultTextFontWeight', 'Light');
 t = tiledlayout(1,4,'Padding', 'compact', 'TileSpacing', 'compact');
 
-adaptor_soa = pred{1,1}.adaptor_soa; %ms
-
 yl = 100;
 ytks = {[], [], [], [-yl, 0, yl]};
 ytklabels = {[], [], [], [-yl, 0, yl]./1e3};
 
-for mm = 1:2
+for mm = 1:n_model
 
     nexttile; hold on
     %     set(gca, 'Position',[0,0,420,150]);
@@ -126,9 +128,80 @@ for mm = 1:2
     xtickangle(0)
     xlim([min(adaptor_soa)-50, max(adaptor_soa)+50])
 
+    xlabel(t, 'Adaptor SOA (s)','FontSize',titleSZ);
+    ylabel(t,'Recalibration effect (s)','FontSize',titleSZ);
+
     title(specifications{mm},'FontSize',fontSZ,'FontWeight', 'normal');
+    saveas(gca, fullfile(out_dir, sprintf('M-%s_group_recal', folders{mm})),'png')
 
 end
 
-xlabel(t, 'Adaptor SOA (s)','FontSize',titleSZ);
-ylabel(t,'Recalibration effect (s)','FontSize',titleSZ);
+%% plot individual recalibration
+
+for mm = 1:n_model
+
+    figure; hold on
+    set(gcf, 'Position',[1,1, 1500, 1000]);
+    sgtitle(specifications{mm})
+
+    for ss = 1:numel(sub_slc)
+
+        sub = sub_slc(ss);
+
+        %     %% load btst data
+        %     flnm = sprintf('btst_sub%i_', sub);
+        %     allFiles = dir(fullfile(athe_path, [flnm '*.mat']));
+        %     btst_fits = load(allFiles.name);
+        %
+        %     % for each btst trial
+        %     for jj = 1:size(btst_fits)
+        %         btst_recal(jj,:) = mean(pred{jj}.pss_shift,2);
+        %     end
+        %
+        %     % for each time point
+        %     for tt = 1:size(btst_recal,2)
+        %         [toj_lb(tt), toj_ub(tt)] = get95CI(btst_recal(:, tt));
+        %     end
+
+        %% plot
+        subplot(3,3,ss); hold on
+        set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
+        title(['S' num2str(ss)],'FontSize',titleSZ)
+
+        %% plot atheoretical prediction
+
+        l  = plot(adaptor_soa, toj_pss(ss,:),'ko', 'MarkerFaceColor','k');
+
+        %     for jj = 1:9
+        %         plot([adaptor_soa(jj),adaptor_soa(jj)],[-toj_lb(jj), -toj_ub(jj)],'k-','LineWidth',1)
+        %     end
+
+        %% plot model prediction
+
+        plot(adaptor_soa, squeeze(pred_recal(mm, ss,:)), '-o','LineWidth',lw, 'Color','r')
+
+        % look better
+        yl = 250;
+        ylim([-yl, yl])
+        yticks([-yl, 0, yl])
+        yticklabels([-yl, 0, yl]./1e3)
+        yline(0,'--','LineWidth',1.5)
+        xticks(adaptor_soa)
+        xticklabels(adaptor_soa/1e3)
+        xtickangle(60)
+        xlim([min(adaptor_soa)-100, max(adaptor_soa)+100])
+        set(gca,'TickDir','out');
+
+        if ss == 4
+            ylabel('Recalibration effect (s)','FontWeight','bold','FontSize',titleSZ)
+        elseif ss == 8
+            xlabel('Adapter SOA (s)','FontWeight','bold','FontSize',titleSZ)
+        end
+
+        if ss                              == numel(sub_slc)
+           saveas(gca, fullfile(out_dir, sprintf('M-%s_S%i_recal', folders{mm}, sub)),'png')
+        end
+
+    end
+
+end
