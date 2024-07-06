@@ -1,0 +1,55 @@
+
+clear; 
+
+% Parameters
+N = 29; % number of neurons
+sigma = 220.6; % width of tuning curves
+alpha = 0.41; % maximal proportional gain reduction
+sigma_a = 122.6; % breadth of the gain field for adaptation
+G0 = 1; % unadapted response gain
+adapted_soa = [-700,-300:100:300,700];
+physical_SOA = -500:50:500; % Physical SOAs
+
+% for each adapted SOA
+for aa = 1:numel(adapted_soa)
+
+    SOA_a = adapted_soa(aa);
+
+    % Preferred SOAs of neurons
+    SOAi = linspace(-500, 500, N);
+
+    % Tuning function
+    fi = @(SOA, SOAi) G0 * exp(-(SOA - SOAi).^2 / (2 * sigma^2));
+
+    % Adaptation model
+    Gi = @(SOAi) G0 * (1 - alpha * exp(-(SOAi - SOA_a).^2 / (2 * sigma_a^2)));
+
+    % Log likelihood calculation
+    logL = @(SOA, R) sum(R .* log(fi(SOA, SOAi))) - sum(fi(SOA, SOAi)) - sum(gammaln(R + 1));
+
+    estimated_SOA = zeros(1, length(physical_SOA));
+    for j = 1:length(physical_SOA)
+        SOA = physical_SOA(j);
+        for i = 1:N
+            R(i) = fi(SOA, SOAi(i)) * Gi(SOAi(i));
+        end
+        SOA_range = -500:1:500;
+        log_likelihoods = arrayfun(@(SOA) logL(SOA, R), SOA_range, 'UniformOutput', true);
+        [~, max_idx] = max(log_likelihoods);
+        estimated_SOA(j) = SOA_range(max_idx);
+    end
+
+    % all biases
+    bias(aa,:) = estimated_SOA - physical_SOA;
+
+end
+
+figure; 
+hold on
+colororder(parula(10))
+plot(physical_SOA, bias,'LineWidth',1)
+xlabel('Physical SOA')
+ylabel('Bias (Estimated SOA - Physical SOA)')
+
+figure; hold on
+plot(adapted_soa, mean(bias,2))

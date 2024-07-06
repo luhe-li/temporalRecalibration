@@ -29,6 +29,15 @@ for i = 1:N
     end
 end
 
+% compute probabi
+
+for j = 1:length(stimulus_SOAs)
+    for i = 1:N
+        
+    end
+end
+
+
 % Plot the results
 figure;
 

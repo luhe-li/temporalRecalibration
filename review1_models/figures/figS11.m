@@ -1,6 +1,16 @@
-clear;
+% fig S11: simulation of recalibration effect by neural population code
+% model by Roach, Heron, Whitaker, & McGraw (2011).
 
-% Parameters
+clear; clc; close all;
+
+%% manage paths
+
+restoredefaultpath;
+out_dir = fullfile(pwd, mfilename);
+if ~exist(out_dir, 'dir'); mkdir(out_dir); end
+
+%% Parameters
+
 N = 29; % Number of neurons
 sigma = 220.6; % Width of tuning curves
 alpha = 0.41; % Maximal proportional gain reduction
@@ -8,6 +18,8 @@ sigma_a = 122.6; % Breadth of the gain field for adaptation
 G0 = 1; % Unadapted response gain
 adapted_soa = [-700, -300:100:300, 700];
 physical_SOA = -500:50:500; % Physical SOAs
+
+%% Model
 
 % Preferred SOAs of neurons
 SOAi = linspace(-500, 500, N);
@@ -40,6 +52,8 @@ for aa = 1:numel(adapted_soa)
     bias(aa, :) = estimated_SOA - physical_SOA;
 end
 
+%% plot
+
 % Plot Bias vs. Physical SOA
 figure;
 hold on;
@@ -51,14 +65,15 @@ legendEntries = arrayfun(@(x) sprintf('%d', x), adapted_soa, 'UniformOutput', fa
 legend(legendEntries, 'Location', 'Best');
 lgd = legend(legendEntries, 'Location', 'Best');
 title(lgd, 'Adapted SOA (ms)');
-title('Bias vs. Physical SOA for Different Adapted SOAs');
 hold off;
+saveas(gca, fullfile(out_dir, 'bias1'),'pdf')
 
 % Plot Mean Bias vs. Adapted SOA
 figure;
 hold on;
 plot(adapted_soa, mean(bias, 2), 'LineWidth', 1);
 xlabel('Adapted SOA (ms)');
-ylabel('Mean Bias');
+ylabel('Mean Bias across physical SOA');
 grid on;
 hold off;
+saveas(gca, fullfile(out_dir, 'bias2'),'pdf')
