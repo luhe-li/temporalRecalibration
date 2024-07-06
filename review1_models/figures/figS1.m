@@ -58,7 +58,7 @@ else
 end
 
 
-%% 1. plot model evidence
+%% plot model evidence as confusion matrix
 
 % subtract min across models
 bestELCBO = reshape([bestELBO.elbo] - 3*[bestELBO.elbo_sd],[n_model,numel(sub_slc)]);
