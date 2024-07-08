@@ -1,4 +1,4 @@
-% fig S1: model prediction of the causal-inference model with
+% fig S1: TOJ model prediction of the causal-inference model with
 % modality-specific uncertainty
 
 clear; clc; close all;

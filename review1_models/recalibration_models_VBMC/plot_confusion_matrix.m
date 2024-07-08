@@ -1,3 +1,5 @@
+% plot confusion matrix for model comparison
+
 clear; close all; clc;
 
 %% model info
@@ -23,29 +25,42 @@ athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
 
 %% load recal models
 
-model_slc = [1,2];%[1,2,5];
+model_slc = [1:4];%[1,2,5];
 n_model = numel(model_slc);
-sub_slc = [1:4,6:10];
+sub_slc = [3,4];%[1:4,6:10];
 
 for mm = 1:n_model
 
-    curr_folder = fullfile(pwd, folders{mm});
-    if mm == 5;    curr_folder = athe_path;    end
-    files = dir(fullfile(curr_folder, 'sub-*'));
+    recal_folder = fullfile(projectDir, 'recalibration_models_VBMC', folders{mm});
+    files = dir(fullfile(recal_folder, 'sub-*'));
 
     for ss = 1:numel(sub_slc)
 
-        fprintf('Extract results of model-%i, sub-%i \n',mm, ss);
-
         i_sub = sub_slc(ss);
-        i_data = load(fullfile(curr_folder, files(ss).name));
+        i_data = load(fullfile(recal_folder, files(ss).name));
         DATA(mm, ss) = i_data;
         log_model_evi(mm, ss) = i_data.diag.bestELCBO;
         bestP{mm, ss} = i_data.diag.post_mean;
         pred{mm, ss} = i_data.pred;
 
+        % extract summary data for plot
+        pred_recal(mm, ss, :) = mean(pred{mm, ss}.pss_shift,2);
+
     end
 end
+
+%% load atheoretical model
+
+athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
+files = dir(fullfile(athe_path, 'sub-*'));
+
+for ss = 1:numel(sub_slc)
+    i_sub = sub_slc(ss);
+    i_data = load(fullfile(athe_path, files(ss).name));
+    log_model_evi(5, ss) = i_data.model.maxELCBO;
+end
+
+%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% 1. plot model evidence
 
@@ -68,58 +83,11 @@ set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
 
 flnm = 'ModelEvidence_recal_models';
-% saveas(gca, fullfile(out_dir, flnm),'pdf')
+% saveas(gca, fullfile(out_dir, flnm),'png')
 
 %% 2. plot group average log model evidence
 
-aa = 1;
+m_LME = mean(log_model_evi,2);
+figure;
+bar(m_LME);
 
-%% 3. check each model's posterior agaisnt prior to validate prior selection
-
-for mm = model_slc
-
-    f1 = figure;
-    set(gcf, 'Position', get(0, 'Screensize'));
-
-    for ss = 1:numel(sub_slc)
-
-        % sample posterior
-        Xs = vbmc_rnd(bestELBO(mm, ss).vp,1e5);
-        Vals = DATA(mm,ss).model.initVal;
-
-        % plot posterior and check  tradeoff
-        cornerplot(Xs, Vals.paraID);
-        saveas(gca, fullfile(out_dir, sprintf('cornerplot_model-%i_sub-%i', mm, ss)),'pdf')
-
-        %% plot individual parameters' posteriors and priors
-        plot_lb = min(Xs, [], 1);
-        plot_ub = max(Xs, [], 1);
-
-        for pp = 1:n_para
-            figure(f1)
-            subplot(numel(sub_slc), n_para, (ss - 1) * n_para + pp)
-            hold on
-
-            % plot prior
-            x = linspace(Vals.lb(pp),Vals.ub(pp),1e3);
-            y = msplinetrapezpdf(x', Vals.lb(pp), Vals.plb(pp),Vals.pub(pp),Vals.ub(pp));
-            plot(x,y,'r')
-
-            % plot posterior
-            % if posterior is too narrow, narrown the prior and fit again
-            h = histogram(Xs(:,pp),'normalization', 'probability','NumBins',100,'FaceColor',[0.5, 0.5, 0.5],'EdgeColor','none');
-
-            if ss == 1
-                title(Vals.paraID{pp});
-                sgtitle(sprintf('Model: %s', DATA(mm,ss).model.model_info.Specification{DATA(mm,ss).model.i_model}))
-            end
-
-            if pp == 1
-                ylabel(sprintf('S%i', ss));
-            end
-        end
-        saveas(gca, fullfile(out_dir, sprintf('checkPrior_model-%i_sub-%i', mm, ss)),'pdf')
-
-    end
-
-end

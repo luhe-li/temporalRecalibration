@@ -1,5 +1,6 @@
-% fig S1: model prediction of the causal-inference model with
-% modality-specific uncertainty
+% for each model, plot predictions of group/individual recalibration and TOJ
+% responses
+
 clear; clc; close all;
 
 %% model info
@@ -26,6 +27,7 @@ model_slc = [1,2];
 n_model = numel(model_slc);
 sub_slc = [1:4,6:10];
 save_fig = 1;
+plotTOJ = 0;
 
 for mm = 1:n_model
 
@@ -55,13 +57,13 @@ files = dir(fullfile(athe_path, 'sub-*'));
 for ss = 1:numel(sub_slc)
     i_sub = sub_slc(ss);
     i_data = load(fullfile(athe_path, files(ss).name));
+    D(ss) = i_data;
     toj_pss(ss,:) = i_data.pred.pss_shift;
 end
 
 % calculate group mean
 mean_toj_pss   = mean(toj_pss, 1, 'omitnan');
 se_toj_pss     = std(toj_pss, [], 1, 'omitnan')./sqrt(numel(sub_slc));
-
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -76,7 +78,8 @@ titleSZ = 9;
 dotSZ = 10;
 adaptor_soa = pred{1,1}.adaptor_soa; %ms
 
-%% plot recalibration prediction
+%% 1. plot group recalibration
+
 figure;
 set(gcf, 'Position',[0,0,420,130]);
 set(gcf, 'DefaultAxesFontName', 'Helvetica Neue');
@@ -132,11 +135,11 @@ for mm = 1:n_model
     ylabel(t,'Recalibration effect (s)','FontSize',titleSZ);
 
     title(specifications{mm},'FontSize',fontSZ,'FontWeight', 'normal');
-    saveas(gca, fullfile(out_dir, sprintf('M-%s_group_recal', folders{mm})),'png')
+    saveas(gca, fullfile(out_dir, sprintf('M%s_group_recal', folders{mm})),'png')
 
 end
 
-%% plot individual recalibration
+%% 2. plot individual recalibration
 
 for mm = 1:n_model
 
@@ -199,7 +202,92 @@ for mm = 1:n_model
         end
 
         if ss                              == numel(sub_slc)
-           saveas(gca, fullfile(out_dir, sprintf('M-%s_S%i_recal', folders{mm}, sub)),'png')
+           saveas(gca, fullfile(out_dir, sprintf('M%s_indiv_recal', folders{mm})),'png')
+        end
+
+    end
+
+end
+
+%% 3. plot TOJ 
+
+if plotTOJ
+
+    for mm = 1:n_model
+
+        for  ss  = 1:numel(sub_slc)
+
+            sub              = sub_slc(ss);
+
+            figure; hold on
+            set(gcf, 'Position', [1400,0,2500,500]);
+
+            tl = tiledlayout(2,9);
+            sgtitle(sprintf('%s, S%i', specifications{mm}, ss),'FontSize',titleSZ,'FontWeight','bold')
+
+            for adapter = 1:9
+
+                % pre
+                nexttile(adapter); hold on
+                set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+
+                % data
+                scatter(D(ss).data(adapter).pre_ms_unique, D(ss).data(adapter).pre_pResp, dotSZ, 'filled');
+
+                % prediction
+                plot(pred{mm,ss}.test_soa, pred{mm,ss}.pre_pmf, 'LineWidth',lw)
+
+                % look better
+                xlim([-550 550])
+                xticks([])
+                yticks([])
+
+                if adapter == 1
+                    ylabel('Pretest probability', 'FontSize',fontSZ,'FontWeight','bold')
+                    yticks(tick_y)
+                    yticklabels(strsplit(num2str(tick_y)))
+                end
+
+                % post
+                nexttile(adapter+num_ses); hold on
+                set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+
+                % data
+                scatter(D(ss).data(adapter).post_ms_unique, D(ss).data(adapter).post_pResp, dotSZ, 'filled');
+
+                % prediction
+                plot(pred{mm,ss}.test_soa, squeeze(pred{mm,ss}.post_pmf(adapter,:,:)),'LineWidth',lw)
+                %             xlabel('Adapter SOA','FontSize',fontSZ,'FontWeight','bold')
+                xlabel({'Test SOA',sprintf('Adapter SOA = %.1f s', adaptor_soa(adapter)./1e3)},'FontSize',fontSZ,'FontWeight','bold')
+
+                % look better
+                xlim([-550 550])
+                xticks(tick_x)
+                xticklabels(strsplit(num2str(tick_x./1e3)))
+                yticks(tick_y)
+                yticklabels(strsplit(num2str(tick_y)))
+
+                if adapter == 1
+                    ylabel('Posttest probability','FontSize',fontSZ,'FontWeight','bold')
+                    yticks(tick_y)
+                    yticklabels(strsplit(num2str(tick_y)))
+                end
+
+            end
+
+            tl.TileSpacing = 'compact';
+            %         tl.XLabel.String = sprintf('S%i: %s',sub,concatenated_str);
+            %         tl.XLabel.FontSize = titleSZ;
+            %         tl.XLabel.FontWeight = 'bold';
+            %         tl.XLabel.String = 'Adapter SOA';
+            %         tl.XLabel.FontSize = titleSZ;
+            %         tl.XLabel.FontWeight = 'bold';
+
+            if save_fig
+                flnm  = sprintf('M%s_S%i_TOJ',mm, sub);
+                saveas(gca, fullfile(out_dir, flnm),'pdf')
+            end
+
         end
 
     end
