@@ -66,7 +66,8 @@ for  ses  = 1:num_ses
     pre_resp(ses,:) = reshape(data(ses).pre_r_org, 1, []);
     post_resp(ses,:) = reshape(data(ses).post_r_org, 1, []);
 end
-vec_resp = [reshape(pre_resp, 1, numel(pre_resp)), reshape(post_resp, 1, numel(post_resp))]';
+pre_resp = reshape(pre_resp, 1, numel(pre_resp))';
+post_resp = reshape(post_resp, 1, numel(post_resp))';
 
 %% define model
 
