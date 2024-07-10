@@ -67,7 +67,7 @@ options.TolStableCount = 30;
 
 %% fit model
 
-for sub = 1:n_sub
+for sub = 7:10%1:n_sub
 
     %% organize data
 

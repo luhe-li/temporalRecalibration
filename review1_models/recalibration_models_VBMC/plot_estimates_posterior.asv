@@ -27,7 +27,9 @@ athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
 
 model_slc = [1:4];%[1,2,5];
 n_model = numel(model_slc);
-sub_slc = [3,4];%[1:4,6:10];
+sub_slc = [3,4,9];%[1:4,6:10];
+saveEst = true;
+dispLatex = true;
 
 for mm = 1:n_model
 
@@ -41,28 +43,40 @@ for mm = 1:n_model
         DATA(mm, ss) = i_data;
         bestP{mm, ss} = i_data.diag.post_mean;
         vps{mm, ss} = i_data.diag.Xs;
-        
-        % extract summary data for plot
-        pred_recal(mm, ss, :) = mean(pred{mm, ss}.pss_shift,2);
 
     end
 end
 
+%% 1. display estimates
 
-% summarize parameter estimates from recalibration model
-for i                            = 1:numel(sub_slc)
-    para.data(i,:)                   = est(i).p;
+% summarize parameter estimates from one model
+for mm = 1:n_model
+
+    clearvars para
+    for ss                            = 1:numel(sub_slc)
+        para.data(ss,:)                   = bestP{mm, ss};
+    end
+
+    est_mean                         = mean(para.data);
+    est_std                          = std(para.data)./sqrt(numel(sub_slc));
+    para.data                        = [para.data; est_mean; est_std; DATA(mm, ss).model.initVal.lb;DATA(mm, ss).model.initVal.ub];
+    para.tableRowLabels              = [sprintfc('S%i', sub_slc),'Mean','S.D.','Lower bound','Upper bound'];
+    para.tableColLabels              = DATA(mm, ss).model.initVal.paraID;
+
+    % save best parameter estimates
+    if saveEst
+        estTable = array2table(para.data, 'VariableNames', para.tableColLabels);
+        estTable = addvars(estTable, para.tableRowLabels', 'Before', 1, 'NewVariableNames', 'RowLabels');
+        writetable(fullfile(estTable), [folders{mm} '_bestParameterEstimates.csv']);
+    end
+
+    if dispLatex
+%         para.dataFormat                  = {'%.2f', 4, '%.3f',3, '%.2f',2};
+        latexTable(para);
+    end
 end
-est_mean                         = mean(para.data);
-est_std                          = std(para.data)./sqrt(numel(sub_slc));
-para.data                        = [para.data; est_mean; est_std; est(1).model.lb; est(1).model.ub];
-para.tableRowLabels              = [sprintfc('S%i', sub_slc),'Mean','S.D.','Lower bound','Upper bound'];
-para.tableColLabels              = est(1).paraID;
-% para.dataFormat                  = {'%.2f', 4, '%.3f',3, '%.2f',2};
-T                                = latexTable(para);
 
-
-%% 3. check each model's posterior agaisnt prior to validate prior selection
+%% 2. check each model's posterior agaisnt prior to validate prior selection
 
 for mm = model_slc
 

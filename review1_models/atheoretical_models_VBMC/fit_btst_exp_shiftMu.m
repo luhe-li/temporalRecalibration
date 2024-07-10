@@ -121,7 +121,7 @@ parfor i = 1:model.n_btst
 
         % vp: variational posterior
         % elbo: Variational Evidence Lower Bound
-        [temp_temp_vp{rr}, temp_elbo(rr), temp_elbo_sd(rr), temp_exitflag(rr), temp_temp_output{rr}] = vbmc(fun, tempVal.init(i,:), tempVal.lb, ...
+        [temp_temp_vp{rr}, temp_elbo(rr), temp_elbo_sd(rr), temp_exitflag(rr), temp_temp_output{rr}] = vbmc(fun, tempVal.init(rr,:), tempVal.lb, ...
             tempVal.ub, tempVal.plb, tempVal.pub, options);
 
     end

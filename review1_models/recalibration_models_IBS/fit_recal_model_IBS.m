@@ -113,10 +113,6 @@ nll_ibs = @(param) ibslike(currModel, param, vec_resp, [], options_ibs, model);
 NLL         = NaN(1, model.num_runs);
 estP        = NaN(model.num_runs, Val.num_para);
 
-% p = [35.693359375 28.5693359375 77.12890625 47.16796875 0.027138671875, 0.528515625 0.00128564453125 87.1825740824543 700];
-% test = currModel(p, model);
-% test_nll = nll_ibs(p);
-
 for i  = 1:model.num_runs
     fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
 

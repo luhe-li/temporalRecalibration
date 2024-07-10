@@ -12,7 +12,13 @@ currModelStr = model_info.FolderName{i_model};
 %% set environment
 
 % exclude outlier
+if i_model == 3
+sub_slc = [6,7,8];
+elseif i_model == 4
+sub_slc = [1,2,8,10];
+else
 sub_slc = [1:4, 6:10];
+end
 
 if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster= false;
@@ -87,8 +93,8 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS
 options = vbmc('defaults');
-if i_model == 4 || i_model == 3; options.MaxFunEvals = 1e3; end % set max iter for cau-inf models
-options.TolStableCount = 30;
+if i_model == 4 || i_model == 3; options.MaxFunEvals = 500; end % set max iter for cau-inf models
+options.TolStableCount = 15;
 
 %% model fitting
 
