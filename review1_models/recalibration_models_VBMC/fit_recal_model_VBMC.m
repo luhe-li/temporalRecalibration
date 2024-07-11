@@ -60,9 +60,6 @@ addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
 outDir = fullfile(currentDir, currModelStr);
 
-% atheoretical model for baseline
-athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
-
 %% organize data
 
 model.num_ses  = 9;

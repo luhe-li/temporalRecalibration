@@ -19,6 +19,7 @@ switch useCluster
         hpc_job_number = str2double(getenv('SLURM_ARRAY_TASK_ID'));
         if isnan(hpc_job_number), error('Problem with array assigment'); end
         fprintf('Job number: %i \n', hpc_job_number);
+        model.num_runs  = hpc_job_number;
 
         % make sure Matlab does not exceed this
         fprintf('Number of cores: %i  \n', numCores);
@@ -29,6 +30,7 @@ switch useCluster
 
     case false
         numCores = feature('numcores');
+        model.num_runs = 1;
 end
 
 %% manage paths
@@ -44,6 +46,7 @@ outDir = fullfile(currentDir, currModelStr);
 
 %% organize data
 
+sub_slc = [1:4];
 for ses = 1:9
     sample_data(ses) = organizeData(1, ses);
 end
@@ -59,7 +62,7 @@ for ss = 1:numel(sub_slc)
 end
 mu_GT = mean(bestP, 1);
 sd_GT = sqrt((bestP - mu_GT).^2./numel(sub_slc));
-num_sample = 1; % for each job, sample once
+num_sample = 100;
 GT_samples = sampleGT(mu_GT, sd_GT, num_sample);
 
 %% define model
@@ -69,13 +72,13 @@ model.num_ses = 9;
 model.thres_R2 = 0.95;
 model.expo_num_sim = 1e3; % number of simulation for exposure phase
 model.expo_num_trial = 250; % number of *real* trials in exposure phase
-model.num_runs = numCores; % fit the model multiple times, each with a different initialization
+model.num_runs = 1; % fit the model multiple times, each with a different initialization
 model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
 model.bound_full = 10*1e3; % in second, the bound for prior axis
 model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
 model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
 model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
-model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
+model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; 
 model.toj_axis_finer = 0; % simulate pmf with finer axis
 model.adaptor_axis_finer = 0; % simulate with more adpators
 model.currModelStr = currModelStr; % current model folder
@@ -89,71 +92,33 @@ options.TolStableCount = 15;
 
 currModel = str2func(['nll_' currModelStr]);
 
-%% simulation
+for ii = 1:num_sample
 
-model.mode       = 'predict';
-pred =  currModel(GT_samples, model, []);
+    %% simulation
 
-% simulate fake data using predicted PMF
-fake_data = simulateData(pred, sample_data);
+    model.mode       = 'predict';
+    pred =  currModel(GT_samples(ii,:), model, []);
 
-%% fitting
-model.mode = 'initialize';
-Val = currModel([], model, fake_data);
-model.initVal = Val;
+    % simulate fake data using predicted PMF
+    fake_data = simulateData(pred, sample_data);
 
-% set priors
-lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
+    %% fitting
+    model.mode = 'initialize';
+    Val = currModel([], model, fake_data);
+    model.initVal = Val;
 
-% set likelihood
-model.mode = 'optimize';
-llfun = @(x) currModel(x, model, data);
-fun = @(x) llfun(x) + lpriorfun(x);
+    % set priors
+    lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 
-[elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
+    % set likelihood
+    model.mode = 'optimize';
+    llfun = @(x) currModel(x, model, data);
+    fun = @(x) llfun(x) + lpriorfun(x);
 
-parfor i  = 1:model.num_runs
-    
-        fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
-        tempVal = Val;
-
-        % vp: variational posterior
-        % elbo: Variational Evidence Lower Bound
-        [temp_vp{i}, elbo(i),elbo_sd(i),exitflag(i),temp_output{i}] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
-            tempVal.ub, tempVal.plb, tempVal.pub, options);
 
 end
 
-% save all outputs
-model.vp = temp_vp;
-model.elbo = elbo;
-model.elbo_sd = elbo_sd;
-model.exitflag = exitflag;
-model.output = temp_output;
 
-% save incase diagnosis fails
-save(fullfile(outDir, sprintf('sample-%i', hpc_job_number)),'fake_data','model')
-
-% evaluate fits
-[diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
-diag.bestELCBO = diag.bestELBO.elbo - 3*diag.bestELBO.elbo_sd;
-
-% find best-fitting parameters
-diag.Xs = vbmc_rnd(diag.bestELBO.vp,1e5);
-diag.post_mean = mean(diag.Xs,1);
-
-%% summarize for model recovery plots
-
-summ.gt = GT_samples;
-summ.est = diag.post_mean;
-
-%% save the data for each pfit
-save(fullfile(outDir, sprintf('sample-%i', hpc_job_number)),'fake_data','model', 'diag','sum')
-
-% delete current pool
-if ~isempty(gcp('nocreate'))
-    delete(gcp('nocreate'));
-end
 
 %% utility functions
 
