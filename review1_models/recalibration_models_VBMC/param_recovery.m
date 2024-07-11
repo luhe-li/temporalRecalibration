@@ -19,6 +19,7 @@ switch useCluster
         hpc_job_number = str2double(getenv('SLURM_ARRAY_TASK_ID'));
         if isnan(hpc_job_number), error('Problem with array assigment'); end
         fprintf('Job number: %i \n', hpc_job_number);
+        recov_run = hpc_job_number;
 
         % make sure Matlab does not exceed this
         fprintf('Number of cores: %i  \n', numCores);
@@ -29,6 +30,7 @@ switch useCluster
 
     case false
         numCores = feature('numcores');
+        recov_run = 1;
 end
 
 %% manage paths
@@ -40,16 +42,18 @@ addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
-outDir = fullfile(currentDir, currModelStr);
+outDir = fullfile(currentDir, mfilename);
+if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 %% organize data
 
 for ses = 1:9
-    sample_data(ses) = organizeData(1, ses);
+    data(ses) = organizeData(1, ses);
 end
 
 %% sample ground-truth from best parameter estimates
 
+sub_slc = [1:4,6:10];
 recal_folder = fullfile(projectDir, 'recalibration_models_VBMC', currModelStr);
 files = dir(fullfile(recal_folder, 'sub-*'));
 for ss = 1:numel(sub_slc)
@@ -95,7 +99,7 @@ model.mode       = 'predict';
 pred =  currModel(GT_samples, model, []);
 
 % simulate fake data using predicted PMF
-fake_data = simulateData(pred, sample_data);
+fake_data = simulateData(pred, data);
 
 %% fitting
 model.mode = 'initialize';
@@ -114,7 +118,7 @@ fun = @(x) llfun(x) + lpriorfun(x);
 
 parfor i  = 1:model.num_runs
     
-        fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
+        fprintf('[%s] Start fitting recovery sample-%i run-%i \n', mfilename, recov_run, i);
         tempVal = Val;
 
         % vp: variational posterior
@@ -131,8 +135,8 @@ model.elbo_sd = elbo_sd;
 model.exitflag = exitflag;
 model.output = temp_output;
 
-% save incase diagnosis fails
-save(fullfile(outDir, sprintf('sample-%i', hpc_job_number)),'fake_data','model')
+% save in case diagnosis fails
+save(fullfile(outDir, sprintf('sample-%i', recov_run)),'fake_data','model')
 
 % evaluate fits
 [diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
@@ -147,8 +151,8 @@ diag.post_mean = mean(diag.Xs,1);
 summ.gt = GT_samples;
 summ.est = diag.post_mean;
 
-%% save the data for each pfit
-save(fullfile(outDir, sprintf('sample-%i', hpc_job_number)),'fake_data','model', 'diag','sum')
+%% save the data for each fit
+save(fullfile(outDir, sprintf('sample-%i', recov_run)),'fake_data','model', 'diag','summ')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))
@@ -162,7 +166,7 @@ function [samples] = sampleGT(mean_values, sd_values, num_sample)
 % Initialize the matrix to store the sampled values
 samples = zeros(num_sample, 9);
 
-% Parameters 'tau' are normally distributed
+% Parameters '\tau' are normally distributed
 samples(:, 1) = normrnd(mean_values(1), sd_values(1), [num_sample, 1]);
 
 % Parameters '\sigma_{A}', '\sigma_{V}', 'criterion', '\sigma_{C1}', '\sigma_{C2}' are log-normally distributed
