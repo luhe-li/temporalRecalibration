@@ -22,48 +22,33 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 n_model = numel(folders);
 sub_slc = [1:4,6:10];
-beta_lcb = 3;
 
-maxELCBO = zeros(n_model, numel(sub_slc));
-elbos = zeros(n_model, numel(sub_slc));
-bestP = cell(n_model, numel(sub_slc));
+for mm = 1:n_model
 
-diag_flnm = sprintf('VBMC_diag_results.mat');
-if ~exist(fullfile(out_dir, diag_flnm),'file')
+    results_folder = fullfile(projectDir, 'atheoretical_models_VBMC', folders{mm});
+    files = dir(fullfile(results_folder, 'sub-*'));
 
-    for mm = 1:n_model
+    for ss = 1:numel(sub_slc)
 
-        curr_folder = fullfile(pwd, folders{mm});
-        files = dir(fullfile(curr_folder, 'sub-*'));
+        i_sub = sub_slc(ss);
+        i_data = load(fullfile(results_folder, files(ss).name));
+        DATA(mm, ss) = i_data;
+        log_model_evi(mm, ss) = i_data.diag.bestELCBO;
+        bestP{mm, ss} = i_data.diag.post_mean;
+        pred{mm, ss} = i_data.pred;
 
-        for ss = 1:numel(sub_slc)
-
-            fprintf('VBMC diagnostics for model-%i, sub-%i \n',mm, ss);
-            i_sub = sub_slc(ss);
-            i_data = load(fullfile(curr_folder, files(i_sub).name));
-            DATA(mm, ss) = i_data;
-            [exitflag(mm, ss),bestELBO(mm, ss),idx_best,stats{mm, ss}] = vbmc_diagnostics(i_data.model.vp);
-
-        end
     end
-
-    save(fullfile(out_dir, diag_flnm), 'exitflag', 'bestELBO', 'idx_best', 'stats', 'DATA');
-
-else
-
-    load(fullfile(out_dir, diag_flnm))
-
 end
 
+%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% 1. plot model evidence
 
-% subtract min across models
-bestELCBO = reshape([bestELBO.elbo] - 3*[bestELBO.elbo_sd],[n_model,numel(sub_slc)]);
-deltaELCBO = max(bestELCBO, [], 1) - bestELCBO; % LOG MODEL EVIDENCE
+% max subtract other log model evidence
+delta_LME = max(log_model_evi, [], 1) - log_model_evi; 
 
 figure
-h = heatmap(round(deltaELBO, 1), 'XLabel','Participant', ...
+h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
     'Colormap', flipud(bone),...
     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
     'FontSize', 8);
@@ -77,60 +62,5 @@ h.XDisplayLabels = num2cell(1:numel(sub_slc));
 set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
 
-flnm = 'ModelEvidence_atheo_models';
-saveas(gca, fullfile(out_dir, flnm),'pdf')
-
-%% 2. check each model's posterior agaisnt prior to validate prior selection
-
-for mm = 1:n_model
-
-        f1 = figure;
-        set(gcf, 'Position', get(0, 'Screensize'));
-
-    for ss = 1:numel(sub_slc)
-
-        % sample posterior
-        Xs = vbmc_rnd(bestELBO(mm, ss).vp,1e5);
-        Vals = DATA(mm,ss).model.initVal;
-
-        % best estimates
-        post_mean = mean(Xs,1);
-        n_para = numel(post_mean);
-
-        % plot posterior and check  tradeoff
-        cornerplot(Xs, Vals.paraID);
-        saveas(gca, fullfile(out_dir, sprintf('cornerplot_model-%i_sub-%i', mm, ss)),'pdf')
-
-        %% plot individual parameters' posteriors and priors
-        plot_lb = min(Xs, [], 1);
-        plot_ub = max(Xs, [], 1);
-        
-        for pp = 1:n_para
-            figure(f1)
-            subplot(numel(sub_slc), n_para, (ss - 1) * n_para + pp)
-            hold on
-
-            % plot prior
-            x = linspace(Vals.lb(pp),Vals.ub(pp),1e3);
-            y = msplinetrapezpdf(x', Vals.lb(pp), Vals.plb(pp),Vals.pub(pp),Vals.ub(pp));
-            plot(x,y,'r')
-
-            % plot posterior
-            % if posterior is too narrow, narrown the prior and fit again
-            h = histogram(Xs(:,pp),'normalization', 'probability','NumBins',100,'FaceColor',[0.5, 0.5, 0.5],'EdgeColor','none');
-
-            
-            if ss == 1
-                title(Vals.paraID{pp});
-                sgtitle(sprintf('Model: %s', DATA(mm,ss).model.model_info.Specification{DATA(mm,ss).model.i_model}))
-            end
-
-            if pp == 1
-                ylabel(sprintf('S%i', ss));
-            end
-        end
-        saveas(gca, fullfile(out_dir, sprintf('checkPrior_model-%i_sub-%i', mm, ss)),'pdf')
-
-    end
-
-end
+flnm = 'modelEvidence_atheo_models';
+saveas(gca, fullfile(out_dir, flnm),'png')

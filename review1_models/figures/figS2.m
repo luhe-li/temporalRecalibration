@@ -114,7 +114,7 @@ ylabel('d'', post-test phase')%, 'Interpreter', 'latex');
 legend({'Audition', 'Vision'}, 'Location', 'southeast');
 
 flnm = 'oddball_result';
-saveas(gca, fullfile(out_dir, flnm), 'epsc');
+saveas(gca, fullfile(out_dir, flnm), 'pdf');
 
 %% Helper Functions
 

@@ -1,4 +1,4 @@
-% fig S1: model prediction of the causal-inference model with
+% fig S5: model prediction of the causal-inference model with
 % modality-specific uncertainty
 
 clear; clc; close all;
@@ -33,7 +33,7 @@ files = dir(fullfile(recal_folder, 'sub-*'));
 for ss = 1:numel(sub_slc)
 
     i_sub = sub_slc(ss);
-    i_data = load(fullfile(recal_folder, files(ss).name));
+    i_data = load(fullfile(recal_folder, files(i_sub).name));
     log_model_evi(ss) = i_data.diag.bestELCBO;
     bestP{ss} = i_data.diag.post_mean;
     pred{ss} = i_data.pred;
@@ -86,7 +86,7 @@ for ss = 1:numel(sub_slc)
 % 
 %     % for each time point
 %     for tt = 1:size(btst_recal,2)
-%         [toj_lb(tt), toj_ub(tt)] = get95CI(btst_recal(:, tt));
+%         [toj_lb(tt), toj_ub(tt)] = get68CI(btst_recal(:, tt));
 %     end
 
     %% plot

@@ -16,6 +16,6 @@ module load matlab/2022a
 
 matlab <<EOF
 
-fit_recal_model(4,1)
+fit_recal_model_VBMC(4,1)
 
 EOF

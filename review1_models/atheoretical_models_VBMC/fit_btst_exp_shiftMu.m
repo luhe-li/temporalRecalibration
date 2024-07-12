@@ -91,7 +91,7 @@ elbo = zeros(model.n_btst, model.num_runs);
 elbo_sd = zeros(model.n_btst, model.num_runs);
 exitflag = zeros(model.n_btst, model.num_runs);
 temp_output = cell(model.n_btst, model.num_runs);
-btstData = struct([]);
+btst_data = struct([]);
 
 parfor i = 1:model.n_btst
 
@@ -100,7 +100,7 @@ parfor i = 1:model.n_btst
 
     % Bootstrap data
     i_btst_data = bootstrapData(sub);
-    btstData(i).data = i_btst_data;
+    btst_data(i).data = i_btst_data;
 
     % Set likelihood
     tempModel.mode = 'optimize';
@@ -174,7 +174,7 @@ parfor jj = 1:model.n_btst
 
     % Model prediction by best-fitting parameters
     tempModel.mode = 'predict';
-    pred{jj} = tempCurrModel(post_mean, tempModel, btstData(jj).data);
+    pred{jj} = tempCurrModel(post_mean, tempModel, btst_data(jj).data);
 
     catch
             sprintf('No solution has converged. Skip model prediction. \n')

@@ -37,7 +37,7 @@ for mm = 1:n_model
     for ss = 1:numel(sub_slc)
 
         i_sub = sub_slc(ss);
-        i_data = load(fullfile(recal_folder, files(ss).name));
+        i_data = load(fullfile(recal_folder, files(i_sub).name));
         DATA(mm, ss) = i_data;
         log_model_evi(mm, ss) = i_data.diag.bestELCBO;
         bestP{mm, ss} = i_data.diag.post_mean;

@@ -52,11 +52,27 @@ for aa = 1:numel(adapted_soa)
     bias(aa, :) = estimated_SOA - physical_SOA;
 end
 
-%% plot
+%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% figure set up
+
+cmp1 = [229, 158, 168; 203, 227, 172; 171,223,235;]./255;
+cmp2 = [216, 49, 91; 175, 213, 128; 88,193,238]./255;
+
+lw = 0.5;
+fontSZ = 7;
+titleSZ = 9;
+dotSZ = 10;
+
+figure;
+set(gcf, 'Position',[0,0,420,130]);
+
+subplot(1,2,1); 
+set(gca, 'Position', [0.1, 0.2, 0.45, 0.8]);
+set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
+set(gca, 'FontName', 'Helvetica');
+hold on
 
 % Plot Bias vs. Physical SOA
-figure;
-hold on;
 colororder(parula(length(adapted_soa)));
 plot(physical_SOA, bias, 'LineWidth', 1);
 xlabel('Physical SOA (ms)');
@@ -66,14 +82,17 @@ legend(legendEntries, 'Location', 'Best');
 lgd = legend(legendEntries, 'Location', 'Best');
 title(lgd, 'Adapted SOA (ms)');
 hold off;
-saveas(gca, fullfile(out_dir, 'bias1'),'pdf')
 
 % Plot Mean Bias vs. Adapted SOA
-figure;
-hold on;
-plot(adapted_soa, mean(bias, 2), 'LineWidth', 1);
+subplot(1,2,2); hold on
+set(gca, 'Position', [0.65, 0.2, 0.3, 0.8]);
+set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
+set(gca, 'FontName', 'Helvetica');
+set(gca, 'FontWeight', 'Light');
+hold on
+plot(adapted_soa, -mean(bias, 2), 'LineWidth', 1);
 xlabel('Adapted SOA (ms)');
-ylabel('Mean Bias across physical SOA');
+ylabel('Mean PSS across physical SOA');
 grid on;
 hold off;
-saveas(gca, fullfile(out_dir, 'bias2'),'pdf')
+saveas(gca, fullfile(out_dir, 'bias'),'pdf')
