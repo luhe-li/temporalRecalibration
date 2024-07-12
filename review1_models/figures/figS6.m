@@ -28,13 +28,13 @@ model_slc = 1;
 sub_slc = [1:4,6:10];
 num_ses = 9;
 
-recal_folder = fullfile(projectDir, 'recalibration_models_VBMC', folders{model_slc});
-files = dir(fullfile(recal_folder, 'sub-*'));
+result_folder = fullfile(projectDir, 'recalibration_models_VBMC', folders{model_slc});
+files = dir(fullfile(result_folder, 'sub-*'));
 
 for ss = 1:numel(sub_slc)
 
     i_sub = sub_slc(ss);
-    i_data = load(fullfile(recal_folder, files(ss).name));
+    i_data = load(fullfile(result_folder, files(i_sub).name));
     pred{ss} = i_data.pred;
 
 end
@@ -74,7 +74,7 @@ for  ss  = 1:numel(sub_slc)
     set(gcf, 'Position', [1400,0,2500,500]);
 
     tl = tiledlayout(2,9);
-    sgtitle(sprintf('S%i',ss),'FontSize',titleSZ,'FontWeight','bold')
+    sgtitle(sprintf('S%i',sub),'FontSize',titleSZ,'FontWeight','bold')
 
     for adapter = 1:9
 
@@ -135,7 +135,7 @@ for  ss  = 1:numel(sub_slc)
     %         tl.XLabel.FontWeight = 'bold';
 
     if save_fig
-        flnm  = sprintf('sub%i_TOJ_prediction',sub);
+        flnm  = sprintf('sub%2d_TOJ_prediction',sub);
         saveas(gca, fullfile(out_dir, flnm),'pdf')
     end
 
