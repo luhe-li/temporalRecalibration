@@ -1,5 +1,5 @@
 % fig 4. Simulation of the causal inference model
-% A. effect of increasing bias, \beta on recalibration magnitude
+% A. effect of increasing p_common on recalibration magnitude
 % B. effect of increasing sensory noise of one modality, \tau_a or \tau_v,
 % on recalibration asymmetry
 
@@ -54,7 +54,7 @@ model.mode       = 'predict';
 fileName = 'sim_pcc.mat';
 if exist(fullfile(out_dir, fileName), 'file') == 2  
     fprintf('File found! Loading %s\n', fileName);
-    load(fileName);
+    load(fullfile(out_dir, fileName));
 else
     fprintf('File does not exist. Performing simulation...\n');
 
@@ -67,7 +67,7 @@ else
         pred =  tempModel([beta, tau_a, tau_v, criterion, lambda, pcc, alpha, sigma_C1, sigma_C2], model, []);
         recal_tau_a(i,:)       = mean(pred.pss_shift, 2);
     end
-    save(fileName)
+    save(fullfile(out_dir, fileName))
 
 end
 
@@ -76,7 +76,7 @@ end
 fileName = 'sim_taus.mat';
 if exist(fullfile(out_dir, fileName), 'file') == 2  
     fprintf('File found! Loading %s\n', fileName);
-    load(fileName);  
+    load(fullfile(out_dir, fileName));  
 else
 
     fprintf('File does not exist. Performing simulation...\n');
@@ -100,7 +100,7 @@ else
         pred =  tempModel([beta, tau_a, i_tau_v, criterion, lambda, p_common, alpha, sigma_C1, sigma_C2], model, []);
         recal_tau_v(i,:)       = mean(pred.pss_shift, 2);
     end
-    save(fileName)
+    save(fullfile(out_dir, fileName))
 end
 
 

@@ -82,7 +82,7 @@ for mm = 2%1:n_model
         set(gcf, 'Position', [0,0,1000,200]);
 
         tl = tiledlayout(2,9);
-        sgtitle(sprintf('%s, S%i', specifications{mm}, sub),'FontSize',titleSZ,'FontWeight','bold')
+        sgtitle(sprintf('%s, outlier', specifications{mm}),'FontSize',titleSZ,'FontWeight','bold')
 
         for adapter = 1:9
 
