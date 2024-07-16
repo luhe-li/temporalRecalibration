@@ -235,7 +235,7 @@ for i = 1:n_level
 
     p_m_given_simul = measurementGiven0(x_axis, beta, i_tau_a, tau_v);
 
-    plot(x_axis, p_m_given_simul,'-','LineWidth',lw);
+    plot(x_axis, p_simul_lapse,'-','LineWidth',lw);
 
 end
 
@@ -245,9 +245,6 @@ yticks([])
 flnm = 'sim_inset';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
 
-% aa = -200:200;
-% b = p_m_given_simul .* aa;
-% figure; plot(x_axis, b);
 
 %% utility functions
 
@@ -259,8 +256,8 @@ function p = measurementGiven0(soa_m, tau, sigma_a, sigma_v)
 p = zeros(size(soa_m));
 % right side of measurement distribution
 bool_m = soa_m > tau;
-p(bool_m) = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (soa_m(bool_m) - tau));
+p(bool_m) = (1/(sigma_a + sigma_v)).* exp(-1/sigma_a .* (soa_m(bool_m) - tau));
 % left side of measurement distribution
-p(~bool_m) = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (soa_m(~bool_m) - tau));
+p(~bool_m) = (1/(sigma_a + sigma_v)).* exp(1/sigma_v .* (soa_m(~bool_m) - tau));
 
 end
