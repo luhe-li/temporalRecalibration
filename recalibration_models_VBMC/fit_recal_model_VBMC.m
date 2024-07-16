@@ -1,24 +1,17 @@
-function fit_recal_model_VBMC(i_model, useCluster)
+function fit_recal_model_VBMC(i_model, useCluster, sub)
 
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
 
 %% set environment
 
-% exclude outlier
-if i_model == 3
-sub_slc = [6,7,8];
-elseif i_model == 4
-sub_slc = [1,2,8,10];
-else
 sub_slc = [1:4, 6:10];
-end
 
 if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster= false;
@@ -45,7 +38,6 @@ switch useCluster
     case false
         % for local debug
         numCores = feature('numcores');
-        sub = 1;
 end
 
 
@@ -148,7 +140,7 @@ model.mode       = 'predict';
 pred =  currModel(diag.post_mean, model, data);
 
 %% save the data for each participant
-save(fullfile(outDir, sprintf('sub-%i_%s', sub, datestr(datetime('now')))),'data','model','diag','pred')
+save(fullfile(outDir, sprintf('sub-%02d_%s', sub, datestr(datetime('now')))),'data','model','diag','pred')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))

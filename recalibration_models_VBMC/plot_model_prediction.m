@@ -29,7 +29,7 @@ model_slc = 1:4;
 n_model = numel(model_slc);
 sub_slc = [1:4, 6:10];
 save_fig = 1;
-plotTOJ = 0;
+plotTOJ = 1;
 
 for mm = 1:n_model
     result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
@@ -69,7 +69,7 @@ end
 
 %% load bootstrap results of atheoretical models
 
-btst_data = load_subject_data(dataDir, sub_slc, 'diag_btst_sub-*');
+btst_data = load_subject_data(result_folder, sub_slc, 'diag_btst_sub-*');
 
 btst_pss = [];
 for ss = 1:numel(sub_slc)
@@ -224,7 +224,7 @@ for mm = 1:n_model
 
         if ss == numel(sub_slc)
            legend([blackL, redL],{'Data','Model prediction'})
-           saveas(gca, fullfile(out_dir, sprintf('M-%s_indiv_recal', folders{mm})),'pdf')
+           saveas(gca, fullfile(out_dir, sprintf('M-%s_indiv_recal', folders{mm})),'png')
         end
         
     end
