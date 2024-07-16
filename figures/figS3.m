@@ -7,6 +7,8 @@ clear; clc; close all;
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[tempDir, ~] = fileparts(projectDir);
+dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 out_dir = fullfile(currentDir, mfilename);
@@ -19,33 +21,15 @@ sub_slc = [1:4,6:10];
 %% load bootstrapped results, extract pss_shift and calculate asymmetry index
 
 result_folder = fullfile(projectDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
-files = dir(fullfile(result_folder, 'diag_btst_sub-*'));
+atheo_btst = load_subject_data(result_folder, exp_sub, 'diag_btst_sub-*');
 
 for ss = 1:numel(sub_slc)
 
-    % Find the file that matches 'sub-XX'
-    sub_str = sprintf('%02d', sub_slc(ss));
-    file_name = '';
-    for file = files'
-        if contains(file.name, ['sub-', sub_str])
-            file_name = file.name;
-            break;
-        end
-    end
-
-    if ~isempty(file_name)
-        
-        btst = load(fullfile(result_folder, file_name));
-
         % Get asymmetry index of each bootstrap trials
-        for jj = 1:numel(btst.pred)
-            btst_ai(ss, jj)= sum(btst.pred{jj}.pss_shift);
+        for jj = 1:numel(atheo_btst{ss}.pred)
+            btst_ai(ss, jj)= sum(atheo_btst{ss}.pred{jj}.pss_shift);
         end
         [CI_lb(ss), CI_ub(ss)]  = get95CI(btst_ai(ss,:));
-
-    else
-        error('File for sub-%s not found.', sub_str);
-    end
 
 end
 

@@ -15,11 +15,14 @@ model_info = table(numbers, specifications', folders', 'VariableNames', {'Number
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[tempDir, ~] = fileparts(projectDir);
+dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
+
 
 %% load recal models
 
@@ -28,56 +31,19 @@ model_slc = 1;
 sub_slc = [1:4,6:10];
 num_ses = 9;
 
-result_folder = fullfile(projectDir, 'recalibration_models_VBMC', folders{model_slc});
-files = dir(fullfile(result_folder, 'sub-*'));
+result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{model_slc});
+R = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 for ss = 1:numel(sub_slc)
 
-        % Find the file that matches 'sub-XX'
-        sub_str = sprintf('%02d', sub_slc(ss));
-        file_name = '';
-        for file = files'
-            if contains(file.name, ['sub-', sub_str])
-                file_name = file.name;
-                break;
-            end
-        end
-
-        % Load the data if the file was found
-        if ~isempty(file_name)
-            i_data = load(fullfile(result_folder, file_name));
-            pred{ss} = i_data.pred;
-        else
-            error('File for sub-%s not found.', sub_str);
-        end
+    pred{ss} = R{ss}.pred;
 
 end
 
 %% load atheoretical model
 
-athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
-files = dir(fullfile(athe_path, 'sub-*'));
-
-for ss = 1:numel(sub_slc)
-
-    % Find the file that matches 'sub-XX'
-    sub_str = sprintf('%02d', sub_slc(ss));
-    file_name = '';
-    for file = files'
-        if contains(file.name, ['sub-', sub_str])
-            file_name = file.name;
-            break;
-        end
-    end
-
-    % Load the data if the file was found
-    if ~isempty(file_name)
-        A(ss) = load(fullfile(athe_path, files(ss).name)); 
-    else
-        error('File for sub-%s not found.', sub_str);
-    end
-
-end
+result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -111,7 +77,7 @@ for  ss  = 1:numel(sub_slc)
         set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
 
         % data
-        scatter(A(ss).data(adapter).pre_ms_unique, A(ss).data(adapter).pre_pResp, dotSZ, 'filled');
+        scatter(atheo(ss).data(adapter).pre_ms_unique, atheo(ss).data(adapter).pre_pResp, dotSZ, 'filled');
 
         % prediction
         plot(pred{ss}.test_soa, pred{ss}.pre_pmf, 'LineWidth',lw)
@@ -132,7 +98,7 @@ for  ss  = 1:numel(sub_slc)
         set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
 
         % data
-        scatter(A(ss).data(adapter).post_ms_unique, A(ss).data(adapter).post_pResp, dotSZ, 'filled');
+        scatter(atheo(ss).data(adapter).post_ms_unique, atheo(ss).data(adapter).post_pResp, dotSZ, 'filled');
 
         % prediction
         plot(pred{ss}.test_soa, squeeze(pred{ss}.post_pmf(adapter,:,:)),'LineWidth',lw)

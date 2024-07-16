@@ -53,6 +53,8 @@ for aa = 1:numel(adapted_soas)
         estimated_SOA(j) = SOA_hyp(max_idx);
     end
 
+    [~, idx] = min(abs(estimated_SOA));
+    PSS(aa) = stimulus_SOA(idx);
     bias(aa, :) = estimated_SOA - stimulus_SOA;
 end
 
@@ -127,8 +129,8 @@ subplot(2,2,4); hold on
 set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
 set(gca, 'FontName', 'Helvetica');
 hold on
-plot(adapted_soas, mean(bias, 2), 'k','LineWidth', 1);
-ylim([-5, 5])
+plot(adapted_soas, PSS, 'k','LineWidth', 1);
+ylim([-60, 60])
 xlabel('Adapter SOA (ms)');
 ylabel('Mean bias across stimulus SOA (ms)');
 grid on;

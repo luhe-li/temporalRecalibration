@@ -24,12 +24,12 @@ idx_exp_exp = 6;
 exp_adp = 2;
 
 result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
-R = load_subject_data(result_folder, sub_slc, 'sub-*');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 for ss = 1:numel(sub_slc)
 
-    pred{ss} = R{ss}.pred;
-    toj_pss(ss, :) = R{ss}.pred.pss_shift;
+    pred{ss} = atheo{ss}.pred;
+    toj_pss(ss, :) = atheo{ss}.pred.pss_shift;
 
 end
 
@@ -49,12 +49,12 @@ end
 %% Get confidence interval from bootstrapped data for selected subject and adaptor
 
 % Load bootstrap data
-R_btst = load_subject_data(result_folder, exp_sub, 'diag_btst_sub-*');
+atheo_btst = load_subject_data(result_folder, exp_sub, 'diag_btst_sub-*');
 
 % Get pmf for each bootstrap trial
-for jj = 1:numel(R_btst{1}.pred)
-    btst_pre_pmf(jj, :, :) = R_btst{1}.pred{jj}.pre_pmf{exp_adp};
-    btst_post_pmf(jj, :, :) = R_btst{1}.pred{jj}.post_pmf{exp_adp};
+for jj = 1:numel(atheo_btst{1}.pred)
+    btst_pre_pmf(jj, :, :) = atheo_btst{1}.pred{jj}.pre_pmf{exp_adp};
+    btst_post_pmf(jj, :, :) = atheo_btst{1}.pred{jj}.post_pmf{exp_adp};
 end
 
 % Get confidence interval for each response type, each time point

@@ -14,42 +14,25 @@ model_info = table(numbers, specifications', folders', 'VariableNames', {'Number
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[tempDir, ~] = fileparts(projectDir);
+dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load atheoretical results
 
 save_fig = 1;
-n_model = numel(folders);
-sub_slc = '05';
+sub_slc = 5;
 
-for mm = 2
-
-    result_folder = fullfile(projectDir, 'atheoretical_models_VBMC', folders{mm});
-    files = dir(fullfile(result_folder, 'sub-*'));
-
-    file_name = '';
-    for file = files'
-        if contains(file.name, ['sub-', sub_slc])
-            file_name = file.name;
-            break;
-        end
-    end
-    if ~isempty(file_name)
-        i_data = load(fullfile(result_folder, file_name));
-        pred = i_data.pred;
-    else
-        error('File for sub-%s not found.', sub_str);
-    end
-end
+result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
+pred = atheo{1}.pred;
 
 % reorganize data
-
 for  ses  = 1:9
-    tempD(ses)  = organizeData(str2num(sub_slc), ses);
+    tempD(ses)  = organizeData(sub_slc, ses);
 end
 [sorted_adaptor_soa, order] = sort([tempD.adaptor_soa]);
 D.data = tempD(order);

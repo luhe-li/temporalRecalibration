@@ -14,45 +14,27 @@ model_info = table(numbers, specifications', folders', 'VariableNames', {'Number
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[tempDir, ~] = fileparts(projectDir);
+dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
-%% load
+%% load different atheoretical models
 
 n_model = numel(folders);
 sub_slc = [1:4,6:10];
 
 for mm = 1:n_model
 
-    result_folder = fullfile(projectDir, 'atheoretical_models_VBMC', folders{mm});
-    files = dir(fullfile(result_folder, 'sub-*'));
+    result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', folders{mm});
+    atheo(mm) = load_subject_data(result_folder, sub_slc, 'sub-*');
 
     for ss = 1:numel(sub_slc)
 
-        % Find the file that matches 'sub-XX'
-        sub_str = sprintf('%02d', sub_slc(ss));
-        file_name = '';
-        for file = files'
-            if contains(file.name, ['sub-', sub_str])
-                file_name = file.name;
-                break;
-            end
-        end
-
-        % Load the data if the file was found
-        if ~isempty(file_name)
-            i_data = load(fullfile(result_folder, file_name));
-            DATA(mm, ss) = i_data;
-            log_model_evi(mm, ss) = i_data.diag.bestELCBO;
-            bestP{mm, ss} = i_data.diag.post_mean;
-            pred{mm, ss} = i_data.pred;
-
-        else
-            error('File for sub-%s not found.', sub_str);
-        end
+            log_model_evi(mm, ss) = atheo{mm, ss}.diag.bestELCBO;
+            
     end
 
 end
