@@ -95,7 +95,7 @@ flnm = 'ModelEvidence_recal_models';
 saveas(gca, fullfile(out_dir, flnm),'png')
 
 %% 3. plot group log bayes factor
-order = [2, 1, 4, 3];
+order = [2, 1, 4, 3, 6, 5];
 delta = log_model_evi(order, :) - log_model_evi(2, :);
 m_delta = mean(delta, 2);
 se_delta = std(delta, [], 2) ./ numel(sub_slc);
@@ -108,7 +108,6 @@ bar_handle = bar(m_delta, 'FaceColor', [0.8, 0.8, 0.8], 'EdgeColor', 'none','Bar
 errorbar(m_delta, se_delta, 'k', 'LineStyle', 'none', 'CapSize', 0);
 yticks([0:10:40])
 ylim([0, 45])
-xlim([0.5, 4.5])
 
 xticks(1:length(m_delta));
 labels = specifications(order);

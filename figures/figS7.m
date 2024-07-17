@@ -1,3 +1,6 @@
+% fig S7: parameter recovery of causal-inference model with asymmetrical
+% likelihood
+
 clear; close all;
 
 %% manage path
@@ -26,11 +29,20 @@ end
 % info
 model_str = r.model.currModelStr;
 paraID = r.model.initVal.paraID;
+paraID{4} = 'criterion';
 num_para = numel(paraID);
 lb = r.model.initVal.lb;
 ub = r.model.initVal.ub;
 
-%% %%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+lw = 0.5;
+fontSZ = 7;
+titleSZ = 9;
+dotSZ = 10;
+
+figure;
+set(gcf, 'Position', [0, 0, 420, 300]);
 
 nPlot = num_para;
 nRow  = ceil(sqrt(nPlot));
@@ -40,10 +52,13 @@ if nPlot <= (nRow*nCol)-nCol, nRow = nRow-1; end
 for jj = 1:num_para
 
     subplot(nRow,nCol,jj);
+    set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
+    set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
+    set(gca, 'FontName', 'Helvetica');
     axis square;
     axis equal
     hold on
-    scatter(gt(:,jj), est(:,jj),50,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    scatter(gt(:,jj), est(:,jj),20,'MarkerEdgeColor','k','MarkerFaceColor','none');
     xlim([lb(jj) ub(jj)])
     ylim([lb(jj) ub(jj)])
 
@@ -53,7 +68,7 @@ for jj = 1:num_para
     y_limits = ax.YLim;
     line_min = min([x_limits y_limits]);
     line_max = max([x_limits y_limits]);
-    plot([line_min line_max], [line_min line_max], 'k--', 'LineWidth', 1);
+    plot([line_min line_max], [line_min line_max], 'k--', 'LineWidth', lw);
 
     % Calculate the Pearson correlation coefficient and p-value
     [R, P] = corrcoef(gt(:, jj), est(:, jj));
@@ -63,12 +78,16 @@ for jj = 1:num_para
     p_value = P(1,2);
 
     % Label the r and p in the title
-    title(sprintf('%s: r= %.2f, p=%.3f', paraID{jj}, r, p_value));
+    title(sprintf('%s \n r= %.2f, p=%.3f', paraID{jj}, r, p_value),'FontSize',fontSZ,'FontWeight','normal');
 
     if jj == 4
-        ylabel('Prediction')
+        ylabel('Prediction','FontSize',titleSZ,'FontWeight','bold')
     elseif jj == 8
-        xlabel('Ground-truth')
+        xlabel('Ground-truth','FontSize',titleSZ,'FontWeight','bold')
     end
 
 end
+
+% Save figure
+flnm = 'param_recovery';
+saveas(gcf, fullfile(out_dir, flnm), 'pdf');

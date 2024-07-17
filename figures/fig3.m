@@ -97,8 +97,7 @@ for mm = 1:2
     set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
     %     axis equal
     set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
-    set(gca, 'FontName', 'Helvetica Neue');
-    set(gca, 'FontWeight', 'Light');
+    set(gca, 'FontName', 'Helvetica');
 
     e = errorbar(adaptor_soa, mean_toj_pss, se_toj_pss, ...
         'o','LineWidth', 1.5);

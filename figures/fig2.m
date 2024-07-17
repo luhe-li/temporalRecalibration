@@ -133,12 +133,12 @@ xticklabels(x_ticks./1000);
 yticks(y_ticks);
 xtickangle(60);
 yticklabels(y_ticks);
-xlabel('Test SOA (s)', 'FontName', 'Helvetica', 'FontWeight', 'Light');
-ylabel('Probability', 'FontName', 'Helvetica', 'FontWeight', 'Light');
+xlabel('Test SOA (s)', 'FontName', 'Helvetica');
+ylabel('Probability', 'FontName', 'Helvetica');
 
 %% B. Group behavior
 subplot(1, 2, 2);
-set(gca, 'Position', [0.65, 0.2, 0.3, 0.8], 'LineWidth', lw, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica', 'FontWeight', 'Light');
+set(gca, 'Position', [0.65, 0.2, 0.3, 0.8], 'LineWidth', lw, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica');
 hold on;
 
 % Group
@@ -154,12 +154,12 @@ ylim([-yl, yl]);
 yticks([-yl, 0, yl]);
 yticklabels([-yl, 0, yl] ./ 1e3);
 yline(0, '--', 'LineWidth', lw);
-ylabel('Recalibration effect (s)', 'FontName', 'Helvetica', 'FontWeight', 'Light');
+ylabel('Recalibration effect (s)', 'FontName', 'Helvetica')
 xticks(adaptor_soa);
 xticklabels(adaptor_soa / 1e3);
 xtickangle(60);
 xlim([min(adaptor_soa) - 50, max(adaptor_soa) + 50]);
-xlabel('Adaptor SOA (s)', 'FontName', 'Helvetica', 'FontWeight', 'Light');
+xlabel('Adaptor SOA (s)', 'FontName', 'Helvetica');
 set(gca, 'TickDir', 'out');
 
 % Save figure
