@@ -167,10 +167,11 @@ model.exitflag = exitflag;
 model.output = output;
 
 for sim_m = 1:numCores
-    model.ELCO(sim_m, fit_m, sample) = model.elbo(sim_m) - 3*model.elbo_sd(sim_m);
+    summ.bestELCBO(sim_m, fit_m, sample) = model.elbo(sim_m) - 3*model.elbo_sd(sim_m);
+    summ.bestELBO(sim_m, fit_m, sample) = model.elbo(sim_m);
 end
 
-save(fullfile(outDir, sprintf('fitM%02d_sample-%02d_%s', fit_m, sample, datestr(datetime('now')))),'fake_data','model')
+save(fullfile(outDir, sprintf('fitM%02d_sample-%02d_%s', fit_m, sample, datestr(datetime('now')))),'fake_data','model','summ')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))
