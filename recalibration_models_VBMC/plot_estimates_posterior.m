@@ -56,7 +56,7 @@ for mm = 1:n_model
     est_mean                         = mean(est);
     est_std                          = std(est)./sqrt(numel(sub_slc));
     para.data                        = round([est; est_mean; est_std; R{mm, ss}.model.initVal.lb;R{mm, ss}.model.initVal.ub],3);
-    para.tableRowLabels              = [sprintfc('S%i', 1:numel(sub_slc)),'Mean','S.D.','Lower bound','Upper bound'];
+    para.tableRowLabels              = [sprintfc('S%i', 1:numel(sub_slc)),'Mean','S.E.','Lower bound','Upper bound'];
     para.tableColLabels              = R{mm, ss}.model.initVal.paraID;
 
     % save best parameter estimates

@@ -12,7 +12,7 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 
 %% load results
 
-results_folder           = fullfile(dataDir,'recalibration_models_VBMC','parameter_recovery');
+results_folder           = fullfile(dataDir,'recalibration_models_VBMC','param_recovery');
 files = dir(fullfile(results_folder, 'sample-*'));
 
 for jj = 1:size(files)

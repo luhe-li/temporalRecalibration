@@ -53,22 +53,6 @@ for ses = 1:9
     data(ses) = organizeData(1, ses);
 end
 
-%% sample ground-truth from best parameter estimates
-
-sub_slc = [1:4,6:10];
-recal_folder = fullfile(projectDir, 'recalibration_models_VBMC', currModelStr);
-files = dir(fullfile(recal_folder, 'sub-*'));
-for ss = 1:numel(sub_slc)
-    i_sub = sub_slc(ss);
-    i_data = load(fullfile(recal_folder, files(ss).name));
-    bestP(ss,:) = i_data.diag.post_mean;
-end
-mu_GT = mean(bestP, 1);
-sd_GT = sqrt((bestP - mu_GT).^2./numel(sub_slc));
-num_sample = 1; % for each job, sample once
-GT_samples = sampleGT(mu_GT, sd_GT, num_sample);
-fprintf('[%s] GT:%i', mfilename, GT_samples);
-
 %% define model
 
 % set fixed & set-up parameters
@@ -92,9 +76,23 @@ options = vbmc('defaults');
 options.MaxFunEvals = 500;
 options.TolStableCount = 15;
 
-%% simualte data and fit model
+%% sample ground-truth from best parameter estimates
+
+sub_slc = [1:4,6:10];
+result_folder = fullfile(projectDir, 'recalibration_models_VBMC', currModelStr);
+R = load_subject_data(result_folder, sub_slc, 'sub-*');
+for ss = 1:numel(sub_slc)
+    bestP(ss,:) = R{ss}.diag.post_mean;
+end
+mu_GT = mean(bestP, 1);
+sd_GT = std(bestP, [], 1);
+num_sample = 1; % for each job, sample once
 
 currModel = str2func(['nll_' currModelStr]);
+model.mode = 'initialize';
+Val = currModel([], model, []);
+GT_samples = generate_samples(Val, mu_GT, sd_GT, num_sample);
+fprintf('[%s] GT: %.2f', mfilename, GT_samples);
 
 %% simulation
 
@@ -164,40 +162,41 @@ end
 
 %% utility functions
 
-function [samples] = sampleGT(mean_values, sd_values, num_sample)
+function samples = generate_samples(Val, mean_values, sd_values, num_sample)
+% Extract the parameter IDs
+paraIds = Val.paraID;
 
-% Initialize the matrix to store the sampled values
-samples = zeros(num_sample, 9);
+% Initialize the samples matrix
+num_parameters = length(paraIds);
+samples = zeros(num_parameters, num_sample);
 
-% Parameters '\tau' are normally distributed
-samples(:, 1) = normrnd(mean_values(1), sd_values(1), [num_sample, 1]);
+% Loop through each parameter
+for i = 1:num_parameters
+    paraId = paraIds{i};
 
-% Parameters '\sigma_{A}', '\sigma_{V}', 'criterion', '\sigma_{C1}', '\sigma_{C2}' are log-normally distributed
-m = [mean_values(2), mean_values(3), mean_values(4), mean_values(8), mean_values(9)];
-v = [sd_values(2:4), sd_values(8), sd_values(9)].^2; % variance
-log_mu = log((m.^2)./sqrt(v+m.^2));
-log_sigma = sqrt(log(v./(m.^2)+1));
-samples(:, 2) = lognrnd(log_mu(1), log_sigma(1), [num_sample, 1]);
-samples(:, 3) = lognrnd(log_mu(2), log_sigma(2), [num_sample, 1]);
-samples(:, 4) = lognrnd(log_mu(3), log_sigma(3), [num_sample, 1]);
-samples(:, 8) = lognrnd(log_mu(4), log_sigma(4), [num_sample, 1]);
-samples(:, 9) = lognrnd(log_mu(5), log_sigma(5), [num_sample, 1]);
+    switch paraId
+        case '\tau'
+            % Case 1: For 'tau'
+            samples(i, :) = normrnd(mean_values(i), sd_values(i), [1, num_sample]);
 
-% Parameter 'p_{common}','\lambda','\alpha' are bounded in a range, sampled from a truncated normal distribution
-lambda_samples = normrnd(mean_values(5), sd_values(5), [num_sample, 1]);
-p_common_samples = normrnd(mean_values(6), sd_values(6), [num_sample, 1]);
-alpha_samples = normrnd(mean_values(7), sd_values(7), [num_sample, 1]);
-lambda_samples(lambda_samples < 1e-4) = 1e-4;
-lambda_samples(lambda_samples > 0.06) = 0.06;
-p_common_samples(p_common_samples < 0) = 0;
-p_common_samples(p_common_samples > 1) = 1;
-alpha_samples(alpha_samples < 1e-4) = 1e-4;
-alpha_samples(alpha_samples > 0.02) = 0.02;
+        case {'\sigma_{A}', '\sigma_{V}', '\sigma', 'c', '\sigma_{C=1}', '\sigma_{C=2}'}
+            % Case 2: For 'sigma_a', 'sigma_v', 'sigma', 'criterion', 'sigma_C1', 'sigma_C2'
+            v = sd_values(i).^2;
+            log_mu = log((mean_values(i).^2) ./ sqrt(v + mean_values(i).^2));
+            log_sigma = sqrt(log(v ./ (mean_values(i).^2) + 1));
+            samples(i, :) = lognrnd(log_mu, log_sigma, [1, num_sample]);
 
-samples(:, 5) = lambda_samples;
-samples(:, 6) = p_common_samples;
-samples(:, 7) = alpha_samples;
+        case {'p_{common}', '\lambda', '\alpha'}
+            % Case 3: For 'p_{common}', '\lambda', '\alpha'
+            param_samples = normrnd(mean_values(i), sd_values(i), [1, num_sample]);
+            param_samples(param_samples < Val.lb(i)) = Val.lb(i);
+            param_samples(param_samples > Val.ub(i)) = Val.ub(i);
+            samples(i, :) = param_samples;
 
+        otherwise
+            error('Unknown parameter ID: %s', paraId);
+    end
+end
 end
 
 function fake_data = simulateData(pred, data)

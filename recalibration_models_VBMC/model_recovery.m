@@ -13,7 +13,7 @@ currModelStr = model_info.FolderName{fit_m};
 
 %% set environment
 
-useCluster = false;
+useCluster = true;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -106,7 +106,7 @@ for sim_m = 1:numCores
         bestP(ss,:) = R{ss}.diag.post_mean;
     end
     mu_GT = mean(bestP, 1);
-    sd_GT = sqrt((bestP - mu_GT).^2./numel(sub_slc));
+    sd_GT = std(bestP, [], 1);
     num_sample = 1; % for each job, randomly sample once
     GT_samples{sim_m} = generate_samples(Val, mu_GT, sd_GT, num_sample);
     
