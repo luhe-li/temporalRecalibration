@@ -1,5 +1,7 @@
 % parameter recovery of the causal-inference, asymmetrical likelihood model
 
+clear; close all; rng('shuffle');
+
 %% set environment
 
 currModelStr = 'cauInf_asym';
@@ -65,6 +67,7 @@ mu_GT = mean(bestP, 1);
 sd_GT = sqrt((bestP - mu_GT).^2./numel(sub_slc));
 num_sample = 1; % for each job, sample once
 GT_samples = sampleGT(mu_GT, sd_GT, num_sample);
+fprintf('[%s] GT:%i', mfilename, GT_samples);
 
 %% define model
 
@@ -136,7 +139,7 @@ model.exitflag = exitflag;
 model.output = temp_output;
 
 % save in case diagnosis fails
-save(fullfile(outDir, sprintf('sample-%i_%s', recov_run, datestr(datetime('now')))),'fake_data','model')
+save(fullfile(outDir, sprintf('sample-%02d', recov_run)),'fake_data','model')
 
 % evaluate fits
 [diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
@@ -152,7 +155,7 @@ summ.gt = GT_samples;
 summ.est = diag.post_mean;
 
 %% save the data for each fit
-save(fullfile(outDir, sprintf('sample-%i_%s', recov_run, datestr(datetime('now')))),'fake_data','model', 'diag','summ')
+save(fullfile(outDir, sprintf('sample-%02d', recov_run)),'fake_data','model', 'diag','summ')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))
