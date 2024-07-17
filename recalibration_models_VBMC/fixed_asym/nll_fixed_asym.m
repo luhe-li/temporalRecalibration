@@ -11,7 +11,7 @@ if strcmp(model.mode, 'initialize')
     paraH.sigma_v  = [  10,   200]; % ms
     paraH.criterion= [   1,   350]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
-    paraH.alpha    = [ 0.5,   3.5]; % percentage
+    paraH.alpha    = [1e-4,  0.02]; % percentage
 
     % soft bounds, the range for PLB, PUB
     paraS.tau      = [ -40,    40]; % ms
@@ -19,7 +19,7 @@ if strcmp(model.mode, 'initialize')
     paraS.sigma_v  = [  20,    50]; % ms
     paraS.criterion= [  30,    80]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
-    paraS.alpha    = [   1,     2]; % percentage
+    paraS.alpha    = [1e-3,  2e-3]; % percentage
 
     % reorganize parameter bounds 
     fn = fieldnames(paraH);

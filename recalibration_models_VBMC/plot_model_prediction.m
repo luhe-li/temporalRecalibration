@@ -5,8 +5,8 @@ clear; clc; close all;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','exp_shiftMu'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Atheoretical'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -25,11 +25,11 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recalibration model results
 
-model_slc = 1:4;
+model_slc = 1:6;
 n_model = numel(model_slc);
 sub_slc = [1:4, 6:10];
 save_fig = 1;
-plotTOJ = 1;
+plotTOJ = 0;
 
 for mm = 1:n_model
     result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
@@ -107,7 +107,7 @@ figure;
 set(gcf, 'Position',[0,0,420,130]);
 set(gcf, 'DefaultAxesFontName', 'Helvetica');
 set(gcf, 'DefaultTextFontName', 'Helvetica');
-t = tiledlayout(1,4,'Padding', 'compact', 'TileSpacing', 'compact');
+t = tiledlayout(1,6,'Padding', 'compact', 'TileSpacing', 'compact');
 
 yl = 100;
 ytks = {[], [], [], [-yl, 0, yl]};

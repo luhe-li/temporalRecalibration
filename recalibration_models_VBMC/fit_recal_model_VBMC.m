@@ -124,7 +124,7 @@ model.exitflag = exitflag;
 model.output = temp_output;
 
 % save incase diagnosis fails
-save(fullfile(outDir, sprintf('sub-%i_%s', sub, datestr(datetime('now')))),'data','model')
+save(fullfile(outDir, sprintf('sub-%02d_%s', sub)),'data','model')
 
 % evaluate fits
 [diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
@@ -140,7 +140,7 @@ model.mode       = 'predict';
 pred =  currModel(diag.post_mean, model, data);
 
 %% save the data for each participant
-save(fullfile(outDir, sprintf('sub-%02d_%s', sub, datestr(datetime('now')))),'data','model','diag','pred')
+save(fullfile(outDir, sprintf('sub-%02d_%s', sub)),'data','model','diag','pred')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))

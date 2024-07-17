@@ -4,8 +4,8 @@ clear; close all; clc;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','exp_shiftMu'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Atheoretical'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -24,7 +24,7 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recal models
 
-model_slc = 1:4;%[1,2,5];
+model_slc = 1:6;
 n_model = numel(model_slc);
 sub_slc = [1:4,6:10];
 
@@ -36,7 +36,6 @@ for mm = 1:n_model
         log_model_evi(mm, ss) = R{mm, ss}.diag.bestELCBO;
     end
 end
-
 
 %% load atheoretical model
 
@@ -75,7 +74,7 @@ saveas(gca, fullfile(out_dir, flnm),'png')
 %% 2. plot model evidence within recalibration model
 
 % max subtract other log model evidence
-delta_LME = max(log_model_evi(1:4,:), [], 1) - log_model_evi(1:4,:); 
+delta_LME = max(log_model_evi(model_slc,:), [], 1) - log_model_evi(model_slc,:); 
 
 figure
 h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
@@ -85,7 +84,7 @@ h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
 colorbar;
 %     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
 
-h.YDisplayLabels = specifications(1:4);
+h.YDisplayLabels = specifications(model_slc);
 h.XDisplayLabels = num2cell(1:numel(sub_slc));
 
 % save figure

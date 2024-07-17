@@ -4,9 +4,9 @@ function model_recovery(fit_m)
 
 %% select models
 
-rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym'}; % Column 3: folder names
+rng('shuffle'); rng('Shuffle');
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{fit_m};
@@ -39,7 +39,7 @@ switch useCluster
         end
 
     case false
-        numCores = 4;
+        numCores = 6;
         sample = 1;
 end
 
@@ -110,7 +110,6 @@ for sim_m = 1:numCores
     num_sample = 1; % for each job, randomly sample once
     GT_samples{sim_m} = generate_samples(Val, mu_GT, sd_GT, num_sample);
     
-
 end
 
 parfor sim_m = 1:numCores
