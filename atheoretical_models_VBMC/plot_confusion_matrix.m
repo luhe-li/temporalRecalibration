@@ -64,3 +64,28 @@ set(gcf, 'Position',[0 0 400 110])
 
 flnm = 'modelEvidence_atheo_models';
 saveas(gca, fullfile(out_dir, flnm),'png')
+
+%% 2. plot group log bayes factor
+
+% max subtract other log model evidence
+delta = log_model_evi - log_model_evi(4,:); 
+m_delta = mean(delta, 2);
+se_delta = std(delta, [], 2) ./ numel(sub_slc);
+
+figure;
+set(gca, 'FontSize', 8)
+set(gcf, 'Position',[0 0 420 250])
+hold on;
+bar_handle = bar(m_delta, 'FaceColor', [0.8, 0.8, 0.8], 'EdgeColor', 'none','BarWidth', 0.6);
+errorbar(m_delta, se_delta, 'k', 'LineStyle', 'none', 'CapSize', 0);
+yticks([0:10:40])
+ylim([0, 45])
+
+xticks(1:length(m_delta));
+labels = specifications(order);
+labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
+xticklabels(labels);
+ylabel({'\Delta log model evidence'; 'relative to heuristic-asymmetric model'});
+
+flnm = 'group_log_model_evidence';
+saveas(gca, fullfile(out_dir, flnm),'png')
