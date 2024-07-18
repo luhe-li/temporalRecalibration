@@ -1,4 +1,4 @@
-% fig S15: data analysis of the oddball-detection task
+% fig S13: data analysis of the oddball-detection task
 
 clear; clc; close all;
 

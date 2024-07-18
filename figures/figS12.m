@@ -1,4 +1,4 @@
-% fig S11: simulation of recalibration effect by neural population code
+% fig S12: simulation of recalibration effect by neural population code
 % model by Roach, Heron, Whitaker, & McGraw (2011).
 
 clear; clc; close all;

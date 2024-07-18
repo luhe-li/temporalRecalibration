@@ -114,83 +114,85 @@ ylabel(ax, 'Probability');
 flnm = 'AB_exponential';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
 
-%% C. Causal inference model
+%% C. Illustration of models
 
-figure('Position', [0, 0, 420, 180]);
-
-%% D & E. Heuristic model and Fixed-update model
-
-figure('Position', [0, 0, 420, 180]);
-
-positions = [
-    0.05, 0.55, 0.2, 0.35;   % [left, bottom, width, height] for subplot 1
-    0.3, 0.55, 0.2, 0.35;   % [left, bottom, width, height] for subplot 2
-    0.7, 0.55, 0.2, 0.35;    % [left, bottom, width, height] for subplot 3
-    0.05, 0.1, 0.2, 0.35;    % [left, bottom, width, height] for subplot 4
-    0.3, 0.1, 0.2, 0.35;    % [left, bottom, width, height] for subplot 5
-    0.7, 0.1, 0.2, 0.35;     % [left, bottom, width, height] for subplot 6
-];
+%% simulation
 
 tau = 0;
 sigma_a = 60;
 sigma_v = 80;
+criterion = 77.23;
+lambda = 0.018;
+p_common = 0.5;
+alpha = 0.0052;
+sigma_C1 = 51.9;
+sigma_C2 = 261.39;
+
+lw = 0.5;
 adapter = [-0.7:0.05:0.7];
 xtks = [-0.7, 0, 0.7];
 x_axis = -0.7:0.01:0.7;
 
-subplot('Position', positions(1, :));
-set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
-plot(adapter, adapter,'k','LineWidth',lw)
-xticks(xtks)
-ylim([-0.7, 0.7])
-yticks(xtks)
-xlabel('Adapter SOA (s)')
-ylabel('Measurement (s)')
-
-subplot('Position', positions(2, :));
-set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
-p_m_given_simul = measurementGiven0(x_axis*1e3, tau, sigma_a, sigma_v);
-plot(x_axis, p_m_given_simul,'k','LineWidth',lw);
-xticks(xtks)
-xticklabels(xtks)
-ylim([0 max(p_m_given_simul)*1.3])
-yticks([])
-xlabel('Measurement (s)')
-ylabel('Probability')
-
-subplot('Position', positions(3, :));
-set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
+% heuristic model
 p = measurementGiven0(adapter*1e3, tau, sigma_a, sigma_v);
-plot(adapter, adapter.* p * 3,'k','LineWidth',lw);
-yline(0)
-ylim([-0.001, 0.001])
-xticks(xtks)
-xlabel('Adapter SOA (s)')
-ylabel('Recalibration (s)')
 
-subplot('Position', positions(4, :));
-set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
-plot(adapter, adapter,'k','LineWidth',lw)
-xticks(xtks)
-ylim([-0.7, 0.7])
-yticks(xtks)
-xlabel('Adapter SOA (s)')
-ylabel('Measurement (s)')
+% causal inference model
+model.num_ses = 9;
+model.thres_R2 = 0.95;
+model.expo_num_sim = 1e2; % number of simulation for exposure phase
+model.expo_num_trial = 250; % number of *real* trials in exposure phase
+model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
+model.bound_full = 10*1e3; % in second, the bound for prior axis
+model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
+model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
+model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
+model.sim_adaptor_soa  = adapter*1e3;
+model.toj_axis_finer = 0; % simulate pmf with finer axis
+model.adaptor_axis_finer = 0; % simulate with more adpators
+model_str = 'cauInf_asym';
+[projectDir, ~]= fileparts(pwd);
+addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC',model_str)))
+currModel = str2func(['nll_' model_str]);
+model.mode       = 'predict';
+pred =  currModel([tau, sigma_a, sigma_v, criterion, lambda, p_common, alpha, sigma_C1, sigma_C2], model, []);
+recal = mean(pred.pss_shift, 2);
 
-% subplot('Position', positions(2, :));
-subplot('Position', positions(6, :));
+%% plot
+figure('Position', [0, 0, 420, 110]);
+
+subplot 131
 set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
 plot(adapter, 0.3*adapter,'k','LineWidth',lw)
-yline(0)
 xticks(xtks)
+xlim([-0.7, 0.7])
 ylim([-0.7, 0.7])
+yline(0,'--')
 yticks(xtks)
 xlabel('Adapter SOA (s)')
-ylabel('Recalibration (s)')
 
-flnm = 'DE_model';
+subplot 132
+set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
+plot(adapter, adapter.* p * 3.4,'k','LineWidth',lw);
+yline(0,'--')
+ylim([-0.001, 0.001])
+xlim([-0.7, 0.7])
+yticks([])
+xticks(xtks)
+xlabel('Adapter SOA (s)')
+
+subplot 133
+set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
+plot(adapter, recal', 'k','LineWidth',lw);
+yline(0,'--')
+ylim([-100, 100])
+xlim([-0.7, 0.7])
+yticks([])
+xticks(xtks)
+xlabel('Adapter SOA (s)')
+
+% save
+flnm = 'C_model';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
-
 
 %% utility function
 

@@ -6,7 +6,7 @@ clear; clc; close all;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Atheoretical'}; % Column 2: specifications
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Atheoretical'}; % Column 2: specifications
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
@@ -77,10 +77,37 @@ fontSZ = 7;
 titleSZ = 9;
 dotSZ = 10;
 
-%% A. plot recalibration prediction
+%% A. plot group log bayes factor
+
+order = [6,5,2, 1, 4, 3];
+delta = log_model_evi(order, :) - log_model_evi(6, :);
+m_delta = mean(delta, 2);
+se_delta = std(delta, [], 2) ./ numel(sub_slc);
 
 figure;
-set(gcf, 'Position',[0,0,420,240]);
+set(gca, 'FontSize', fontSZ)
+set(gcf, 'Position',[0 0 420 100])
+hold on;
+bar_handle = bar(m_delta, 'FaceColor', [0.8, 0.8, 0.8], 'EdgeColor', 'none','BarWidth', 0.5);
+errorbar(m_delta, se_delta, 'k', 'LineStyle', 'none', 'CapSize', 0);
+yticks(0:10:40)
+ylim([0, 45])
+
+xticks(1:length(m_delta));
+xtickangle(0)
+xlim([0.5, 6.5])
+labels = specifications(order);
+labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
+xticklabels(labels);
+ylabel({'\Delta log model evidence'; 'relative to fixed-update'; 'symmetric model'});
+
+flnm = 'A_BF';
+saveas(gca,fullfile(out_dir,flnm),'pdf')
+
+%% B. plot recalibration prediction
+
+figure;
+set(gcf, 'Position',[0,0,420,250]);
 set(gcf, 'DefaultAxesFontName', 'Helvetica Neue');
 set(gcf, 'DefaultAxesFontWeight', 'Light');
 set(gcf, 'DefaultTextFontName', 'Helvetica Neue');
@@ -89,10 +116,10 @@ t = tiledlayout(2,3,'Padding', 'compact', 'TileSpacing', 'compact');
 
 adaptor_soa = pred{1,1}.adaptor_soa; %ms
 
-order = [1,3,5,2,4,6];
+order = [6,2,4, 5,1,3];
 yl = 100;
-ytks = {[], [], [], [-yl, 0, yl]};
-ytklabels = {[], [], [], [-yl, 0, yl]./1e3};
+ytks = {[], [],[],[],[-yl, 0, yl], [-yl, 0, yl]};
+ytklabels = {[], [], [], [], [-yl, 0, yl]./1e3, [-yl, 0, yl]./1e3};
 
 for mm = order
 
@@ -132,31 +159,12 @@ for mm = order
     xtickangle(0)
     xlim([min(adaptor_soa)-50, max(adaptor_soa)+50])
 
-    title(specifications{mm},'FontSize',fontSZ,'FontWeight', 'normal');
+    title(specifications{mm},'FontSize',fontSZ,'FontWeight', 'bold');
 
 end
 
 xlabel(t, 'Adaptor SOA (s)','FontSize',titleSZ);
 ylabel(t,'Recalibration effect (s)','FontSize',titleSZ);
 
-%% 3. plot group log bayes factor
-
-order = [2, 1, 4, 3, 6, 5];
-delta = log_model_evi(order, :) - log_model_evi(2, :);
-m_delta = mean(delta, 2);
-se_delta = std(delta, [], 2) ./ numel(sub_slc);
-
-figure;
-set(gca, 'FontSize', 8)
-set(gcf, 'Position',[0 0 420 150])
-hold on;
-bar_handle = bar(m_delta, 'FaceColor', [0.8, 0.8, 0.8], 'EdgeColor', 'none','BarWidth', 0.6);
-errorbar(m_delta, se_delta, 'k', 'LineStyle', 'none', 'CapSize', 0);
-yticks(0:10:40)
-ylim([0, 45])
-
-xticks(1:length(m_delta));
-labels = specifications(order);
-labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
-xticklabels(labels);
-ylabel({'\Delta log model evidence'; 'relative to heuristic-asymmetric model'});
+flnm = 'B_model prediction';
+saveas(gca,fullfile(out_dir,flnm),'pdf')

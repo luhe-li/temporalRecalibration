@@ -1,4 +1,4 @@
-% fig S4: outlier behavior
+% fig S14: outlier behavior
 
 clear; clc; close all;
 
