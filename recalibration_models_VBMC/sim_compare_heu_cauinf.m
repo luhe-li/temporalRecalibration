@@ -251,9 +251,6 @@ saveas(gca,fullfile(out_dir,flnm),'pdf')
 
 %% utility functions
 
-% CDF of doueble exponential distribution
-% Eq.3 in García-Pérez & Alcalá-Quintana (2012)
-
 function p = measurementGiven0(soa_m, tau, sigma_a, sigma_v)
 
 p = zeros(size(soa_m));

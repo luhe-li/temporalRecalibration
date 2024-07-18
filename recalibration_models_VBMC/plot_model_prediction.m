@@ -45,12 +45,12 @@ end
 %% load atheoretical model results
 
 result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
-data = load_subject_data(result_folder, sub_slc, 'sub-*');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 % Initialize toj_pss based on the first loaded file
-toj_pss = zeros(numel(sub_slc), size(data{1}.pred.pss_shift, 2));
+toj_pss = zeros(numel(sub_slc), size(atheo{1}.pred.pss_shift, 2));
 for ss = 1:numel(sub_slc)
-    toj_pss(ss, :) = data{ss}.pred.pss_shift;
+    toj_pss(ss, :) = atheo{ss}.pred.pss_shift;
 end
 
 % Calculate group mean and standard error

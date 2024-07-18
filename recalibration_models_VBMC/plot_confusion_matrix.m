@@ -4,7 +4,7 @@ clear; close all; clc;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Atheoretical'}; % Column 2: specifications
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Atheoretical'}; % Column 2: specifications
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
@@ -95,8 +95,8 @@ flnm = 'ModelEvidence_recal_models';
 saveas(gca, fullfile(out_dir, flnm),'png')
 
 %% 3. plot group log bayes factor
-order = [2, 1, 4, 3, 6, 5];
-delta = log_model_evi(order, :) - log_model_evi(2, :);
+order = [6, 5,2, 1, 4, 3];
+delta = log_model_evi(order, :) - log_model_evi(6, :);
 m_delta = mean(delta, 2);
 se_delta = std(delta, [], 2) ./ numel(sub_slc);
 
@@ -113,7 +113,7 @@ xticks(1:length(m_delta));
 labels = specifications(order);
 labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
 xticklabels(labels);
-ylabel({'\Delta log model evidence'; 'relative to heuristic-asymmetric model'});
+ylabel({'\Delta log model evidence'; 'relative to fixed-update symmetric model'});
 
 flnm = 'group_log_model_evidence';
 saveas(gca, fullfile(out_dir, flnm),'png')

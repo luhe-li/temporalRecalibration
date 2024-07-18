@@ -16,47 +16,30 @@ addpath(genpath(fullfile(projectDir, 'utils')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
-%% load atheoretical model results
+%% set up
 
 sub_slc = [1:4,6:10];
-result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
-atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
-
-% Initialize toj_pss based on the first loaded file
-toj_pss = zeros(numel(sub_slc), size(atheo{1}.pred.pss_shift, 2));
-for ss = 1:numel(sub_slc)
-    toj_pss(ss, :) = atheo{ss}.pred.pss_shift;
-end
-
-% Calculate group mean and standard error
-mean_toj_pss = mean(toj_pss, 1, 'omitnan');
-se_toj_pss = std(toj_pss, [], 1, 'omitnan') ./ sqrt(numel(sub_slc));
 
 %% load bootstrapped results, extract pss_shift and calculate asymmetry index
 
 result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 atheo_btst = load_subject_data(result_folder, sub_slc, 'diag_btst_sub-*');
 
 for ss = 1:numel(sub_slc)
 
-    % get confidence interval of PSS
-    btst = atheo_btst{ss};
-    for jj = 1:numel(btst.pred)
-        btst_pss(jj, :) = btst.pred{jj}.pss_shift;
-        btst_ai(ss, jj)= sum(atheo_btst{ss}.pred{jj}.pss_shift);
-    end
-
-    for tt = 1:size(btst_pss, 2)
-        [pss_lb(ss, tt), pss_ub(ss, tt)] = get95CI(btst_pss(:, tt));
-    end
-    [ai_lb(ss), ai_ub(ss)]  = get95CI(btst_ai(ss,:));
+        % Get asymmetry index of each bootstrap trials
+        for jj = 1:numel(atheo_btst{ss}.pred)
+            btst_ai(ss, jj)= sum(atheo_btst{ss}.pred{jj}.pss_shift);
+        end
+        [CI_lb(ss), CI_ub(ss)]  = get95CI(btst_ai(ss,:));
 
 end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 lw = 0.5;
-fontSZ = 6;
+fontSZ = 7;
 titleSZ = 9;
 dotSZ = 10;
 
@@ -68,7 +51,7 @@ test_soa = atheo{1}.model.test_soa;
 adaptor_soa = atheo{1}.model.sim_adaptor_soa;
 
 figure;
-set(gcf, 'Position', [0,0,420,300]);
+set(gcf, 'Position', [0,0,2500,500]);
 
 for ss = 1:numel(sub_slc)
 
@@ -79,23 +62,34 @@ for ss = 1:numel(sub_slc)
 
     %% plot atheoretical prediction
 
-    l  = plot(adaptor_soa, toj_pss(ss,:),'ko', 'MarkerFaceColor','k','MarkerSize',2);
+    l  = plot(adaptor_soa, toj_pss(ss,:),'ko', 'MarkerFaceColor','k');
 
     for jj = 1:9
-        plot([adaptor_soa(jj),adaptor_soa(jj)],[pss_lb(ss, jj), pss_ub(ss, jj)],'k-','LineWidth',lw)
+        plot([adaptor_soa(jj),adaptor_soa(jj)],[-lb(ss, jj), -ub(ss, jj)],'k-','LineWidth',1)
     end
+
+    %% plot model prediction
+
+    plot(adaptor_soa, pred_recal(ss,:), '-o','LineWidth',lw, 'Color','r')
 
     % look better
     yl = 250;
     ylim([-yl, yl])
     yticks([-yl, 0, yl])
     yticklabels([-yl, 0, yl]./1e3)
-    yline(0,'--','LineWidth',lw)
+    yline(0,'--','LineWidth',1.5)
     xticks(adaptor_soa)
     xticklabels(adaptor_soa/1e3)
     xtickangle(60)
     xlim([min(adaptor_soa)-100, max(adaptor_soa)+100])
     set(gca,'TickDir','out');
+
+    if ss                              == numel(sub_slc)
+        if save_fig
+            flnm = 'indiv_recal';
+            saveas(gca, fullfile(out_dir, flnm),'pdf')
+        end
+    end
 
     if ss == 4
         ylabel('Recalibration effect (s)','FontWeight','bold','FontSize',titleSZ)
@@ -105,19 +99,20 @@ for ss = 1:numel(sub_slc)
 
 end
 
-flnm = 'A_indiv_recal';
-saveas(gca, fullfile(out_dir, flnm),'pdf')
-
 %% B. asymmetry index
 
+lw = 0.5;
+fontsz = 7;
+titleFontSz = 10;
+
 figure;
-set(gcf, 'Position', [0,0,420,100]);
-set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out');
+set(gcf, 'Position', [0,0,210,180]);
+set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
 hold on 
 
 for ss = 1:numel(sub_slc)
 
-    plot([ss,ss],  [ai_lb(ss), ai_ub(ss)],'k','LineWidth',2)
+    plot([ss,ss],  [CI_lb(ss), CI_ub(ss)],'k','LineWidth',2)
    
 end
 
@@ -128,8 +123,8 @@ yticks([-700, 0, 700])
 yticklabels([-0.7, 0, 0.7])
 xticks(1:9)
 xticklabels(1:9)
-xlabel('Participant','FontWeight','bold','FontSize',titleSZ)
-ylabel('Asymmetry index','FontWeight','bold','FontSize',titleSZ)
+xlabel('Participant')
+ylabel('Asymmetry index')
 
-flnm = 'B_asymmetry_index';
+flnm = 'asymmetry_index_ci';
 saveas(gca, fullfile(out_dir, flnm),'pdf')

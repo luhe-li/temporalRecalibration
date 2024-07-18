@@ -116,7 +116,7 @@ saveas(gca,fullfile(out_dir,flnm),'pdf')
 
 %% C. Causal inference model
 
-figure('Position', [0, 0, 420, 180]);
+
 
 %% D & E. Heuristic model and Fixed-update model
 
@@ -131,9 +131,9 @@ positions = [
     0.7, 0.1, 0.2, 0.35;     % [left, bottom, width, height] for subplot 6
 ];
 
-tau = 0;
+tau = -;
 sigma_a = 60;
-sigma_v = 80;
+sigma_v = 70;
 adapter = [-0.7:0.05:0.7];
 xtks = [-0.7, 0, 0.7];
 x_axis = -0.7:0.01:0.7;
@@ -155,7 +155,7 @@ xticks(xtks)
 xticklabels(xtks)
 ylim([0 max(p_m_given_simul)*1.3])
 yticks([])
-xlabel('Measurement (s)')
+xlabel('Adapter SOA (s)')
 ylabel('Probability')
 
 subplot('Position', positions(3, :));
@@ -166,7 +166,9 @@ yline(0)
 ylim([-0.001, 0.001])
 xticks(xtks)
 xlabel('Adapter SOA (s)')
-ylabel('Recalibration (s)')
+ylabel('Recalibration')
+
+
 
 subplot('Position', positions(4, :));
 set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
@@ -174,22 +176,20 @@ plot(adapter, adapter,'k','LineWidth',lw)
 xticks(xtks)
 ylim([-0.7, 0.7])
 yticks(xtks)
-xlabel('Adapter SOA (s)')
-ylabel('Measurement (s)')
+xlabel('Adapter SOA')
+ylabel('Measurement')
 
 % subplot('Position', positions(2, :));
 subplot('Position', positions(6, :));
 set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
 plot(adapter, 0.3*adapter,'k','LineWidth',lw)
-yline(0)
 xticks(xtks)
 ylim([-0.7, 0.7])
 yticks(xtks)
-xlabel('Adapter SOA (s)')
-ylabel('Recalibration (s)')
+xlabel('Adapter SOA')
+ylabel('Recalibration')
 
-flnm = 'DE_model';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
+
 
 
 %% utility function

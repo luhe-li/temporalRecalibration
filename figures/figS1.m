@@ -4,7 +4,7 @@ clear; close all; clc;
 
 %% model info
 
-specifications = {'Exponential likelihood, shift criterion', 'Exponential likelihood, shift bias', 'Gaussian likelihood, shift criterion',  'Gaussian likelihood, shift bias',};
+specifications = {'Exponential likelihood, shift criterion', 'Exponential likelihood, shift bias', 'Gaussian likelihood, shift criterion',  'Gaussian likelihood, shift bias'};
 folders = {'exp_shiftC', 'exp_shiftMu', 'gauss_shiftC', 'gauss_shiftMu'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
@@ -29,11 +29,11 @@ sub_slc = [1:4,6:10];
 for mm = 1:n_model
 
     result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', folders{mm});
-    atheo(mm) = load_subject_data(result_folder, sub_slc, 'sub-*');
+    atheo{mm} = load_subject_data(result_folder, sub_slc, 'sub-*');
 
     for ss = 1:numel(sub_slc)
 
-            log_model_evi(mm, ss) = atheo{mm, ss}.diag.bestELCBO;
+            log_model_evi(mm, ss) = atheo{mm}{ss}.diag.bestELBO.elbo; %atheo{mm}{ss}.diag.bestELCBO;
             
     end
 
@@ -47,6 +47,7 @@ end
 delta_LME = max(log_model_evi, [], 1) - log_model_evi;
 
 figure
+subplot('Position', [0.2, 0.1, 0.6, 0.8]); 
 h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
     'Colormap', flipud(bone),...
     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
@@ -60,6 +61,25 @@ h.XDisplayLabels = num2cell(1:numel(sub_slc));
 % save figure
 set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
+
+%% bar plot of number of winning
+
+n_win = sum(delta_LME<log(10),2);
+
+subplot('Position', [0.9, 0.1, 0.1, 0.8]);
+
+b = barh(1:length(n_win), n_win, 'FaceColor', [0.8, 0.8, 0.8]);
+set(gca, 'YDir', 'reverse', 'XColor', 'none', 'YColor', 'none', 'Color', 'none'); % Remove axis and background
+
+yticks(1:length(n_win));
+yticklabels({' ', ' ', ' ', ' '});
+
+for i = 1:length(n_win)
+    text(n_win(i) + 0.5, i, num2str(n_win(i)), 'VerticalAlignment', 'middle');
+end
+
+set(gca, 'XLim', [0 max(n_win) + 2]);
+set(gca, 'YLim', [0.5 4.5]);
 
 flnm = 'modelEvidence_atheo_models';
 saveas(gca, fullfile(out_dir, flnm),'pdf')
