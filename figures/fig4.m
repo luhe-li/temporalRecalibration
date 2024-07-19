@@ -1,6 +1,6 @@
 % fig 4. Compare model fitting results
-% A. Model predictions of recalibration effect
-% B. Model comparison metrics (Bayes Factor)
+% A. Model comparison metrics (Bayes Factor)
+% B. Model predictions of recalibration effect
 
 clear; clc; close all;
 
@@ -108,10 +108,8 @@ saveas(gca,fullfile(out_dir,flnm),'pdf')
 
 figure;
 set(gcf, 'Position',[0,0,420,250]);
-set(gcf, 'DefaultAxesFontName', 'Helvetica Neue');
-set(gcf, 'DefaultAxesFontWeight', 'Light');
-set(gcf, 'DefaultTextFontName', 'Helvetica Neue');
-set(gcf, 'DefaultTextFontWeight', 'Light');
+set(gcf, 'DefaultAxesFontName', 'Helvetica');
+set(gcf, 'DefaultTextFontName', 'Helvetica');
 t = tiledlayout(2,3,'Padding', 'compact', 'TileSpacing', 'compact');
 
 adaptor_soa = pred{1,1}.adaptor_soa; %ms

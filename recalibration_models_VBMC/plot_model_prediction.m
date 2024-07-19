@@ -29,7 +29,7 @@ model_slc = 1:6;
 n_model = numel(model_slc);
 sub_slc = [1:4, 6:10];
 save_fig = 1;
-plotTOJ = 0;
+plotTOJ = 1;
 
 for mm = 1:n_model
     result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
@@ -104,14 +104,17 @@ num_ses = 9;
 %% 1. plot group recalibration
 
 figure;
-set(gcf, 'Position',[0,0,420,130]);
+set(gcf, 'Position',[0,0,420,250]);
 set(gcf, 'DefaultAxesFontName', 'Helvetica');
 set(gcf, 'DefaultTextFontName', 'Helvetica');
-t = tiledlayout(1,6,'Padding', 'compact', 'TileSpacing', 'compact');
+t = tiledlayout(2,3,'Padding', 'compact', 'TileSpacing', 'compact');
 
+adaptor_soa = pred{1,1}.adaptor_soa; %ms
+
+order = [6,2,4, 5,1,3];
 yl = 100;
-ytks = {[], [], [], [-yl, 0, yl]};
-ytklabels = {[], [], [], [-yl, 0, yl]./1e3};
+ytks = {[], [],[],[],[-yl, 0, yl], [-yl, 0, yl]};
+ytklabels = {[], [], [], [], [-yl, 0, yl]./1e3, [-yl, 0, yl]./1e3};
 
 for mm = 1:n_model
 
@@ -235,7 +238,7 @@ end
 
 if plotTOJ
 
-    for mm = 3%1:n_model
+    for mm = [1,3]
 
         for  ss  = 1:numel(sub_slc)
 

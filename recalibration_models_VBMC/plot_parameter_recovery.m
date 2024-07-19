@@ -7,6 +7,7 @@ cur_dir               = pwd;
 [git_dir, ~] = fileparts(project_dir);
 dataDir = fullfile(git_dir,'temporalRecalibrationData');
 addpath(genpath(fullfile(project_dir, 'utils')));
+addpath(genpath(fullfile(project_dir, 'vbmc')));
 out_dir               = fullfile(cur_dir, mfilename);
 if ~exist(out_dir,'dir') mkdir(out_dir); end
 
@@ -15,11 +16,16 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 results_folder           = fullfile(dataDir,'recalibration_models_VBMC','param_recovery');
 files = dir(fullfile(results_folder, 'sample-*'));
 
-for jj = 1:size(files)
+for pp = 1:size(files)
 
-    r = load(fullfile(results_folder, files(jj).name));
-    gt(jj,:) = r.summ.gt;
-    est(jj,:) = r.summ.est;
+    r = load(fullfile(results_folder, files(pp).name));
+
+    try
+        gt(pp,:) = r.summ.gt;
+        est(pp,:) = r.summ.est;
+    catch
+        continue
+    end
 
 end
 
@@ -37,15 +43,15 @@ nRow  = ceil(sqrt(nPlot));
 nCol  = ceil(sqrt(nPlot));
 if nPlot <= (nRow*nCol)-nCol, nRow = nRow-1; end
 
-for jj = 1:num_para
+for pp = 1:num_para
 
-    subplot(nRow,nCol,jj);
+    subplot(nRow,nCol,pp);
     axis square;
     axis equal
     hold on
-    scatter(gt(:,jj), est(:,jj),50,'MarkerEdgeColor','k','MarkerFaceColor','none');
-    xlim([lb(jj) ub(jj)])
-    ylim([lb(jj) ub(jj)])
+    scatter(gt(:,pp), est(:,pp),50,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    xlim([lb(pp) ub(pp)])
+    ylim([lb(pp) ub(pp)])
 
     % identity line
     ax = gca;
@@ -56,19 +62,58 @@ for jj = 1:num_para
     plot([line_min line_max], [line_min line_max], 'k--', 'LineWidth', 1);
 
     % Calculate the Pearson correlation coefficient and p-value
-    [R, P] = corrcoef(gt(:, jj), est(:, jj));
+    [R, P] = corrcoef(gt(:, pp), est(:, pp));
 
     % Extract the correlation coefficient and p-value
     r = R(1,2);
     p_value = P(1,2);
 
     % Label the r and p in the title
-    title(sprintf('%s: r= %.2f, p=%.3f', paraID{jj}, r, p_value));
+    title(sprintf('%s: r= %.2f, p=%.3f', paraID{pp}, r, p_value));
 
-    if jj == 4
+    if pp == 4
         ylabel('Prediction')
-    elseif jj == 8
+    elseif pp == 8
         xlabel('Ground-truth')
     end
 
 end
+
+flnm = 'param_recovery';
+saveas(gca,fullfile(out_dir, flnm),'png')
+
+%% check which paramaters trade off with p_common 
+
+idx_pcc = 6;
+rest_p = [1:5,7:9];
+figure
+for jj = 1:num_para-1
+
+    pp = rest_p(jj);
+    subplot(nRow,nCol,jj);
+    axis square;
+    hold on
+    scatter(est(:,idx_pcc), est(:,pp),50,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    xlim([lb(idx_pcc) ub(idx_pcc)])
+    ylim([lb(pp) ub(pp)])
+
+    % Calculate the Pearson correlation coefficient and p-value
+    [R, P] = corrcoef(gt(:, pp), est(:, pp));
+
+    % Extract the correlation coefficient and p-value
+    r = R(1,2);
+    p_value = P(1,2);
+
+    % Label the r and p in the title
+    title(sprintf('%s: r= %.2f, p=%.3f', paraID{pp}, r, p_value));
+
+    if pp == 4
+        ylabel('Prediction')
+    elseif pp == 8
+        xlabel('Ground-truth')
+    end
+
+end
+
+flnm = 'pcc_tradeoff';
+saveas(gca,fullfile(out_dir, flnm),'png')

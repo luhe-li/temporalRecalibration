@@ -15,14 +15,19 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 
 %% load results
 
-results_folder           = fullfile(dataDir,'recalibration_models_VBMC','parameter_recovery');
+results_folder           = fullfile(dataDir,'recalibration_models_VBMC','param_recovery');
 files = dir(fullfile(results_folder, 'sample-*'));
 
 for jj = 1:size(files)
 
     r = load(fullfile(results_folder, files(jj).name));
-    gt(jj,:) = r.summ.gt;
-    est(jj,:) = r.summ.est;
+
+    try
+        gt(jj,:) = r.summ.gt;
+        est(jj,:) = r.summ.est;
+    catch
+        continue
+    end
 
 end
 
@@ -58,7 +63,7 @@ for jj = 1:num_para
     axis square;
     axis equal
     hold on
-    scatter(gt(:,jj), est(:,jj),20,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    scatter(gt(:,jj), est(:,jj),10,'MarkerEdgeColor','k','MarkerFaceColor','none');
     xlim([lb(jj) ub(jj)])
     ylim([lb(jj) ub(jj)])
 
@@ -78,12 +83,12 @@ for jj = 1:num_para
     p_value = P(1,2);
 
     % Label the r and p in the title
-    title(sprintf('%s \n r= %.2f, p=%.3f', paraID{jj}, r, p_value),'FontSize',fontSZ,'FontWeight','normal');
+    title(sprintf('%s \n r= %.2f, p=%.2f', paraID{jj}, r, round(p_value,2)),'FontSize',fontSZ,'FontWeight','normal');
 
     if jj == 4
-        ylabel('Prediction','FontSize',titleSZ,'FontWeight','bold')
+        ylabel('Model prediction','FontSize',titleSZ)
     elseif jj == 8
-        xlabel('Ground-truth','FontSize',titleSZ,'FontWeight','bold')
+        xlabel('Ground-truth','FontSize',titleSZ)
     end
 
 end

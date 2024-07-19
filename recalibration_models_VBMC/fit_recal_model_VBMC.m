@@ -3,8 +3,8 @@ function fit_recal_model_VBMC(i_model, useCluster, sub)
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Causal inference reduced, asymmetric'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','cauInf_asym_reduced'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
@@ -82,7 +82,7 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS
 options = vbmc('defaults');
-if i_model == 4 || i_model == 3; options.MaxFunEvals = 500; end % set max iter for cau-inf models
+if ismember(i_model, [3,5,7]); options.MaxFunEvals = 500; end % set max iter for cau-inf models
 options.TolStableCount = 15;
 
 %% model fitting

@@ -15,104 +15,59 @@ model_info = table(numbers, specifications', folders', 'VariableNames', {'Number
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[tempDir, ~] = fileparts(projectDir);
+dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recal models
 
+model_slc = 3;
+sub_slc = [1:4, 6:10];
 save_fig = 1;
-model_slc = 1; 
-sub_slc = [1:4,6:10];
 
-recal_folder = fullfile(projectDir, 'recalibration_models_VBMC', folders{model_slc});
-files = dir(fullfile(recal_folder, 'sub-*'));
+result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{model_slc});
+R = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 for ss = 1:numel(sub_slc)
-
-        % Find the file that matches 'sub-XX'
-        sub_str = sprintf('%02d', sub_slc(ss));
-        file_name = '';
-        for file = files'
-            if contains(file.name, ['sub-', sub_str])
-                file_name = file.name;
-                break;
-            end
-        end
-
-        % Load the data if the file was found
-        if ~isempty(file_name)
-            i_data = load(fullfile(recal_folder, file_name));
-            log_model_evi(ss) = i_data.diag.bestELCBO;
-            bestP{ss} = i_data.diag.post_mean;
-            pred{ss} = i_data.pred;
-
-            % extract summary data for plot
-            pred_recal(ss, :) = mean(pred{ss}.pss_shift,2);
-        else
-            error('File for sub-%s not found.', sub_str);
-        end
-
-    % extract summary data for plot
-    pred_recal(ss, :) = mean(pred{ss}.pss_shift,2);
-
+    pred{ss} = R{ss}.pred;
+    % Extract summary data for plot
+    pred_recal(ss, :) = mean(pred{ss}.pss_shift, 2);
 end
 
-%% load atheoretical model
+%% load atheoretical model results
 
-athe_path = fullfile(projectDir, 'atheoretical_models_VBMC','exp_shiftMu');
-files = dir(fullfile(athe_path, 'sub-*'));
-btst_files = dir(fullfile(athe_path, 'btst_sub-*'));
+result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 
+% Initialize toj_pss based on the first loaded file
+toj_pss = zeros(numel(sub_slc), size(atheo{1}.pred.pss_shift, 2));
 for ss = 1:numel(sub_slc)
-
-    % Find the file that matches 'sub-XX'
-    sub_str = sprintf('%02d', sub_slc(ss));
-    file_name = '';
-    for file = files'
-        if contains(file.name, ['sub-', sub_str])
-            file_name = file.name;
-            break;
-        end
-    end
-
-    % Load the data if the file was found
-    if ~isempty(file_name)
-        i_data = load(fullfile(athe_path, files(ss).name));
-        toj_pss(ss,:) = i_data.pred.pss_shift;
-    else
-        error('File for sub-%s not found.', sub_str);
-    end
-
+    toj_pss(ss, :) = atheo{ss}.pred.pss_shift;
 end
 
-%% load bootstrap results of atheoretical model
+% Calculate group mean and standard error
+mean_toj_pss = mean(toj_pss, 1, 'omitnan');
+se_toj_pss = std(toj_pss, [], 1, 'omitnan') ./ sqrt(numel(sub_slc));
 
+%% load bootstrap results of atheoretical models
+
+btst_data = load_subject_data(result_folder, sub_slc, 'diag_btst_sub-*');
+
+btst_pss = [];
 for ss = 1:numel(sub_slc)
-
-    % Load bootstrap data
-    file_name = '';
-    for btst_file = btst_files'
-        if contains(btst_file.name, ['sub-', exp_sub])
-            file_name = btst_file.name;
-            break;
-        end
-    end
-    btst = load(fullfile(result_folder, file_name));
-
-    % Get pss_shift for each bootstrap trial
+    btst = btst_data{ss};
     for jj = 1:numel(btst.pred)
-        % bootstrap trials x pss shift predicted at each adaptor soa
         btst_pss(jj, :) = btst.pred{jj}.pss_shift;
     end
 
     for tt = 1:size(btst_pss, 2)
-        [lb(ss, tt), ub(ss,tt)] = get68CI(btst_pss(:,tt));
+        [lb(ss, tt), ub(ss, tt)] = get68CI(btst_pss(:, tt));
     end
-
 end
+
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -127,29 +82,26 @@ titleSZ = 9;
 dotSZ = 10;
 
 figure; hold on
-set(gcf, 'Position',[1,1, 1500, 1000]);
+set(gcf, 'Position',[1,1, 420, 300]);
 adaptor_soa = pred{1,1}.adaptor_soa; %ms
 
 for ss = 1:numel(sub_slc)
 
-    sub = sub_slc(ss);
-
-    %% plot
     subplot(3,3,ss); hold on
     set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
     title(['S' num2str(ss)],'FontSize',titleSZ)
 
     %% plot atheoretical prediction
 
-    l  = plot(adaptor_soa, toj_pss(ss,:),'ko', 'MarkerFaceColor','k');
+    l  = plot(adaptor_soa, toj_pss(ss,:),'ko', 'MarkerFaceColor','k','MarkerSize',2);
 
     for jj = 1:9
-        plot([adaptor_soa(jj),adaptor_soa(jj)],[-lb(ss, jj), -ub(ss, jj)],'k-','LineWidth',1)
+        plot([adaptor_soa(jj),adaptor_soa(jj)],[lb(ss, jj), ub(ss, jj)],'k-','LineWidth',1)
     end
 
     %% plot model prediction
 
-    plot(adaptor_soa, pred_recal(ss,:), '-o','LineWidth',lw, 'Color','r')
+    plot(adaptor_soa, pred_recal(ss,:), '-o','LineWidth',lw, 'Color','r','MarkerSize',2);
 
     % look better
     yl = 250;

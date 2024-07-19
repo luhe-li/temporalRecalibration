@@ -5,7 +5,7 @@ clear; close all; rng('shuffle');
 %% set environment
 
 currModelStr = 'cauInf_asym';
-useCluster = true;
+useCluster = false;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -40,12 +40,15 @@ end
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[git_dir, ~] = fileparts(projectDir);
+dataDir = fullfile(git_dir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
 outDir = fullfile(currentDir, mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
+if ~useCluster; projectDir = dataDir; end
 
 %% organize data
 
@@ -112,7 +115,7 @@ lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 
 % set likelihood
 model.mode = 'optimize';
-llfun = @(x) currModel(x, model, data);
+llfun = @(x) currModel(x, model, fake_data);
 fun = @(x) llfun(x) + lpriorfun(x);
 
 [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
