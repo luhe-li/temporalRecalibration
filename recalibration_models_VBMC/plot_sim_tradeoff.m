@@ -14,6 +14,7 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 %% load results
 
 save_fig=1;
+
 results_folder = fullfile(pwd,'sim_tradeoff_by_NLL');
 files = dir(fullfile(results_folder, 'sim_num*'));
 pattern = 'sim_num\d{3}_i(\d{2})_j(\d{2})';
@@ -29,12 +30,11 @@ for ii = 1:size(files)
     NLL(:,:,ii,jj) = tempNLL;
 
 end
-% 
-% para_combi = r.para_combi;
-% paraID = r.paraID;
-% p1s = r.p1s;
-% p2s = r.p2s;
-% save('sim_tradeoff',"NLL",'para_combi',"paraID","p1s","p2s");
+
+para_combi = r.para_combi;
+paraID = r.paraID;
+p1ss = r.p1ss;
+p2ss = r.p2ss;
 
 %% plot
 
@@ -49,7 +49,8 @@ for pp = 1:size(NLL, 1)
         subplot(3, 3, ss);
 
         d = squeeze(NLL(pp, ss, :, :));
-        imagesc(p2s, p1s, d, [min(d, [], "all"), min(d, [], "all")+4000]); hold on
+        imagesc(p2s(pp,:), p1s(pp,:), d); %[min(d, [], "all"), min(d, [], "all")]); 
+        hold on
         c                = colorbar;
         c.Label.String   = 'NLL';
         c.Label.FontSize = 10;
@@ -64,6 +65,6 @@ for pp = 1:size(NLL, 1)
 
     if save_fig
         flnm = sprintf('tradeoff_comb %i', pp);
-        saveas(gca, fullfile(outDir, flnm),'png')
+        saveas(gca, fullfile(out_dir, flnm),'png')
     end
 end

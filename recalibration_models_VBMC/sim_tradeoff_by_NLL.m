@@ -28,13 +28,13 @@ switch useCluster
 end
 %% order for job number
 
-num_p = 15; % number of grid of each parameter
+num_p = 10; % number of grid of each parameter
 job_number = 1;
 jobs = zeros(num_p*num_p, 3); % Preallocate array for job number, ii, jj
 
 % Generate pairs of (ii, jj) for each job
-for ii = 1:15
-    for jj = 1:15
+for ii = 1:num_p
+    for jj = 1:num_p
         jobs(job_number, :) = [job_number, ii, jj];
         job_number = job_number + 1;
     end
@@ -111,6 +111,8 @@ for p_comb            = 1:size(para_combi, 1)
     % exclude bounds
     p1s = p1s(2:end-1);
     p2s = p2s(2:end-1);
+    p1ss(p_comb,:) = p1s;
+    p2ss(p_comb,:) = p2s;
 
     for ss = 1:numel(sub_slc)
 
@@ -125,5 +127,5 @@ for p_comb            = 1:size(para_combi, 1)
 
 end
 
-save(fullfile(out_dir, sprintf('sim_num%03d_i%02d_j%02d', hpc_job_number, ii, jj)),'NLL');
+save(fullfile(out_dir, sprintf('sim_num%03d_i%02d_j%02d', hpc_job_number, ii, jj)),'NLL','para_combi',"paraID","p1ss","p2ss");
 
