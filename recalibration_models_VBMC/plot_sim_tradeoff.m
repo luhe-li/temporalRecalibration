@@ -19,13 +19,13 @@ results_folder = fullfile(pwd,'sim_tradeoff_by_NLL');
 files = dir(fullfile(results_folder, 'sim_num*'));
 pattern = 'sim_num\d{3}_i(\d{2})_j(\d{2})';
 
-for ii = 1:size(files)
-    flnm = files(ii).name;
+for uu = 1:size(files)
+    flnm = files(uu).name;
     tokens = regexp(flnm, pattern, 'tokens');
     ii = str2double(tokens{1}{1});
     jj = str2double(tokens{1}{2});
 
-    r = load(fullfile(results_folder, files(ii).name));
+    r = load(fullfile(results_folder, files(uu).name));
     tempNLL = r.NLL;
     NLL(:,:,ii,jj) = tempNLL;
 
