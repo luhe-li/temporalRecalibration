@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #SBATCH --job-name=RecalModel4
-#SBATCH -a 1-2
+#SBATCH -a 1-225
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1

@@ -13,13 +13,14 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 
 %% load results
 
-results_folder = fullfile(dataDir,'recalibration_models_VBMC','sim_tradeoff_by_NLL');
-files = dir(fullfile(results_folder, 'sim_num-*'));
+save_fig=1;
+results_folder = fullfile(pwd,'sim_tradeoff_by_NLL');
+files = dir(fullfile(results_folder, 'sim_num*'));
 pattern = 'sim_num\d{3}_i(\d{2})_j(\d{2})';
 
 for ii = 1:size(files)
     flnm = files(ii).name;
-    tokens = regexp(filename, pattern, 'tokens');
+    tokens = regexp(flnm, pattern, 'tokens');
     ii = str2double(tokens{1}{1});
     jj = str2double(tokens{1}{2});
 
@@ -28,13 +29,14 @@ for ii = 1:size(files)
     NLL(:,:,ii,jj) = tempNLL;
 
 end
-
-save('sim_tradeoff',"NLL");
+% 
+% para_combi = r.para_combi;
+% paraID = r.paraID;
+% p1s = r.p1s;
+% p2s = r.p2s;
+% save('sim_tradeoff',"NLL",'para_combi',"paraID","p1s","p2s");
 
 %% plot
-
-set(gcf, 'Position', get(0, 'Screensize'));
-set(gca, 'LineWidth', 1.5, 'FontSize', 15, 'TickDir', 'out')
 
 for pp = 1:size(NLL, 1)
 
@@ -46,17 +48,17 @@ for pp = 1:size(NLL, 1)
 
         subplot(3, 3, ss);
 
-        d = squeeze(nll(pp, ss, :, :));
+        d = squeeze(NLL(pp, ss, :, :));
         imagesc(p2s, p1s, d, [min(d, [], "all"), min(d, [], "all")+4000]); hold on
         c                = colorbar;
         c.Label.String   = 'NLL';
-        %         c.Label.FontSize = 10;
+        c.Label.FontSize = 10;
 
         xticks(p2s)
         yticks(p1s)
-        xlabel(fits(sub).paraID(idx_p2))
-        ylabel(fits(sub).paraID(idx_p1))
-        title(sprintf('S%i', sub_slc(ss)))
+        xlabel(paraID(para_combi(pp,2)))
+        ylabel(paraID(para_combi(pp,1)))
+        title(sprintf('S%i', (ss)))
 
     end
 
