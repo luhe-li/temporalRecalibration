@@ -98,7 +98,7 @@ for jj = 1:num_para-1
     ylim([lb(pp) ub(pp)])
 
     % Calculate the Pearson correlation coefficient and p-value
-    [R, P] = corrcoef(gt(:, pp), est(:, pp));
+    [R, P] = corrcoef(est(:,idx_pcc), est(:, pp));
 
     % Extract the correlation coefficient and p-value
     r = R(1,2);

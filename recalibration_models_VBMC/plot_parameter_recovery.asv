@@ -84,29 +84,21 @@ saveas(gca,fullfile(out_dir, flnm),'png')
 
 %% check which paramaters trade off with p_common 
 
-idx_pcc 
+idx_pcc = 6;
 rest_p = [1:5,7:9];
+figure
 for jj = 1:num_para-1
 
     pp = rest_p(jj);
     subplot(nRow,nCol,jj);
     axis square;
-    axis equal
     hold on
-    scatter(est(:,5), est(:,pp),50,'MarkerEdgeColor','k','MarkerFaceColor','none');
-    xlim([lb(5) ub(5)])
+    scatter(est(:,idx_pcc), est(:,pp),50,MarkerEdgeColor','k','MarkerFaceColor','none');
+    xlim([lb(idx_pcc) ub(idx_pcc)])
     ylim([lb(pp) ub(pp)])
 
-    % identity line
-    ax = gca;
-    x_limits = ax.XLim;
-    y_limits = ax.YLim;
-    line_min = min([x_limits y_limits]);
-    line_max = max([x_limits y_limits]);
-    plot([line_min line_max], [line_min line_max], 'k--', 'LineWidth', 1);
-
     % Calculate the Pearson correlation coefficient and p-value
-    [R, P] = corrcoef(gt(:, pp), est(:, pp));
+    [R, P] = corrcoef(est(:,idx_pcc), est(:, pp));
 
     % Extract the correlation coefficient and p-value
     r = R(1,2);
@@ -123,5 +115,5 @@ for jj = 1:num_para-1
 
 end
 
-% flnm = 'pcc_tradeoff';
-% saveas(gca,fullfile(out_dir, flnm),'png')
+flnm = 'pcc_tradeoff';
+saveas(gca,fullfile(out_dir, flnm),'png')
