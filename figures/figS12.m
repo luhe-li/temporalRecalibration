@@ -20,7 +20,7 @@ adapted_soas = [-700, -300:100:300, 700];
 
 x_max = 1000;
 adapted_SOA = -100; % example adaptor soa for subplot 1&2
-stimulus_SOA = -x_max:50:x_max; % Stimulus SOAs
+stimulus_SOA = -x_max:1:x_max; % Stimulus SOAs
 preferred_SOAs = linspace(-500, 500, N); % preferred SOAs of neurons (in ms)\
 SOA_hyp = -1000:1000;
 
@@ -106,7 +106,7 @@ xline(adapted_SOA,'--') % Mark the adapted SOA
 xlabel('Stimulus SOA (ms)');
 ylabel('Population response');
 xlim([-x_max, x_max]);
-legend('Unadapted', 'Adapted','Adapter SOA','Location','best');
+% legend('Unadapted', 'Adapted','Adapter SOA','Location','best');
 hold on;
 
 subplot(2,2,3); 
@@ -118,10 +118,10 @@ plot(stimulus_SOA, bias, 'LineWidth', 1);
 xlim([min(preferred_SOAs), max(preferred_SOAs)])
 xlabel('Stimulus SOA (ms)');
 ylabel('Bias (estimated SOA - stimulus SOA; ms)');
-legendEntries = arrayfun(@(x) sprintf('%d', x), adapted_soas, 'UniformOutput', false);
-legend(legendEntries, 'Location', 'Best');
-lgd = legend(legendEntries, 'Location', 'Best');
-title(lgd, 'Adapter SOA (ms)');
+% legendEntries = arrayfun(@(x) sprintf('%d', x), adapted_soas, 'UniformOutput', false);
+% legend(legendEntries, 'Location', 'Best');
+% lgd = legend(legendEntries, 'Location', 'Best');
+% title(lgd, 'Adapter SOA (ms)');
 hold off;
 
 % Plot Mean Bias vs. Adapted SOA
@@ -131,8 +131,9 @@ set(gca, 'FontName', 'Helvetica');
 hold on
 plot(adapted_soas, PSS, 'k','LineWidth', 1);
 ylim([-60, 60])
+xlim([-700 700])
 xlabel('Adapter SOA (ms)');
-ylabel('Mean bias across stimulus SOA (ms)');
+ylabel('Point of subjective simultaneity (ms)');
 grid on;
 hold off;
 saveas(gca, fullfile(out_dir, 'bias'),'pdf')

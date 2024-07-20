@@ -129,9 +129,8 @@ sigma_C1 = 51.9;
 sigma_C2 = 261.39;
 
 lw = 0.5;
-adapter = [-0.7:0.05:0.7];
+adapter = [-0.7:0.01:0.7];
 xtks = [-0.7, 0, 0.7];
-x_axis = -0.7:0.01:0.7;
 
 % heuristic model
 p = measurementGiven0(adapter*1e3, tau, sigma_a, sigma_v);
@@ -158,7 +157,7 @@ pred =  currModel([tau, sigma_a, sigma_v, criterion, lambda, p_common, alpha, si
 recal = mean(pred.pss_shift, 2);
 
 %% plot
-figure('Position', [0, 0, 420, 110]);
+figure('Position', [0, 0, 420, 90]);
 
 subplot 131
 set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
