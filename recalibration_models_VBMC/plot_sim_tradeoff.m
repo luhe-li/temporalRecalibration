@@ -20,6 +20,7 @@ files = dir(fullfile(results_folder, 'sim_num*'));
 pattern = 'sim_num\d{3}_i(\d{2})_j(\d{2})';
 
 for uu = 1:size(files)
+    
     flnm = files(uu).name;
     tokens = regexp(flnm, pattern, 'tokens');
     ii = str2double(tokens{1}{1});
@@ -49,7 +50,7 @@ for pp = 1:size(NLL, 1)
         subplot(3, 3, ss);
 
         d = squeeze(NLL(pp, ss, :, :));
-        imagesc(p2s(pp,:), p1s(pp,:), d); %[min(d, [], "all"), min(d, [], "all")]); 
+        imagesc(p2ss(pp,:), p1ss(pp,:), d); %[min(d, [], "all"), min(d, [], "all")]); 
         hold on
         c                = colorbar;
         c.Label.String   = 'NLL';
