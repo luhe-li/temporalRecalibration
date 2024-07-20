@@ -125,40 +125,5 @@ for p_comb            = 1:size(para_combi, 1)
 
 end
 
-save(fullfile(out_dir, sprintf('sim_num%03d_i%02d_j%02d', hpc_job_number, ii, jj)));
+save(fullfile(out_dir, sprintf('sim_num%03d_i%02d_j%02d', hpc_job_number, ii, jj)),'NLL');
 
-% %% plot
-%
-% figure
-% set(gcf, 'Position', get(0, 'Screensize'));
-% set(gca, 'LineWidth', 1.5, 'FontSize', 15, 'TickDir', 'out')
-%
-% for pp = 1:size(para_combi, 2)
-%
-%     figure
-%     set(gcf, 'Position', get(0, 'Screensize'));
-%     set(gca, 'LineWidth', 1.5, 'FontSize', 15, 'TickDir', 'out')
-%
-%     for ss           = 1:numel(sub_slc)
-%
-%         subplot(3, 3, ss);
-%
-%         d = squeeze(nll(pp, ss, :, :));
-%         imagesc(p2s, p1s, d, [min(d, [], "all"), min(d, [], "all")+4000]); hold on
-%         c                = colorbar;
-%         c.Label.String   = 'NLL';
-%         %         c.Label.FontSize = 10;
-%
-%         xticks(p2s)
-%         yticks(p1s)
-%         xlabel(fits(sub).paraID(idx_p2))
-%         ylabel(fits(sub).paraID(idx_p1))
-%         title(sprintf('S%i', sub_slc(ss)))
-%
-%     end
-%
-%     if save_fig
-%         flnm = sprintf('tradeoff_comb %i', pp);
-%         saveas(gca, fullfile(outDir, flnm),'png')
-%     end
-% end
