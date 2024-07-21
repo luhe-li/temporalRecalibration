@@ -7,20 +7,20 @@ if strcmp(model.mode, 'initialize')
     out.num_para = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
-    paraH.tau      = [-200,   200]; % ms
+    paraH.tau      = [-150,   150]; % ms
     paraH.sigma_a  = [  10,   150]; % ms
     paraH.sigma_v  = [  10,   150]; % ms
     paraH.criterion= [   1,   350]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
     paraH.p_common = [1e-4,1-1e-4]; % weight
     paraH.alpha    = [1e-4,  0.02]; % percentage
-    paraH.sigma_C1 = [   1,   100]; % ms
-    paraH.sigma_C2 = [ 200,   550]; % ms
+    paraH.sigma_C1 = [  10,   100]; % ms
+    paraH.sigma_C2 = [ 200,   500]; % ms
 
     % soft bounds, the range for PLB, PUB
     paraS.tau      = [ -40,    40]; % ms
-    paraS.sigma_a  = [  20,    50]; % ms
-    paraS.sigma_v  = [  20,    50]; % ms
+    paraS.sigma_a  = [  50,    70]; % ms
+    paraS.sigma_v  = [  50,    70]; % ms
     paraS.criterion= [  30,    80]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
     paraS.p_common = [ 0.3,   0.7]; % weight

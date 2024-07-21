@@ -5,7 +5,7 @@ clear; close all; clc;
 %% model info
 
 specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym_fit2', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym_xSigmaC1', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -26,7 +26,7 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 model_slc = 1:6;
 n_model = numel(model_slc);
-sub_slc = [1,3,4,6:10];%[1:4,6:10];
+sub_slc = [1:4,6:10];%[1:4,6:10];
 save_fig = 0;
 
 for mm = 1:n_model

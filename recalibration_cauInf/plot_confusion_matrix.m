@@ -25,7 +25,7 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 model_slc = [1,2,4];
 n_model = numel(model_slc);
-sub_slc = [1,3,4,6:10];
+sub_slc = [1:4,6:10];
 
 for mm = 1:n_model
     result_folder = fullfile(dataDir, 'recalibration_cauInf', folders{model_slc(mm)});
