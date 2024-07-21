@@ -5,22 +5,22 @@ function model_recovery(fit_m)
 %% select models
 
 rng('shuffle'); rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{fit_m};
 
 %% set environment
 
-useCluster = true;
+useCluster = false;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster                  = false;
 end
 
-% job/sample = 100, core/run = 3, fit once
+% job/sample = 100, core/sim_m = 6, fit once
 switch useCluster
     case true
         if ~exist('numCores', 'var') || isempty(numCores)
@@ -85,10 +85,11 @@ model.fit_m_str = currModelStr; % current model folder
 
 % set OPTIONS
 options = vbmc('defaults');
-options.MaxFunEvals = 500;
+if ismember(fit_m, [3,4]); options.MaxFunEvals = 500; end % set max iter for cau-inf models
 options.TolStableCount = 15;
 
 %% sample ground-truth from best parameter estimates
+
 for sim_m = 1:numCores
 
     sim_str = folders{sim_m};
@@ -96,7 +97,6 @@ for sim_m = 1:numCores
     addpath(genpath(fullfile(pwd, sim_str)));
     model.mode = 'initialize';
     Val = sim_func([], model, []);
-    rmpath(genpath(fullfile(pwd, sim_str)));
     clearvars bestP
 
     % load best estimates
@@ -115,9 +115,7 @@ end
 parfor sim_m = 1:numCores
 
     temp_model = model;
-    sim_str = folders{sim_m};
     sim_func = str2func(['nll_' sim_str]);
-    addpath(genpath(fullfile(pwd, sim_str)));
 
     %% simulation
     temp_model.mode       = 'predict';
@@ -140,7 +138,7 @@ parfor sim_m = 1:numCores
 
     % set likelihood
     temp_model.mode = 'optimize';
-    llfun = @(x) currModel(x, temp_model, data);
+    llfun = @(x) currModel(x, temp_model, sim_data);
     fun = @(x) llfun(x) + lpriorfun(x);
 
     fprintf('[%s] Start sim model-%s, fit model-%s, recovery sample-%i \n', mfilename, sim_str, currModelStr, sample);

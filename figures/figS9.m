@@ -23,7 +23,6 @@ addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
-
 %% load recal models
 
 save_fig = 1;
