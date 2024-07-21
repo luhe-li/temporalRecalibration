@@ -3,9 +3,8 @@
 clear; close all; clc;
 
 %% model info
-
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym_fit2', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
+specifications = {'Full model','No \sigma_{C1}', 'No \sigma_{C2}','No \sigma_{C1}, \sigma_{C2}'}; % Column 2: specifications
+folders = {'cauInf_asym', 'cauInf_asym_xSigmaC1', 'cauInf_asym_xSigmaC2', 'cauInf_asym_xSigmaC1C2'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -24,13 +23,12 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recal models
 
-model_slc = 1:6;
+model_slc = [1,2,4];
 n_model = numel(model_slc);
-sub_slc = [1,3,4,6:10];%[1:4,6:10];
-save_fig = 0;
+sub_slc = [1,3,4,6:10];
 
 for mm = 1:n_model
-    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
+    result_folder = fullfile(dataDir, 'recalibration_cauInf', folders{model_slc(mm)});
     R(mm, :) = load_subject_data(result_folder, sub_slc, 'sub-*');
     
     for ss = 1:numel(sub_slc)
@@ -52,12 +50,12 @@ end
 %% 1. plot model evidence with atheoretical model
 
 % max subtract other log model evidence
-delta_LME = max(log_model_evi, [], 1) - log_model_evi; 
+delta_LME = max(log_model_evi, [], 1) - log_model_evi;
 
 figure
 h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
     'Colormap', flipud(bone),...
-    'ColorLimits', [0, 6.9], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+    'ColorLimits', [0, 2.3], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
     'FontSize', 8);
 colorbar;
 %     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
@@ -69,10 +67,9 @@ h.XDisplayLabels = num2cell(1:numel(sub_slc));
 set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
 
-if save_fig
 flnm = 'ModelEvidence_all_models';
 saveas(gca, fullfile(out_dir, flnm),'png')
-end
+
 %% 2. plot model evidence within recalibration model
 
 % max subtract other log model evidence
@@ -81,7 +78,7 @@ delta_LME = max(log_model_evi(model_slc,:), [], 1) - log_model_evi(model_slc,:);
 figure
 h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
     'Colormap', flipud(bone),...
-    'ColorLimits', [0, 6.9], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+    'ColorLimits', [0, 2.3], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
     'FontSize', 8);
 colorbar;
 %     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
@@ -93,10 +90,9 @@ h.XDisplayLabels = num2cell(1:numel(sub_slc));
 set(gca, 'FontSize', 8)
 set(gcf, 'Position',[0 0 400 110])
 
-if save_fig
 flnm = 'ModelEvidence_recal_models';
 saveas(gca, fullfile(out_dir, flnm),'png')
-end
+
 %% 3. plot group log bayes factor
 order = [6, 5,2, 1, 4, 3];
 delta = log_model_evi(order, :) - log_model_evi(6, :);

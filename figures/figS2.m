@@ -98,9 +98,9 @@ for ss = 1:numel(sub_slc)
     set(gca,'TickDir','out');
 
     if ss == 4
-        ylabel('Recalibration effect (s)','FontWeight','bold','FontSize',titleSZ)
+        ylabel('Recalibration effect (s)','FontSize',titleSZ)
     elseif ss == 8
-        xlabel('Adapter SOA (s)','FontWeight','bold','FontSize',titleSZ)
+        xlabel('Adapter SOA (s)','FontSize',titleSZ)
     end
 
 end
@@ -128,8 +128,8 @@ yticks([-700, 0, 700])
 yticklabels([-0.7, 0, 0.7])
 xticks(1:9)
 xticklabels(1:9)
-xlabel('Participant','FontWeight','bold','FontSize',titleSZ)
-ylabel('Asymmetry index','FontWeight','bold','FontSize',titleSZ)
+xlabel('Participant','FontSize',titleSZ)
+ylabel('Asymmetry index','FontSize',titleSZ)
 
 flnm = 'B_asymmetry_index';
 saveas(gca, fullfile(out_dir, flnm),'pdf')

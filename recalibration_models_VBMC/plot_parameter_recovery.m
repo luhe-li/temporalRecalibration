@@ -49,7 +49,7 @@ for pp = 1:num_para
     axis square;
     axis equal
     hold on
-    scatter(gt(:,pp), est(:,pp),50,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    scatter(gt(:,pp), est(:,pp),30,'MarkerEdgeColor','k','MarkerFaceColor','none');
     xlim([lb(pp) ub(pp)])
     ylim([lb(pp) ub(pp)])
 
@@ -93,7 +93,7 @@ for jj = 1:num_para-1
     subplot(nRow,nCol,jj);
     axis square;
     hold on
-    scatter(est(:,idx_pcc), est(:,pp),50,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    scatter(est(:,idx_pcc), est(:,pp),30,'MarkerEdgeColor','k','MarkerFaceColor','none');
     xlim([lb(idx_pcc) ub(idx_pcc)])
     ylim([lb(pp) ub(pp)])
 
