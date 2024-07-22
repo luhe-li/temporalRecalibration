@@ -1,0 +1,31 @@
+clear; close all;
+
+%% manage path
+
+cur_dir               = pwd;
+[project_dir, ~]      = fileparts(cur_dir);
+[git_dir, ~] = fileparts(project_dir);
+dataDir = fullfile(git_dir,'temporalRecalibrationData');
+addpath(genpath(fullfile(project_dir, 'utils')));
+addpath(genpath(fullfile(project_dir, 'vbmc')));
+out_dir               = fullfile(cur_dir, mfilename);
+if ~exist(out_dir,'dir') mkdir(out_dir); end
+
+%% load results
+
+results_folder           = fullfile(dataDir,'recalibration_models_VBMC','param_recovery');
+files = dir(fullfile(results_folder, 'sample-*'));
+pattern = 'fitM(\d+)_sample-(\d+)_';
+
+fit_m = 1;
+for pp = 1:size(files)
+
+    flnm =  files(pp).name;
+    r = load(fullfile(results_folder, files(pp).name));
+    tokens = regexp(filename, pattern, 'tokens');
+    fit_m = str2double(tokens{1}{1});
+    i_sample = str2double(tokens{1}{2});
+
+    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
+    
+end
