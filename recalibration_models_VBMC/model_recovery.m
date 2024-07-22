@@ -13,7 +13,7 @@ currModelStr = model_info.FolderName{fit_m};
 
 %% set environment
 
-useCluster = false;
+useCluster = true;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -115,6 +115,7 @@ end
 parfor sim_m = 1:numCores
 
     temp_model = model;
+    sim_str = folders{sim_m};
     sim_func = str2func(['nll_' sim_str]);
 
     %% simulation
