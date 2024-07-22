@@ -1,5 +1,10 @@
 clear; close all;
 
+%% select models
+
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
+
 %% manage path
 
 cur_dir               = pwd;
@@ -18,6 +23,7 @@ files = dir(fullfile(results_folder, 'fitM*'));
 pattern = 'fitM(\d+)_sample-(\d+)_';
 
 fit_m = 1;
+log_model_evidence = nan(6, 6, 1);
 for pp = 1:size(files)
 
     flnm =  files(pp).name;
@@ -26,7 +32,11 @@ for pp = 1:size(files)
     fit_m = str2double(tokens{1}{1});
     i_sample = str2double(tokens{1}{2});
 
-    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
+    for sim_m = 1:6
+        elbos(sim_m) = r.model.elbo(sim_m);
+    end
+
+    log_model_evidence(:, fit_m, i_sample) = elbos;
     
 end
 
@@ -44,15 +54,15 @@ end
 
 %% plot
 
-figure; hold on
-set(gcf, 'Position',[0,0,170,150]);
+figure;
+set(gcf, 'Position',[0,0,420,300]);
 
 imagesc(CM); 
 colormap('bone')
-xticks(1:2)
-yticks(1:2)
-xticklabels({'Learning','Percept'})
-yticklabels({'Learning','Percept'})
+xticks(1:6)
+yticks(1:6)
+xticklabels(specifications)
+yticklabels(specifications)
 xlabel('Fit Model');
 ylabel('Simulated Model');
 
