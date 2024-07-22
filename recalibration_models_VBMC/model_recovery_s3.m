@@ -1,6 +1,6 @@
-% part 1 of model recovry: simulate 100 datesets from 6 models
+function model_recovery_s3(fit_m)
 
-clear; close all; clc;
+% job = sample, core = sim_m
 
 %% select models
 
@@ -9,9 +9,11 @@ specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal infer
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
+currModelStr = model_info.FolderName{fit_m};
 
 %% set environment
-useCluster = false;
+
+useCluster = 0;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -38,7 +40,7 @@ switch useCluster
 
     case false
         numCores = 6;
-        i_sample = 100;
+        i_sample = 1;
 end
 
 %% manage paths
@@ -51,15 +53,10 @@ dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
 addpath(genpath(fullfile(projectDir, 'utils')));
+addpath(genpath(fullfile(currentDir, currModelStr)));
 outDir = fullfile(currentDir, mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
 if useCluster == false; projectDir = dataDir; end
-
-%% organize data
-sub_slc = [1:4,6:10];
-for sess = 1:9
-    data(sess) = organizeData(1, sess);
-end
 
 %% define model
 
@@ -77,44 +74,74 @@ model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
 model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
 model.toj_axis_finer = 0; % simulate pmf with finer axis
 model.adaptor_axis_finer = 0; % simulate with more adpators
+model.fit_m = fit_m; % current model folder
+model.fit_m_str = currModelStr; % current model folder
 
-%% sample ground-truth from best parameter estimates
+% set OPTIONS
+options = vbmc('defaults');
+if ismember(fit_m, [3,4]); options.MaxFunEvals = 500; end % set max iter for cau-inf models
+options.TolStableCount = 15;
 
-for sim_m = 1:numel(folders)
+%% load similated data
 
-    sim_str = folders{sim_m};
-    sim_func = str2func(['nll_' sim_str]);
-    addpath(genpath(fullfile(pwd, sim_str)));
+result_folder = fullfile(projectDir, 'recalibration_models_VBMC', 'model_recovery_s2');
+d = load(fullfile(result_folder, 'sim_data.mat')); % load struct `sim`
 
-    model.mode = 'initialize';
-    Val = sim_func([], model, []);
+parfor sim_m = 1:numCores
 
-    % load best estimates
-    clearvars bestP
-    result_folder = fullfile(projectDir, 'recalibration_models_VBMC', sim_str);
-    R = load_subject_data(result_folder, sub_slc, 'sub-*');
-    for ss = 1:numel(sub_slc)
-        bestP(ss,:) = R{ss}.diag.post_mean;
-    end
+    temp_d = d;
+    temp_model = model;
+    sim_data = temp_d.fake_data(sim_m, i_sample).data;
+    currModel = str2func(['nll_' currModelStr]);
 
-    % sample 100 ground truth
-    mu_GT = mean(bestP, 1);
-    sd_GT = std(bestP, [], 1);
-    GT_samples = generate_samples(Val, mu_GT, sd_GT, 1);
-    model.mode = 'predict';
+    temp_model.mode = 'initialize';
+    Val = currModel([], temp_model, []);
+    temp_model.initVal = Val;
 
-    temp_sim_func = sim_func;
-    pred =  temp_sim_func(GT_samples, model, []);
-    sim_data = simulateData(pred, data);
-    fake_data(sim_m, i_sample).data = sim_data;
-    fake_data(sim_m, i_sample).gt = GT_samples;
-    fake_data(sim_m, i_sample).mu_GT = mu_GT;
-    fake_data(sim_m, i_sample).sd_GT = sd_GT;
-    fake_data(sim_m, i_sample).pred = pred;
+    % set priors
+    lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
+
+    % set likelihood
+    temp_model.mode = 'optimize';
+    llfun = @(x) currModel(x, temp_model, sim_data);
+    fun = @(x) llfun(x) + lpriorfun(x);
+
+    fprintf('[%s] Start sim model-%s, fit model-%s, recovery sample-%i \n', mfilename, folders{sim_m}, currModelStr, i_sample);
+
+    % vp: variational posterior
+    % elbo: Variational Evidence Lower Bound
+    [temp_vp, temp_elbo, temp_elbo_sd, temp_exitflag,temp_output] = vbmc(fun, Val.init(randi(temp_model.num_runs,1),:), Val.lb,...
+        Val.ub, Val.plb, Val.pub, options);
+
+    % save all outputs
+    vp{sim_m} = temp_vp;
+    elbo(sim_m) = temp_elbo;
+    elbo_sd(sim_m) = temp_elbo_sd;
+    exitflag(sim_m) = temp_exitflag;
+    output{sim_m} = temp_output;
+    fake_data{sim_m} = sim_data;
 
 end
 
-save(fullfile(outDir, sprintf('sim_data_sample-%02d',i_sample)),'fake_data')
+model.vp = vp;
+model.elbo = elbo;
+model.elbo_sd = elbo_sd;
+model.exitflag = exitflag;
+model.output = output;
+
+for sim_m = 1:numCores
+    summ.bestELCBO(sim_m, fit_m) = model.elbo(sim_m) - 3*model.elbo_sd(sim_m);
+    summ.bestELBO(sim_m, fit_m) = model.elbo(sim_m);
+end
+
+save(fullfile(outDir, sprintf('fitM%02d_sample-%02d_%s', fit_m, i_sample, datestr(datetime('now')))),'fake_data','model','summ')
+
+% delete current pool
+if ~isempty(gcp('nocreate'))
+    delete(gcp('nocreate'));
+end
+
+end
 
 %% utility functions
 
@@ -155,6 +182,7 @@ for i = 1:num_parameters
 end
 end
 
+
 function fake_data = simulateData(pred, data)
 
 fake_data = data;
@@ -186,4 +214,5 @@ for ses = 1:9
     fake_data(ses).post_pResp(2,:) = fake_data(ses).post_nT_simul./nT;
 
 end
+
 end

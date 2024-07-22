@@ -9,6 +9,39 @@ folders = {'cauInf_asym', 'cauInf_asym_xSigmaC1', 'cauInf_asym_xSigmaC2', 'cauIn
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
+
+%% set environment
+
+useCluster = true;
+
+% set cores
+if ~exist('useCluster', 'var') || isempty(useCluster)
+    useCluster                  = false;
+end
+
+% job/sample = 100, core/sim_m = 6, fit once
+switch useCluster
+    case true
+        if ~exist('numCores', 'var') || isempty(numCores)
+            numCores  = maxNumCompThreads;
+        end
+        hpc_job_number = str2double(getenv('SLURM_ARRAY_TASK_ID'));
+        if isnan(hpc_job_number), error('Problem with array assigment'); end
+        fprintf('Job number: %i \n', hpc_job_number);
+        i_sample = hpc_job_number;
+
+        % make sure Matlab does not exceed this
+        fprintf('Number of cores: %i  \n', numCores);
+        maxNumCompThreads(numCores);
+        if isempty(gcp('nocreate'))
+            parpool(numCores);
+        end
+
+    case false
+        numCores = 6;
+        i_sample = 1;
+end
+
 %% manage paths
 
 restoredefaultpath;

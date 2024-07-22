@@ -26,7 +26,7 @@ switch useCluster
         hpc_job_number = str2double(getenv('SLURM_ARRAY_TASK_ID'));
         if isnan(hpc_job_number), error('Problem with array assigment'); end
         fprintf('Job number: %i \n', hpc_job_number);
-        num_sample = hpc_job_number;
+        i_sample = hpc_job_number;
 
         % make sure Matlab does not exceed this
         fprintf('Number of cores: %i  \n', numCores);
@@ -37,7 +37,7 @@ switch useCluster
 
     case false
         numCores = 6;
-        num_sample = 100;
+        i_sample = 100;
 end
 
 %% manage paths
@@ -50,7 +50,6 @@ dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
 addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(currentDir, currModelStr)));
 outDir = fullfile(currentDir, mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
 if useCluster == false; projectDir = dataDir; end
@@ -100,22 +99,20 @@ for sim_m = 1:numel(folders)
     % sample 100 ground truth
     mu_GT = mean(bestP, 1);
     sd_GT = std(bestP, [], 1);
-    GT_samples = generate_samples(Val, mu_GT, sd_GT, num_sample);
+    GT_samples = generate_samples(Val, mu_GT, sd_GT, 1);
     model.mode = 'predict';
 
-    % simulation
-    for i_sample = 1:num_sample
-
-        pred =  sim_func(GT_samples(:,i_sample)', model, []);
-        sim_data = simulateData(pred, data);
-        sim(sim_m, i_sample) = sim_data;
-        sim(sim_m, i_sample).gt = GT_samples(:,i_sample)';
-
-    end
+    temp_sim_func = sim_func;
+    pred =  temp_sim_func(GT_samples, model, []);
+    sim_data = simulateData(pred, data);
+    fake_data(sim_m, i_sample).data = sim_data;
+    fake_data(sim_m, i_sample).gt = GT_samples;
+    fake_data(sim_m, i_sample).mu_GT = mu_GT;
+    fake_data(sim_m, i_sample).sd_GT = sd_GT;
 
 end
 
-save(fullfile(outDir, sprintf('model_recovery_sim_data')),'sim')
+save(fullfile(outDir, sprintf('model_recovery_sim_data_sample-%02d',i)),'fake_data')
 
 %% utility functions
 
@@ -155,7 +152,6 @@ for i = 1:num_parameters
     end
 end
 end
-
 
 function fake_data = simulateData(pred, data)
 
