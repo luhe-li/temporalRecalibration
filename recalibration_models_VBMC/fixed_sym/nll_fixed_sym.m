@@ -14,7 +14,7 @@ if strcmp(model.mode, 'initialize')
 
     % soft bounds, the range for PLB, PUB
     paraS.tau      = [ -40,    40]; % ms
-    paraS.sigma    = [  20,    50]; % ms
+    paraS.sigma    = [  50,    70]; % ms
     paraS.criterion= [  30,    80]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
     paraS.alpha    = [1e-3,  2e-3]; % percentage
