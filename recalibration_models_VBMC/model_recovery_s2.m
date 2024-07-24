@@ -37,6 +37,7 @@ for pp = 1:size(files)
     for sim_m = 1:6
         fake_data(sim_m, i_sample).data =  r.fake_data(sim_m,i_sample).data;
         fake_data(sim_m, i_sample).gt = r.fake_data(sim_m,i_sample).gt;
+        fake_data(sim_m, i_sample).pred = r.fake_data(sim_m,i_sample).pred;
     end
 end
 

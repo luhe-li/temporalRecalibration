@@ -18,11 +18,10 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 
 %% load results
 
-results_folder           = fullfile(dataDir,'recalibration_models_VBMC','model_recovery');
+results_folder           = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
 files = dir(fullfile(results_folder, 'fitM*'));
 pattern = 'fitM(\d+)_sample-(\d+)_';
 
-fit_m = 1;
 log_model_evidence = nan(6, 6, 1);
 for pp = 1:size(files)
 
@@ -32,13 +31,11 @@ for pp = 1:size(files)
     fit_m = str2double(tokens{1}{1});
     i_sample = str2double(tokens{1}{2});
 
-    for sim_m = 1:6
-        elbos(sim_m) = r.model.elbo(sim_m);
-    end
-
-    log_model_evidence(:, fit_m, i_sample) = elbos;
+    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO(:,fit_m);
     
 end
+
+log_model_evidence = log_model_evidence([1,2,5,6], [1,2,5,6],:);
 
 [num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
 CM = zeros(num_sim_m, num_fit_m);
@@ -49,8 +46,14 @@ for sim_m = 1:num_sim_m
         [~, max_fit_m_index] = max(log_model_evidence(sim_m, :, i_sample));
         % Increment the count for the corresponding fit_m
         CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
+
+        if sim_m == 1 && max_fit_m_index == 3
+            disp('i_sample')
+        end
     end
 end
+
+CM = CM./num_i_sample;
 
 %% plot
 
@@ -66,14 +69,13 @@ yticklabels(specifications)
 xlabel('Fit Model');
 ylabel('Simulated Model');
 
-
 [num_rows, num_cols] = size(CM);
 for row = 1:num_rows
     for col = 1:num_cols
         val = CM(row, col);
         % Choose text color for better contrast
         textColor = 'w'; % default black
-        if val > 0.5
+        if val >= 0.5
             textColor = 'k'; % white for contrast
         end
         text(col, row, num2str(val, '%0.2f'), ...

@@ -13,7 +13,7 @@ currModelStr = model_info.FolderName{fit_m};
 
 %% set environment
 
-useCluster = 0;
+useCluster = true;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)

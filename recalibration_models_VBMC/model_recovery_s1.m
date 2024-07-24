@@ -11,7 +11,7 @@ numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
 %% set environment
-useCluster = false;
+useCluster = true;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -133,25 +133,27 @@ for i = 1:num_parameters
     switch paraId
         case '\tau'
             % Case 1: For 'tau'
-            samples(i, :) = normrnd(mean_values(i), sd_values(i), [1, num_sample]);
+            param_samples = normrnd(mean_values(i), sd_values(i), [1, num_sample]);
 
         case {'\sigma_{A}', '\sigma_{V}', '\sigma', 'c', '\sigma_{C=1}', '\sigma_{C=2}'}
             % Case 2: For 'sigma_a', 'sigma_v', 'sigma', 'criterion', 'sigma_C1', 'sigma_C2'
             v = sd_values(i).^2;
             log_mu = log((mean_values(i).^2) ./ sqrt(v + mean_values(i).^2));
             log_sigma = sqrt(log(v ./ (mean_values(i).^2) + 1));
-            samples(i, :) = lognrnd(log_mu, log_sigma, [1, num_sample]);
+            param_samples = lognrnd(log_mu, log_sigma, [1, num_sample]);
 
         case {'p_{common}', '\lambda', '\alpha'}
             % Case 3: For 'p_{common}', '\lambda', '\alpha'
             param_samples = normrnd(mean_values(i), sd_values(i), [1, num_sample]);
-            param_samples(param_samples < Val.lb(i)) = Val.lb(i);
-            param_samples(param_samples > Val.ub(i)) = Val.ub(i);
-            samples(i, :) = param_samples;
 
         otherwise
             error('Unknown parameter ID: %s', paraId);
     end
+
+    param_samples(param_samples < Val.lb(i)) = Val.lb(i);
+    param_samples(param_samples > Val.ub(i)) = Val.ub(i);
+    samples(i, :) = param_samples;
+
 end
 end
 
