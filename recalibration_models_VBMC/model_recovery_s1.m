@@ -116,6 +116,18 @@ end
 
 save(fullfile(outDir, sprintf('sim_data_sample-%02d',i_sample)),'fake_data')
 
+% %% optinal: check predictions
+% 
+% i_sample = 1;
+% for sim_m = 1:numel(folders)
+%     figure; 
+%     sgtitle(folders{sim_m})
+%     subplot 121
+%     plot(fake_data(sim_m, i_sample).pred.adaptor_soa, mean(fake_data(sim_m, i_sample).pred.pss_shift,2))
+%     subplot 122
+%     plot(fake_data(sim_m, i_sample).pred.test_soa, fake_data(sim_m, i_sample).pred.pre_pmf')
+% end
+
 %% utility functions
 
 function samples = generate_samples(Val, mean_values, sd_values, num_sample)

@@ -120,6 +120,17 @@ parfor sim_m = 1:numCores
     exitflag(sim_m) = temp_exitflag;
     output{sim_m} = temp_output;
     fake_data{sim_m} = sim_data;
+    fake_pred{sim_m} = temp_d.fake_data(sim_m, i_sample).pred;
+
+    % make predictions
+    Xs = vbmc_rnd(temp_vp,1e5);
+    post_mean = mean(Xs,1);
+
+    %% model prediction by best-fitting parameters
+
+    model.mode       = 'predict';
+    pred =  currModel(post_mean, model, data);
+    fit_pred{sim_m} = pred;
 
 end
 
@@ -130,11 +141,11 @@ model.exitflag = exitflag;
 model.output = output;
 
 for sim_m = 1:numCores
-    summ.bestELCBO(sim_m, fit_m) = model.elbo(sim_m) - 3*model.elbo_sd(sim_m);
-    summ.bestELBO(sim_m, fit_m) = model.elbo(sim_m);
+    summ.bestELCBO(sim_m) = model.elbo(sim_m) - 3*model.elbo_sd(sim_m);
+    summ.bestELBO(sim_m) = model.elbo(sim_m);
 end
 
-save(fullfile(outDir, sprintf('fitM%02d_sample-%02d_%s', fit_m, i_sample, datestr(datetime('now')))),'fake_data','model','summ')
+save(fullfile(outDir, sprintf('fitM%02d_sample-%02d_%s', fit_m, i_sample, datestr(datetime('now')))),'fake_data','fake_pred','model','summ','fit_pred')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))
