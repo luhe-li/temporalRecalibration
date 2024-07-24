@@ -121,10 +121,12 @@ parfor sim_m = 1:numCores
     output{sim_m} = temp_output;
     fake_data{sim_m} = sim_data;
     fake_pred{sim_m} = temp_d.fake_data(sim_m, i_sample).pred;
+    fake_gt{sim_m} = temp_d.fake_data(sim_m, i_sample).gt;
 
     % make predictions
     Xs = vbmc_rnd(temp_vp,1e5);
     post_mean = mean(Xs,1);
+    fit_est{sim_m} = post_mean;
 
     %% model prediction by best-fitting parameters
 
@@ -145,7 +147,8 @@ for sim_m = 1:numCores
     summ.bestELBO(sim_m) = model.elbo(sim_m);
 end
 
-save(fullfile(outDir, sprintf('fitM%02d_sample-%02d_%s', fit_m, i_sample, datestr(datetime('now')))),'fake_data','fake_pred','model','summ','fit_pred')
+save(fullfile(outDir, sprintf('fitM%02d_sample-%02d_%s', fit_m, i_sample, datestr(datetime('now')))),...
+    'fake_data','fake_pred','model','summ','fit_pred','fake_gt','fit_est')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))
