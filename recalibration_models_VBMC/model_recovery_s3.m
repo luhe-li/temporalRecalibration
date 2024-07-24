@@ -128,8 +128,8 @@ parfor sim_m = 1:numCores
 
     %% model prediction by best-fitting parameters
 
-    model.mode       = 'predict';
-    pred =  currModel(post_mean, model, data);
+    temp_model.mode       = 'predict';
+    pred =  currModel(post_mean, temp_model, sim_data);
     fit_pred{sim_m} = pred;
 
 end

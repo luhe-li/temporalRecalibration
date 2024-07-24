@@ -6,9 +6,9 @@ if strcmp(model.mode, 'initialize')
     out.num_para = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
-    paraH.tau      = [-150,   150]; % ms
+    paraH.tau      = [-100,   100]; % ms
     paraH.sigma    = [  10,   150]; % ms
-    paraH.criterion= [   1,   350]; % criterion, s
+    paraH.criterion= [   1,   300]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
     paraH.alpha    = [1e-4,  0.02]; % percentage
 

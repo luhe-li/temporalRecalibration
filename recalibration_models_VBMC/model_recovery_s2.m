@@ -8,7 +8,7 @@ clear; close all; clc;
 if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster                  = false;
 end
-
+w
 % restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);

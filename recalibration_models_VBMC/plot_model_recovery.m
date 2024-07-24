@@ -2,7 +2,7 @@ clear; close all;
 
 %% select models
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; 
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
 %% manage path
@@ -18,7 +18,7 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 
 %% load results
 
-results_folder           = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
+results_folder = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
 files = dir(fullfile(results_folder, 'fitM*'));
 pattern = 'fitM(\d+)_sample-(\d+)_';
 
@@ -31,8 +31,19 @@ for pp = 1:size(files)
     fit_m = str2double(tokens{1}{1});
     i_sample = str2double(tokens{1}{2});
 
-    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO(:,fit_m);
-    
+    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
+    fake_pred(:, fit_m, i_sample) = r.fake_pred;
+    pred(:,fit_m, i_sample) = r.fit_pred;
+    elbo(:, fit_m, i_sample) = r.model.elbo;
+    exitflag(:, fit_m, i_sample) = r.model.exitflag;
+
+    % make predictions
+    for mm = 1:6
+        Xs = vbmc_rnd(r.model.vp{mm},1e5);
+        post_mean = mean(Xs,1);
+        est{mm, fit_m,i_sample} = post_mean;
+    end
+
 end
 
 log_model_evidence = log_model_evidence([1,2,5,6], [1,2,5,6],:);
@@ -40,7 +51,7 @@ log_model_evidence = log_model_evidence([1,2,5,6], [1,2,5,6],:);
 [num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
 CM = zeros(num_sim_m, num_fit_m);
 for sim_m = 1:num_sim_m
-    
+
     for i_sample = 1:num_i_sample
 
         % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
@@ -48,20 +59,51 @@ for sim_m = 1:num_sim_m
         % Increment the count for the corresponding fit_m
         CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
 
-%         if sim_m == 1 && max_fit_m_index == 3
-%             disp(i_sample)
-%         end
+        if sim_m == 1 && max_fit_m_index == 4
+            disp(i_sample)
+        end
     end
 end
 
 CM = CM./num_i_sample;
+
+%% compare model predictions
+
+i_sample = 18;
+sim_m = 1;
+for fit_m = [1,4]
+    figure;
+    set(gcf, 'Position',[0 0 500 400])
+    sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
+    hold on
+    plot(pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(pred{sim_m, fit_m, i_sample}.pss_shift,2),'--or')
+    plot(fake_pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(fake_pred{sim_m, fit_m, i_sample}.pss_shift,2),'k')
+    saveas(gca, fullfile(out_dir, sprintf('recal_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
+
+    figure;  hold on
+    set(gcf, 'Position',[0 0 1000 400])
+    sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
+    subplot(2,5,1); hold on
+    title('pretest')
+    plot(pred{sim_m, fit_m, i_sample}.test_soa, pred{sim_m, fit_m, i_sample}.pre_pmf','--or')
+    plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, fake_pred{sim_m, fit_m, i_sample}.pre_pmf,'k')
+
+    for ses = 1:9
+        subplot(2,5,ses+1);
+        hold on
+        plot(pred{sim_m, fit_m, i_sample}.test_soa, squeeze(pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:))','--or')
+        plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, squeeze((fake_pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:)))','k')
+        title(['posttest' num2str(ses)])
+    end
+    saveas(gca, fullfile(out_dir, sprintf('toj_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
+end
 
 %% plot
 
 figure;
 set(gcf, 'Position',[0,0,420,300]);
 
-imagesc(CM); 
+imagesc(CM);
 colormap('bone')
 xticks(1:6)
 yticks(1:6)
@@ -84,3 +126,5 @@ for row = 1:num_rows
             'Color', textColor);
     end
 end
+
+saveas(gca, fullfile(out_dir, 'CM'),'png');
