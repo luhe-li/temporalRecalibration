@@ -35,7 +35,7 @@ for ss = 1:numel(sub_slc)
     est(ss,:) = bestP{ss};
 end
 
-R{ss}.model.initVal.paraID{4} = 'Criterion';
+paraID = {'\beta','\tau_A','\tau_V','Criterion','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
 
 %% create latex table
 
@@ -43,7 +43,7 @@ est_mean                         = mean(est);
 est_std                          = std(est)./sqrt(numel(sub_slc));
 para.data                        = round([est; est_mean; est_std; R{ss}.model.initVal.lb;R{ss}.model.initVal.ub],3);
 para.tableRowLabels              = [sprintfc('S%i', 1:numel(sub_slc)),'Mean','S.E.','Lower bound','Upper bound'];
-para.tableColLabels              = R{ss}.model.initVal.paraID;
+para.tableColLabels              = paraID;
 
 if dispLatex
     para.dataFormat = {'%.2f', 4, '%.3f',3, '%.2f',2};

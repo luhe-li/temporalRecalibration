@@ -33,7 +33,8 @@ end
 
 % info
 model_str = r.model.currModelStr;
-paraID = {'\beta','\tau_A','\tau_V','Criterion','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
+paraID = {'\beta','tau_A','tau_V',};
+paraID{4} = 'criterion';
 num_para = numel(paraID);
 lb = r.model.initVal.lb;
 ub = r.model.initVal.ub;
@@ -82,12 +83,7 @@ for jj = 1:num_para
     p_value = P(1,2);
 
     % Label the r and p in the title
-
-    if p_value < 0.01
-        title(sprintf('%s \n r = %.2f, p < 0.01', paraID{jj}, r),'FontSize',fontSZ,'FontWeight','normal');
-    else
-        title(sprintf('%s \n r = %.2f, p = %.3f', paraID{jj}, r, round(p_value, 3)),'FontSize',fontSZ,'FontWeight','normal');
-    end
+    title(sprintf('%s \n r= %.2f, p=%.2f', paraID{jj}, r, round(p_value,2)),'FontSize',fontSZ,'FontWeight','normal');
 
     if jj == 4
         ylabel('Model prediction','FontSize',titleSZ)

@@ -159,7 +159,7 @@ xticks(adaptor_soa);
 xticklabels(adaptor_soa / 1e3);
 xtickangle(60);
 xlim([min(adaptor_soa) - 50, max(adaptor_soa) + 50]);
-xlabel('Adaptor SOA (s)', 'FontName', 'Helvetica');
+xlabel('Adapter SOA (s)', 'FontName', 'Helvetica');
 set(gca, 'TickDir', 'out');
 
 % Save figure

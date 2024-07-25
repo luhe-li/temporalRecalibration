@@ -5,7 +5,7 @@ clear; close all; clc;
 %% select models
 
 rng('shuffle'); rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric', 'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
@@ -107,7 +107,7 @@ for sim_m = 1:numel(folders)
     pred =  temp_sim_func(GT_samples, model, []);
     sim_data = simulateData(pred, data);
     fake_data(sim_m, i_sample).data = sim_data;
-    fake_data(sim_m, i_sample).gt = GT_samples;
+    fake_data(sim_m, i_sample).gt_p = GT_samples;
     fake_data(sim_m, i_sample).mu_GT = mu_GT;
     fake_data(sim_m, i_sample).sd_GT = sd_GT;
     fake_data(sim_m, i_sample).pred = pred;
@@ -129,7 +129,6 @@ save(fullfile(outDir, sprintf('sim_data_sample-%02d',i_sample)),'fake_data')
 % end
 
 %% utility functions
-
 function samples = generate_samples(Val, mean_values, sd_values, num_sample)
 % Extract the parameter IDs
 paraIds = Val.paraID;
@@ -143,7 +142,7 @@ for i = 1:num_parameters
     paraId = paraIds{i};
 
     switch paraId
-        case '\tau'
+        case {'\tau','p_{common}', '\lambda', '\alpha'}
             % Case 1: For 'tau'
             param_samples = normrnd(mean_values(i), sd_values(i), [1, num_sample]);
 
@@ -154,18 +153,27 @@ for i = 1:num_parameters
             log_sigma = sqrt(log(v ./ (mean_values(i).^2) + 1));
             param_samples = lognrnd(log_mu, log_sigma, [1, num_sample]);
 
-        case {'p_{common}', '\lambda', '\alpha'}
-            % Case 3: For 'p_{common}', '\lambda', '\alpha'
-            param_samples = normrnd(mean_values(i), sd_values(i), [1, num_sample]);
-
         otherwise
             error('Unknown parameter ID: %s', paraId);
     end
 
-    param_samples(param_samples < Val.lb(i)) = Val.lb(i);
-    param_samples(param_samples > Val.ub(i)) = Val.ub(i);
-    samples(i, :) = param_samples;
+    % Ensure all samples are within the bounds
+    for j = 1:num_sample
+        while param_samples(j) < Val.lb(i) || param_samples(j) > Val.ub(i)
+            switch paraId
+                case {'\tau','p_{common}', '\lambda', '\alpha'}
+                    param_samples(j) = normrnd(mean_values(i), sd_values(i));
 
+                case {'\sigma_{A}', '\sigma_{V}', '\sigma', 'c', '\sigma_{C=1}', '\sigma_{C=2}'}
+                    param_samples(j) = lognrnd(log_mu, log_sigma);
+
+                otherwise
+                    error('Unknown parameter ID: %s', paraId);
+            end
+        end
+    end
+
+    samples(i, :) = param_samples;
 end
 end
 

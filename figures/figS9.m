@@ -5,8 +5,8 @@ clear; clc; close all;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','exp_shiftMu'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'}; 
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -54,17 +54,17 @@ cmp2 = [216, 49, 91; 175, 213, 128; 88,193,238]./255;
 lw = 0.5;
 fontSZ = 7;
 titleSZ = 9;
-dotSZ = 10;
+dotSZ = 6;
 
 tick_y = 0:0.5:1;
 tick_x = [-500, 0, 500];
 test_soa = pred{1}.test_soa;
 adaptor_soa = pred{1}.adaptor_soa;
 
-for  ss  = 1:numel(sub_slc)
+for  ss  = 1%:numel(sub_slc)
 
     figure; hold on
-    set(gcf, 'Position', [1400,0,2500,500]);
+    set(gcf, 'Position', [0,0,800,150]);
 
     tl = tiledlayout(2,9);
     sgtitle(sprintf('S%i',ss),'FontSize',titleSZ,'FontWeight','bold')
@@ -74,9 +74,10 @@ for  ss  = 1:numel(sub_slc)
         % pre
         nexttile(adapter); hold on
         set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+        title(sprintf('Adapter SOA\n%.1f s', adaptor_soa(adapter)./1e3),'FontSize',fontSZ-1,'FontWeight','bold')
 
         % data
-        scatter(atheo(ss).data(adapter).pre_ms_unique, atheo(ss).data(adapter).pre_pResp, dotSZ, 'filled');
+        scatter(atheo{ss}.data(adapter).pre_ms_unique, atheo{ss}.data(adapter).pre_pResp, dotSZ, 'filled');
 
         % prediction
         plot(pred{ss}.test_soa, pred{ss}.pre_pmf, 'LineWidth',lw)
@@ -87,7 +88,7 @@ for  ss  = 1:numel(sub_slc)
         yticks([])
 
         if adapter == 1
-            ylabel('Pretest probability', 'FontSize',fontSZ,'FontWeight','bold')
+            ylabel({'Pre-test', 'probability'}, 'FontSize',fontSZ,'FontWeight','bold')
             yticks(tick_y)
             yticklabels(strsplit(num2str(tick_y)))
         end
@@ -95,13 +96,15 @@ for  ss  = 1:numel(sub_slc)
         % post
         nexttile(adapter+num_ses); hold on
         set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+        if adapter == 5
+            xlabel('Test SOA','FontSize',fontSZ,'FontWeight','bold')
+        end
 
         % data
-        scatter(atheo(ss).data(adapter).post_ms_unique, atheo(ss).data(adapter).post_pResp, dotSZ, 'filled');
+        scatter(atheo{ss}.data(adapter).post_ms_unique, atheo{ss}.data(adapter).post_pResp, dotSZ, 'filled');
 
         % prediction
         plot(pred{ss}.test_soa, squeeze(pred{ss}.post_pmf(adapter,:,:)),'LineWidth',lw)
-        xlabel({'Test SOA',sprintf('Adapter SOA = %.1f s', adaptor_soa(adapter)./1e3)},'FontSize',fontSZ,'FontWeight','bold')
 
         % look better
         xlim([-550 550])
@@ -111,7 +114,7 @@ for  ss  = 1:numel(sub_slc)
         yticklabels(strsplit(num2str(tick_y)))
 
         if adapter == 1
-            ylabel('Posttest probability','FontSize',fontSZ,'FontWeight','bold')
+            ylabel({'Post-test'; 'probability'},'FontSize',fontSZ,'FontWeight','bold')
             yticks(tick_y)
             yticklabels(strsplit(num2str(tick_y)))
         end

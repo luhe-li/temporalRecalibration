@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #SBATCH --job-name=Model1Recovery
-#SBATCH -a 1-50
+#SBATCH -a 1-100
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6
