@@ -6,7 +6,7 @@ clear; clc; close all;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Atheoretical'}; % Column 2: specifications
+specifications = {'Heuristic, modality-specific uncertainty', 'Heuristic, modality-independent uncertainty', 'Causal-inference, modality-specific uncertainty',  'Causal-inference, modality-independent uncertainty','Fixed update, modality-specific uncertainty', 'Fixed-update, modality-independent uncertainty','Atheoretical'}; % Column 2: specifications
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
@@ -85,7 +85,7 @@ m_delta = mean(delta, 2);
 se_delta = std(delta, [], 2) ./ numel(sub_slc);
 
 figure;
-set(gca, 'FontSize', fontSZ)
+set(gca, 'FontSize', fontSZ,'TickDir', 'out')
 set(gcf, 'Position',[0 0 420 100])
 hold on;
 bar_handle = bar(m_delta, 'FaceColor', [0.8, 0.8, 0.8], 'EdgeColor', 'none','BarWidth', 0.5);
@@ -97,9 +97,17 @@ xticks(1:length(m_delta));
 xtickangle(0)
 xlim([0.5, 6.5])
 labels = specifications(order);
-labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
-xticklabels(labels);
-ylabel({'\Delta log model evidence'; 'relative to fixed-update'; 'symmetric model'});
+
+for i = 1:numel(labels)
+    % Split each string into three parts
+    parts = strsplit(labels{i}, ' ');
+    % Concatenate parts with newline characters
+    splitStr{i} = strjoin(parts, '\n');
+end
+
+% labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
+xticklabels(splitStr);
+ylabel({'\Delta log model evidence'; 'relative to fixed-update'; 'modality-independent';'uncertainty model'});
 
 flnm = 'A_BF';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
@@ -157,7 +165,8 @@ for mm = order
     xtickangle(0)
     xlim([min(adaptor_soa)-50, max(adaptor_soa)+50])
 
-    title(specifications{mm},'FontSize',fontSZ,'FontWeight', 'bold');
+    parts = strsplit(specifications{mm},',');
+    title({parts{1};parts{2}},'FontSize',fontSZ,'FontWeight', 'bold');
 
 end
 

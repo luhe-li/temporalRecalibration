@@ -46,7 +46,7 @@ for pp = 1:size(files)
 
 end
 
-log_model_evidence = log_model_evidence([1,2,5,6], [1,2,5,6],:);
+log_model_evidence = log_model_evidence([1,2,3,5,6], [1,2,3,5,6],:);
 
 [num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
 CM = zeros(num_sim_m, num_fit_m);
@@ -59,44 +59,44 @@ for sim_m = 1:num_sim_m
         % Increment the count for the corresponding fit_m
         CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
 
-        if sim_m == 1 && max_fit_m_index == 4
-            disp(i_sample)
-        end
+%         if sim_m == 1 && max_fit_m_index == 4
+%             disp(i_sample)
+%         end
     end
 end
 
 CM = CM./num_i_sample;
 
 %% compare model predictions
-
-i_sample = 18;
-sim_m = 1;
-for fit_m = [1,4]
-    figure;
-    set(gcf, 'Position',[0 0 500 400])
-    sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
-    hold on
-    plot(pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(pred{sim_m, fit_m, i_sample}.pss_shift,2),'--or')
-    plot(fake_pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(fake_pred{sim_m, fit_m, i_sample}.pss_shift,2),'k')
-    saveas(gca, fullfile(out_dir, sprintf('recal_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
-
-    figure;  hold on
-    set(gcf, 'Position',[0 0 1000 400])
-    sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
-    subplot(2,5,1); hold on
-    title('pretest')
-    plot(pred{sim_m, fit_m, i_sample}.test_soa, pred{sim_m, fit_m, i_sample}.pre_pmf','--or')
-    plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, fake_pred{sim_m, fit_m, i_sample}.pre_pmf,'k')
-
-    for ses = 1:9
-        subplot(2,5,ses+1);
-        hold on
-        plot(pred{sim_m, fit_m, i_sample}.test_soa, squeeze(pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:))','--or')
-        plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, squeeze((fake_pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:)))','k')
-        title(['posttest' num2str(ses)])
-    end
-    saveas(gca, fullfile(out_dir, sprintf('toj_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
-end
+% 
+% i_sample = 18;
+% sim_m = 1;
+% for fit_m = [1,4]
+%     figure;
+%     set(gcf, 'Position',[0 0 500 400])
+%     sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
+%     hold on
+%     plot(pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(pred{sim_m, fit_m, i_sample}.pss_shift,2),'--or')
+%     plot(fake_pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(fake_pred{sim_m, fit_m, i_sample}.pss_shift,2),'k')
+%     saveas(gca, fullfile(out_dir, sprintf('recal_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
+% 
+%     figure;  hold on
+%     set(gcf, 'Position',[0 0 1000 400])
+%     sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
+%     subplot(2,5,1); hold on
+%     title('pretest')
+%     plot(pred{sim_m, fit_m, i_sample}.test_soa, pred{sim_m, fit_m, i_sample}.pre_pmf','--or')
+%     plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, fake_pred{sim_m, fit_m, i_sample}.pre_pmf,'k')
+% 
+%     for ses = 1:9
+%         subplot(2,5,ses+1);
+%         hold on
+%         plot(pred{sim_m, fit_m, i_sample}.test_soa, squeeze(pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:))','--or')
+%         plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, squeeze((fake_pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:)))','k')
+%         title(['posttest' num2str(ses)])
+%     end
+%     saveas(gca, fullfile(out_dir, sprintf('toj_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
+% end
 
 %% plot
 
@@ -107,8 +107,8 @@ imagesc(CM);
 colormap('bone')
 xticks(1:6)
 yticks(1:6)
-xticklabels(specifications([1,2,5,6]))
-yticklabels(specifications([1,2,5,6]))
+xticklabels(specifications([1,2,3,5,6]))
+yticklabels(specifications([1,2,3,5,6]))
 xlabel('Fit Model');
 ylabel('Simulated Model');
 

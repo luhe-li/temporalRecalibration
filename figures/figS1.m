@@ -4,7 +4,7 @@ clear; close all; clc;
 
 %% model info
 
-specifications = {'Exponential likelihood, shift criterion', 'Exponential likelihood, shift bias', 'Gaussian likelihood, shift criterion',  'Gaussian likelihood, shift bias'};
+specifications = {'Exponential likelihood, criterion-shift', 'Exponential likelihood, bias-shift', 'Gaussian likelihood, criterion-shift',  'Gaussian likelihood, bias-shift'};
 folders = {'exp_shiftC', 'exp_shiftMu', 'gauss_shiftC', 'gauss_shiftMu'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
@@ -43,14 +43,14 @@ end
 
 %% plot model evidence
 
-% max subtract other log model evidence
+% max model relative to others
 delta_LME = max(log_model_evi, [], 1) - log_model_evi;
 
 figure
 subplot('Position', [0.2, 0.1, 0.6, 0.8]); 
 h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
-    'Colormap', flipud(bone),...
-    'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+    'Colormap', flip(bone),...
+    'ColorLimits', [0, log(100)], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
     'FontSize', 8);
 colorbar;
 %     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...

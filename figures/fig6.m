@@ -1,16 +1,15 @@
-% A cute exponential TOJ demo with gif output
+% fig 6: demonstration of the normative model of psychometric functions of
+% ternary TOJ task
 
-clear all; clc; close all;
+clear; clc; close all;
 
+%% manage paths
 
-%% path
-
-cur_dir                            = pwd;
-[project_dir, ~]                   = fileparts(cur_dir);
-out_dir = fullfile(cur_dir, 'fig5TOJdemo');
-addpath(genpath(fullfile(project_dir, 'data'))); 
-addpath(genpath(fullfile(project_dir, 'recalibrationModel'))); 
-if ~exist(out_dir,'dir') mkdir(out_dir); end
+restoredefaultpath;
+[projectDir, ~]= fileparts(pwd);
+addpath(genpath(fullfile(projectDir, 'utils')));
+out_dir = fullfile(pwd, mfilename);
+if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% set free param
 
@@ -24,17 +23,15 @@ soa = 0;
 
 % set free parameters for causal inference
 p_common = 0.2;
-% alpha = 0.012;
 sigma_C1 = 10;
 sigma_C2 = 500;
 
-% mu
+% calculate PSS
 if sigma_a <= sigma_v
 mu  = -tau - sigma_v * log((sigma_a + sigma_v)/(2*sigma_v));
 else
 mu  = -tau + sigma_a * log((sigma_a + sigma_v)/(2*sigma_a));
 end
-
 
 %% set fixed param
 
@@ -44,20 +41,19 @@ max_x = 500;
 x_axis = min_x:max_x;
 soas = min_x:50:max_x;
 
-% set fixed param for cau inf
+% set fixed param for causal inference
 model.expo_num_trial        = 250; % number of *real* trials in exposure phase
-model.bound                 = 10; % in second, the bound for prior axis
-model.bound_int             = 2;
+model.bound_full = 10*1e3; % in ms, the bound for prior axis
+model.bound_int = 2*1e3; % in ms, where measurements are likely to reside
 model.sim_adaptor_soa       = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
 
 % prior
-fixP.bound_int              = model.bound_int*1e3;
-fixP.x_axis                 = [-model.bound * 1e3:1:model.bound * 1e3];
-fixP.x_axis_int             = [-model.bound_int * 1e3:1:model.bound_int * 1e3];
-fixP.l_window               = find(fixP.x_axis == fixP.x_axis_int(1));
-fixP.r_window               = find(fixP.x_axis == fixP.x_axis_int(end));
-fixP.prior_C1               = normpdf(fixP.x_axis_int, 0, sigma_C1);
-fixP.prior_C2               = normpdf(fixP.x_axis_int, 0, sigma_C2);
+fixP.x_axis     = -model.bound_full:1:model.bound_full;
+fixP.x_axis_int = -model.bound_int:1:model.bound_int;
+fixP.l_window   = find(fixP.x_axis == fixP.x_axis_int(1));
+fixP.r_window   = find(fixP.x_axis == fixP.x_axis_int(end));
+fixP.prior_C1   = normpdf(fixP.x_axis_int, 0, sigma_C1);
+fixP.prior_C2   = normpdf(fixP.x_axis_int, 0, sigma_C2);
 
 % likelihood that centers around 0
 v_peak                       = 0;
@@ -68,9 +64,26 @@ rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (fixP.x_axis(idx_peak+1:end)));
 fixP.df_likelihood           = [lf, rf] + 1e-40;
 fixP.df_likelihood_int       = fixP.df_likelihood(fixP.l_window:fixP.r_window);
 
-fixP.y_criterion             = 1/(sigma_a + sigma_v);
+fixP.y_criterion             = sigma_v/(sigma_a + sigma_v);
 
-%% set up
+% set up for PMF with causal inference by simulation (pmf_exp_CI)
+fixP.num_sample             = 1e4; % number of simulation samples of measurements
+model.test_soa              = 0;
+
+% pre-calculate possible likelihoods by shifting default likelihood
+fixP.shift_bound = model.bound_int;
+shiftRange = -fixP.shift_bound:1:fixP.shift_bound;
+numShifts = numel(shiftRange);
+indices = (fixP.l_window - shiftRange(:)) + (0:(fixP.r_window - fixP.l_window));
+indices = max(min(indices, length(fixP.df_likelihood)), 1);
+fixP.likelihoods = fixP.df_likelihood(indices);
+
+% pre-calculate two posteriors
+fixP.protopost_C1s = fixP.likelihoods .* repmat(fixP.prior_C1, numShifts, 1);
+fixP.protopost_C2s = fixP.likelihoods .* repmat(fixP.prior_C2, numShifts, 1);
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 lw = 0.5;
 fontSz = 7;
@@ -112,7 +125,7 @@ lgd.ItemTokenSize = [10,10];
 
 % look better
 ylabel('Probability')
-xlabel('Measurement of SOA (s)')
+xlabel('Measurement of SOA (sec)')
 % yticks([yl(1), yl(2)])
 xticks([-500, 0, 500])
 xticklabels({'-0.5','0','0.5'})
@@ -128,10 +141,7 @@ subplot('Position', [left, bottom, width, height]);
 set(gca, 'LineWidth', lw, 'FontSize', fontSz); hold on
 set(gca,'TickDir','out');
 
-fixP.sample_count           = 1e4;
-model.test_soa              = 0;
-
-[p_afirst, p_simul, p_vfirst, shat_sample] = predPMFv3(model.test_soa, fixP,...
+[p_afirst, p_simul, p_vfirst, shat_sample] = pmf_exp_CI(model.test_soa, fixP,...
     tau, sigma_a, sigma_v, criterion, lambda, p_common);
 
 nbin = 5;
@@ -151,7 +161,7 @@ lgd.ItemTokenSize = [10,10];
 % set(findobj(lgd, 'type', 'text'), 'FontSize', 8); 
 
 ylabel('Count')
-xlabel('Estimate of SOA (s)')
+xlabel('Estimate of SOA (sec)')
 % yl = ylim; 
 % yticks([yl(1), 10^2, yl(2)])
 xlim([min_x, max_x])
@@ -177,7 +187,7 @@ set(gca, 'LineWidth', lw, 'FontSize', fontSz); hold on
 % set fix para
 model.test_soa              = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
 
-[pre_afirst, pre_simul, pre_vfirst] = predPMFv1(model.test_soa, fixP,...
+[pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI(model.test_soa, fixP,...
         tau, sigma_a, sigma_v, criterion, lambda, p_common);
 p_resp(1,:) = pre_vfirst; p_resp(3,:) = pre_afirst; p_resp(2,:) = pre_simul;
 
@@ -194,13 +204,11 @@ lgd.ItemTokenSize = [10,10];
 yticks([0 1])
 ylabel('Probability')
 xlim([min(model.test_soa),max(model.test_soa)])
-xlabel('Test SOA (s)')
+xlabel('Test SOA (sec)')
 % tick options
 xticks([min(model.test_soa),0,max(model.test_soa)])
 xticklabels({'-0.5','0','0.5'})
 set(gca,'TickDir','out');
 
-%% save
-% print('fullExpoModelDemo.eps', '-pdf', '-painters'); % Use '-painters' for vector graphics
 flnm = 'TOJdemo2';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
