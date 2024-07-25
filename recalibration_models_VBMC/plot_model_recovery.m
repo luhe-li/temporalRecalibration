@@ -3,6 +3,12 @@ clear; close all;
 %% select models
 
 specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
+% specifications = {'Heuristic\newlineModality-specific\newlineuncertainty',...
+%     'Heuristic\newlineModality-independent\newlineuncertainty',...
+%     'Causal inference\newlineModality-specific\newlineuncertainty',...
+%     'Causal inference\newlineModality-indepdent\newlineuncertainty',...
+%     'Fixed updated\newlineModality-specific\newlineuncertainty',...
+%     'Fixed updated\newlineModality-indepdent\newlineuncertainty'};
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
 %% manage path
@@ -10,7 +16,8 @@ folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixe
 cur_dir               = pwd;
 [project_dir, ~]      = fileparts(cur_dir);
 [git_dir, ~] = fileparts(project_dir);
-dataDir = fullfile(git_dir,'temporalRecalibrationData');
+% dataDir = fullfile(git_dir,'temporalRecalibrationData');
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
 addpath(genpath(fullfile(project_dir, 'utils')));
 addpath(genpath(fullfile(project_dir, 'vbmc')));
 out_dir               = fullfile(cur_dir, mfilename);
@@ -18,11 +25,12 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 
 %% load results
 
-results_folder = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3_nopred');
+results_folder = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
 files = dir(fullfile(results_folder, 'fitM*'));
 pattern = 'fitM(\d+)_sample-(\d+)_';
 
-log_model_evidence = nan(6, 6, 1);
+model_slc = [1,2,5,6];
+log_model_evidence = nan(6, 6, 100);
 for pp = 1:size(files)
 
     flnm =  files(pp).name;
@@ -31,26 +39,20 @@ for pp = 1:size(files)
     fit_m = str2double(tokens{1}{1});
     i_sample = str2double(tokens{1}{2});
 
-    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO(:,fit_m);
-%     if fit_m~=3
-%         log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
-%         fake_pred(:, fit_m, i_sample) = r.fake_pred;
-%         pred(:,fit_m, i_sample) = r.fit_pred;
-%     end
-    elbo(:, fit_m, i_sample) = r.model.elbo;
-    fake_data(:, fit_m, i_sample) = r.model.fake_data;
+    % metric fo rmodel comparison
+    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
+    RMSE(:, fit_m, i_sample) = r.summ.RMSE;
 
-    % make predictions
-    for mm = 1:6
-        Xs = vbmc_rnd(r.model.vp{mm},1e5);
-        post_mean = mean(Xs,1);
-        est{mm, fit_m,i_sample} = post_mean;
-    end
+    % extract model predictions
+    fake_pred(:, fit_m, i_sample) = r.fake_pred;
+    fake_data(:, fit_m, i_sample) = r.fake_data;
+    fit_pred(:,fit_m, i_sample) = r.fit_pred;
+    fit_est(:, fit_m,i_sample) = r.fit_est;
 
 end
 
-log_model_evidence = log_model_evidence([1,2,3,5,6], [1,2,3,5,6],:);
-
+% use model_evidence for CM
+log_model_evidence = log_model_evidence(model_slc,model_slc,:);
 [num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
 CM = zeros(num_sim_m, num_fit_m);
 for sim_m = 1:num_sim_m
@@ -62,13 +64,90 @@ for sim_m = 1:num_sim_m
         % Increment the count for the corresponding fit_m
         CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
 
-%         if sim_m == 1 && max_fit_m_index == 4
-%             disp(i_sample)
-%         end
+    end
+end
+CM = CM./num_i_sample;
+
+% use RMSE of the recalibration prediction for CM
+RMSE = RMSE(model_slc,model_slc,:);
+[num_sim_m, num_fit_m, num_i_sample] = size(RMSE);
+CM2 = zeros(num_sim_m, num_fit_m);
+for sim_m = 1:num_sim_m
+
+    for i_sample = 1:num_i_sample
+
+        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
+        [~, min_fit_m_index] = min(RMSE(sim_m, :, i_sample));
+        % Increment the count for the corresponding fit_m
+        CM2(sim_m, min_fit_m_index) = CM2(sim_m, min_fit_m_index) + 1;
+
+    end
+end
+CM2 = CM2./num_i_sample;
+
+%% plot 
+
+figure;
+set(gcf, 'Position',[0,0,420,300]);
+
+imagesc(CM);
+colormap('bone')
+xticks(1:6)
+yticks(1:6)
+xticklabels(specifications(model_slc))
+yticklabels(specifications(model_slc))
+xlabel('Model used for fitting','FontWeight','bold');
+ylabel('Data generating model','FontWeight','bold');
+title('Percentage of winning based on model evidence','fontsize',12)
+
+[num_rows, num_cols] = size(CM);
+for row = 1:num_rows
+    for col = 1:num_cols
+        val = CM(row, col);
+        % Choose text color for better contrast
+        textColor = 'w'; % default black
+        if val >= 0.3
+            textColor = 'k'; % white for contrast
+        end
+        text(col, row, num2str(val, '%0.2f'), ...
+            'HorizontalAlignment', 'center', ...
+            'Color', textColor);
     end
 end
 
-CM = CM./num_i_sample;
+saveas(gca, fullfile(out_dir, 'CM'),'png');
+
+%% plot2: RMSE of the recalibration phase as the criterion of winning model
+
+figure;
+set(gcf, 'Position',[0,0,420,300]);
+
+imagesc(CM2);
+colormap('bone')
+xticks(1:6)
+yticks(1:6)
+xticklabels(specifications(model_slc))
+yticklabels(specifications(model_slc))
+xlabel('Model used for fitting','FontWeight','bold');
+ylabel('Data generating model','FontWeight','bold');
+title({'Percentage of winning based on';'RMSE of recalibration prediction'},'fontsize',12)
+
+[num_rows, num_cols] = size(CM2);
+for row = 1:num_rows
+    for col = 1:num_cols
+        val = CM2(row, col);
+        % Choose text color for better contrast
+        textColor = 'w'; % default black
+        if val >= 0.3
+            textColor = 'k'; % white for contrast
+        end
+        text(col, row, num2str(val, '%0.2f'), ...
+            'HorizontalAlignment', 'center', ...
+            'Color', textColor);
+    end
+end
+
+saveas(gca, fullfile(out_dir, 'CM_RMSE'),'png');
 
 %% compare model predictions
 % 
@@ -100,53 +179,3 @@ CM = CM./num_i_sample;
 %     end
 %     saveas(gca, fullfile(out_dir, sprintf('toj_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
 % end
-
-%% plot
-
-figure;
-set(gcf, 'Position',[0,0,420,300]);
-
-imagesc(CM);
-colormap('bone')
-xticks(1:6)
-yticks(1:6)
-xticklabels(specifications([1,2,3,5,6]))
-yticklabels(specifications([1,2,3,5,6]))
-xlabel('Fit Model');
-ylabel('Simulated Model');
-
-[num_rows, num_cols] = size(CM);
-for row = 1:num_rows
-    for col = 1:num_cols
-        val = CM(row, col);
-        % Choose text color for better contrast
-        textColor = 'w'; % default black
-        if val >= 0.3
-            textColor = 'k'; % white for contrast
-        end
-        text(col, row, num2str(val, '%0.2f'), ...
-            'HorizontalAlignment', 'center', ...
-            'Color', textColor);
-    end
-end
-
-saveas(gca, fullfile(out_dir, 'CM'),'png');
-
-%% use RMSE of the recalibration phase as the criterion of winning model
-
-% prediction of different models use the same variables in model struct
-model_slc = [1,2,3,5,6];
-model = r.model;
-model.mode = 'predict';
-for i_sample = 1:100
-    for sim_m = model_slc
-        for fit_m = model_slc
-            best_p = est{sim_m, fit_m, i_sample};
-            fit_func = str2func(['nll_' folders{fit_m}]);
-            addpath(fullfile(pwd, folders{fit_m}))
-            pred{sim_m, fit_m, i_sample} = fit_func(best_p, model, []);
-        end
-    end
-end
-
-

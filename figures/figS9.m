@@ -101,7 +101,6 @@ for  ss  = 1:numel(sub_slc)
 
         % prediction
         plot(pred{ss}.test_soa, squeeze(pred{ss}.post_pmf(adapter,:,:)),'LineWidth',lw)
-        %             xlabel('Adapter SOA','FontSize',fontSZ,'FontWeight','bold')
         xlabel({'Test SOA',sprintf('Adapter SOA = %.1f s', adaptor_soa(adapter)./1e3)},'FontSize',fontSZ,'FontWeight','bold')
 
         % look better
@@ -120,12 +119,6 @@ for  ss  = 1:numel(sub_slc)
     end
 
     tl.TileSpacing = 'compact';
-    %         tl.XLabel.String = sprintf('S%i: %s',sub,concatenated_str);
-    %         tl.XLabel.FontSize = titleSZ;
-    %         tl.XLabel.FontWeight = 'bold';
-    %         tl.XLabel.String = 'Adapter SOA';
-    %         tl.XLabel.FontSize = titleSZ;
-    %         tl.XLabel.FontWeight = 'bold';
 
     if save_fig
         flnm  = sprintf('sub%02d_TOJ_prediction',ss);

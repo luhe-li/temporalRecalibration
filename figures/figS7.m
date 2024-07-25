@@ -1,110 +1,93 @@
-% fig S7: individual results of recalibration model comparison
+% fig S7: parameter recovery of causal-inference model with asymmetrical
+% likelihood
 
-clear; close all; clc;
+clear; close all;
 
-%% model info
+%% manage path
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
-numbers = (1:numel(specifications))';
-model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
+cur_dir               = pwd;
+[project_dir, ~]      = fileparts(cur_dir);
+[git_dir, ~] = fileparts(project_dir);
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
+addpath(genpath(fullfile(project_dir, 'utils')));
+out_dir               = fullfile(cur_dir, mfilename);
+if ~exist(out_dir,'dir') mkdir(out_dir); end
 
+%% load results
 
-%% manage paths
+results_folder           = fullfile(dataDir,'recalibration_models_VBMC','param_recovery');
+files = dir(fullfile(results_folder, 'sample-*'));
 
-restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-[tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
-addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
-out_dir = fullfile(currentDir, mfilename);
-if ~exist(out_dir, 'dir'); mkdir(out_dir); end
+for jj = 1:size(files)
 
-%% load recal models
+    r = load(fullfile(results_folder, files(jj).name));
+    gt(jj,:) = r.summ.gt;
+    est(jj,:) = r.summ.est;
 
-model_slc = [6,5,2,1,4,3];
-n_model = numel(model_slc);
-sub_slc = [1:4,6:10];
-
-for mm = 1:n_model
-    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
-    R(mm, :) = load_subject_data(result_folder, sub_slc, 'sub-*');
-    
-    for ss = 1:numel(sub_slc)
-        log_model_evi(mm, ss) = R{mm, ss}.diag.bestELCBO;
-    end
 end
 
-%% load atheoretical model
-
-result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
-atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
-
-for ss = 1:numel(sub_slc)
-   log_model_evi(n_model+1, ss)= atheo{ss}.diag.bestELCBO;
-end
+% info
+model_str = r.model.currModelStr;
+paraID = r.model.initVal.paraID;
+paraID{4} = 'criterion';
+num_para = numel(paraID);
+lb = r.model.initVal.lb;
+ub = r.model.initVal.ub;
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% 1. plot model evidence with atheoretical model
+lw = 0.5;
+fontSZ = 7;
+titleSZ = 9;
+dotSZ = 10;
 
-% max subtract other log model evidence
-delta_LME = max(log_model_evi, [], 1) - log_model_evi; 
+figure;
+set(gcf, 'Position', [0, 0, 420, 300]);
 
-figure
-set(gcf, 'Position',[0 0 400 170])
-set(gca, 'FontSize', 8)
+nPlot = num_para;
+nRow  = ceil(sqrt(nPlot));
+nCol  = ceil(sqrt(nPlot));
+if nPlot <= (nRow*nCol)-nCol, nRow = nRow-1; end
 
-h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
-    'Colormap', flipud(bone),...
-    'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
-    'FontSize', 8);
-colorbar;
-h.YDisplayLabels = specifications([model_slc,7]);
-h.XDisplayLabels = num2cell(1:numel(sub_slc));
+for jj = 1:num_para
 
-flnm = 'A_BF_all_models';
-saveas(gca, fullfile(out_dir, flnm),'pdf')
+    subplot(nRow,nCol,jj);
+    set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
+    set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
+    set(gca, 'FontName', 'Helvetica');
+    axis square;
+    axis equal
+    hold on
+    scatter(gt(:,jj), est(:,jj),10,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    xlim([lb(jj) ub(jj)])
+    ylim([lb(jj) ub(jj)])
 
-%% 2. plot model evidence within recalibration model
+    % identity line
+    ax = gca;
+    x_limits = ax.XLim;
+    y_limits = ax.YLim;
+    line_min = min([x_limits y_limits]);
+    line_max = max([x_limits y_limits]);
+    plot([line_min line_max], [line_min line_max], 'k--', 'LineWidth', lw);
 
-% max subtract other log model evidence
-delta_LME = max(log_model_evi(model_slc,:), [], 1) - log_model_evi(model_slc,:); 
+    % Calculate the Pearson correlation coefficient and p-value
+    [R, P] = corrcoef(gt(:, jj), est(:, jj));
 
-figure
-set(gcf, 'Position',[0 0 400 150])
+    % Extract the correlation coefficient and p-value
+    r = R(1,2);
+    p_value = P(1,2);
 
-subplot('Position', [0.2, 0.1, 0.6, 0.8]); 
-set(gca, 'FontSize', 8)
-h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
-    'Colormap', flipud(bone),...
-    'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
-    'FontSize', 8);
-colorbar;
-%     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+    % Label the r and p in the title
+    title(sprintf('%s \n r= %.2f, p=%.2f', paraID{jj}, r, round(p_value,2)),'FontSize',fontSZ,'FontWeight','normal');
 
-h.YDisplayLabels = specifications(model_slc);
-h.XDisplayLabels = num2cell(1:numel(sub_slc));
+    if jj == 4
+        ylabel('Model prediction','FontSize',titleSZ)
+    elseif jj == 8
+        xlabel('Ground-truth','FontSize',titleSZ)
+    end
 
-
-n_win = sum(delta_LME<log(10),2);
-subplot('Position', [0.9, 0.1, 0.1, 0.8]);
-
-b = barh(1:length(n_win), n_win, 'FaceColor', [0.8, 0.8, 0.8]);
-set(gca, 'YDir', 'reverse', 'XColor', 'none', 'YColor', 'none', 'Color', 'none'); % Remove axis and background
-
-yticks(1:length(n_win));
-yticklabels({' ', ' ', ' ', ' '});
-
-for i = 1:length(n_win)
-    text(n_win(i) + 0.5, i, num2str(n_win(i)), 'VerticalAlignment', 'middle');
 end
 
-set(gca, 'XLim', [0 max(n_win) + 2]);
-set(gca, 'YLim', [0.5 6.5]);
-
-flnm = 'B_BF_recal_models';
-saveas(gca, fullfile(out_dir, flnm),'pdf')
+% Save figure
+flnm = 'param_recovery';
+saveas(gcf, fullfile(out_dir, flnm), 'pdf');

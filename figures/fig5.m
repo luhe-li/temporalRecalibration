@@ -157,7 +157,6 @@ for c = 1:numel(colorpicked)
     [grad{c},im{c}]= colorGradient(colorpicked{c}(1,:),colorpicked{c}(2,:),depth);
 end
 
-ori_adaptor_soa = model.sim_adaptor_soa;
 %% A. plot p_CC
 
 figure;
@@ -167,7 +166,7 @@ subplot(1,2,1); hold on
 set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
 set(gca, 'ColorOrder', grad_lin{1});
 
-plot(ori_adaptor_soa, recal_pcc,'LineWidth',lw*2);
+plot(adaptor, recal_pcc,'LineWidth',lw*2);
 
 % Create an array of legend labels corresponding to \pcc values
 legendLabels = cell(1, numel(pccs));
@@ -187,9 +186,9 @@ yticks([-yl, 0, yl])
 yticklabels([-yl, 0, yl]./1e3)
 ylabel('Recalibration effect (s)')
 xlabel('Adapter SOA (s)')
-xticks(ori_adaptor_soa)
-xticklabels(ori_adaptor_soa/1e3)
-xlim([min(ori_adaptor_soa)-50, max(ori_adaptor_soa)+50])
+xticks(adaptor)
+xticklabels(adaptor/1e3)
+xlim([min(adaptor)-50, max(adaptor)+50])
 
 %% B. plot tau
 
@@ -197,7 +196,7 @@ subplot(1,2,2); hold on
 set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out')
 set(gca, 'ColorOrder', grad_lin{2});
 
-plot(ori_adaptor_soa, recal_tau,'LineWidth',lw*2);
+plot(adaptor, recal_tau,'LineWidth',lw*2);
 
 % Create an array of legend labels corresponding to \taus values
 legendLabels = cell(1, numel(taus));
@@ -217,9 +216,9 @@ yticks([-yl, 0, yl])
 yticklabels([-yl, 0, yl]./1e3)
 ylabel('Recalibration effect (s)')
 xlabel('Adapter SOA (s)')
-xticks(ori_adaptor_soa)
-xticklabels(ori_adaptor_soa/1e3)
-xlim([min(ori_adaptor_soa)-50, max(ori_adaptor_soa)+50])
+xticks(adaptor)
+xticklabels(adaptor/1e3)
+xlim([min(adaptor)-50, max(adaptor)+50])
 
 flnm = 'AB_nonlinearity';
 saveas(gca,fullfile(out_dir,flnm),'pdf')

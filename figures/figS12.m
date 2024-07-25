@@ -136,4 +136,4 @@ xlabel('Adapter SOA (ms)');
 ylabel('Point of subjective simultaneity (ms)');
 grid on;
 hold off;
-saveas(gca, fullfile(out_dir, 'bias'),'pdf')
+saveas(gca, fullfile(out_dir, 'population_model'),'pdf')

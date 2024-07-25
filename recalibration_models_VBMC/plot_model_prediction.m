@@ -179,7 +179,6 @@ for mm = 1:n_model
         %% plot
         subplot(3,3,ss); hold on
         set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
-        set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
         set(gca, 'FontName', 'Helvetica');
         title(['S' num2str(ss)],'FontSize',titleSZ)
 
