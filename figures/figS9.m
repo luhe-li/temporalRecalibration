@@ -35,7 +35,7 @@ R = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 for ss = 1:numel(sub_slc)
 
-    pred{ss} = R{ss}.pred;
+   pred{ss} = R{ss}.pred;
 
 end
 
@@ -61,7 +61,7 @@ tick_x = [-500, 0, 500];
 test_soa = pred{1}.test_soa;
 adaptor_soa = pred{1}.adaptor_soa;
 
-for  ss  = 1%:numel(sub_slc)
+for  ss  = 1:numel(sub_slc)
 
     figure; hold on
     set(gcf, 'Position', [0,0,800,150]);

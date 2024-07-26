@@ -60,17 +60,18 @@ num_ses = 9;
 for mm = 2%1:n_model
 
         figure; hold on
-        set(gcf, 'Position', [0,0,1000,200]);
+        set(gcf, 'Position', [0,0,800,150]);
 
         tl = tiledlayout(2,9);
-        sgtitle(sprintf('%s, outlier', specifications{mm}),'FontSize',titleSZ,'FontWeight','bold')
+        sgtitle('Temporal-order-judgmenst of excluded participant','FontSize',titleSZ,'FontWeight','bold')
+       
 
         for adapter = 1:9
 
             % pre
             nexttile(adapter); hold on
             set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
-            title(sprintf('Adapter SOA = %.1f s', adaptor_soa(adapter)./1e3),'FontSize',fontSZ,'FontWeight','bold')
+            title(sprintf('Adapter SOA\n%.1f s', adaptor_soa(adapter)./1e3),'FontSize',fontSZ-1,'FontWeight','bold')
 
             % data
             scatter(D.data(adapter).pre_ms_unique, D.data(adapter).pre_pResp, dotSZ, 'filled');
@@ -84,7 +85,7 @@ for mm = 2%1:n_model
             yticks([])
 
             if adapter == 1
-                ylabel('Pretest probability', 'FontSize',fontSZ,'FontWeight','bold')
+                ylabel({'Pre-test', 'probability'}, 'FontSize',fontSZ,'FontWeight','bold')
                 yticks(tick_y)
                 yticklabels(strsplit(num2str(tick_y)))
             end
@@ -98,8 +99,9 @@ for mm = 2%1:n_model
 
             % prediction
             plot(pred.test_soa, pred.post_pmf{adapter},'LineWidth',lw)
-            %             xlabel('Adapter SOA','FontSize',fontSZ,'FontWeight','bold')
-            xlabel('Test SOA','FontSize',fontSZ,'FontWeight','bold')
+            if adapter == 5
+                xlabel('Test SOA','FontSize',fontSZ,'FontWeight','bold')
+            end
 
             % look better
             xlim([-550 550])
@@ -109,7 +111,7 @@ for mm = 2%1:n_model
             yticklabels(strsplit(num2str(tick_y)))
 
             if adapter == 1
-                ylabel('Posttest probability','FontSize',fontSZ,'FontWeight','bold')
+                ylabel({'Post-test'; 'probability'},'FontSize',fontSZ,'FontWeight','bold')
                 yticks(tick_y)
                 yticklabels(strsplit(num2str(tick_y)))
             end
