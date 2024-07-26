@@ -1,10 +1,10 @@
 #!/bin/bash
 #
 #SBATCH --job-name=RecalModel4
-#SBATCH -a 1-4
+#SBATCH -a 1-9
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=41
+#SBATCH --cpus-per-task=21
 #SBATCH --mem=64GB
 #SBATCH --time=72:00:00
 #SBATCH --mail-type=END

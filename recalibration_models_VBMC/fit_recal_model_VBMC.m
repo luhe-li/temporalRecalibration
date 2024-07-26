@@ -3,8 +3,8 @@ function fit_recal_model_VBMC(i_model, useCluster, sub)
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'}; 
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Update criterion, asymmetric'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','criteria_asym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
@@ -37,7 +37,7 @@ switch useCluster
 
     case false
         % for local debug
-        numCores = feature('numcores');
+        numCores = 3;%feature('numcores');
 end
 
 
@@ -82,8 +82,9 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS
 options = vbmc('defaults');
-if ismember(i_model, [3,5,7]); options.MaxFunEvals = 500; end % set max iter for cau-inf models
+if ismember(i_model, [3,5]); options.MaxFunEvals = 500; end % set max iter for cau-inf models
 options.TolStableCount = 15;
+options.SpecifyTargetNoise = true;
 
 %% model fitting
 
@@ -100,11 +101,15 @@ lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 % set likelihood
 model.mode = 'optimize';
 llfun = @(x) currModel(x, model, data);
-fun = @(x) llfun(x) + lpriorfun(x);
+% fun = @(x) llfun(x) + lpriorfun(x);
+fun = @(x) lpostfun(x,llfun,lpriorfun); 
 
 [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 
-parfor i  = 1:model.num_runs
+%test
+pp = fun(Val.init(1,:));
+
+for i  = 1:model.num_runs
     
         fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
         tempVal = Val;

@@ -1,5 +1,6 @@
-function out   = nll_criteria_asym(freeParam, model, data)
+function [out, out_sd] = nll_criteria_asym(freeParam, model, data)
 
+out_sd = NaN;
 if strcmp(model.mode, 'initialize')
 
     out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','c_{update}','\lambda','\alpha'};
@@ -10,7 +11,7 @@ if strcmp(model.mode, 'initialize')
     paraH.sigma_a  = [  10,   150]; % ms
     paraH.sigma_v  = [  10,   150]; % ms
     paraH.criterion= [   1,   300]; % criterion, s
-    paraH.c_update = [   1,   300]; % criterion, s
+    paraH.c_update = [ 100,   700]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
     paraH.alpha    = [ 0.5,   3.5]; % percentage
 
@@ -19,7 +20,7 @@ if strcmp(model.mode, 'initialize')
     paraS.sigma_a  = [  50,    70]; % ms
     paraS.sigma_v  = [  50,    70]; % ms
     paraS.criterion= [  30,    80]; % criterion, s
-    paraS.c_update = [  30,    80]; % criterion, s
+    paraS.c_update = [ 150,   300]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
     paraS.alpha    = [   1,     2]; % percentage
 
@@ -83,7 +84,7 @@ else
             title('PSS shift')
         end
 
-        LL_ses = NaN(1, model.num_ses);
+        [LL_ses, L_VAR] = deal(NaN(1, model.num_ses));
         for ses = 1:model.num_ses
 
             %% calculate pretest nLL
@@ -166,9 +167,14 @@ else
             % sum the negative likelihood of pre and post test
             LL_ses(ses)   = pre_LL + post_LL;
 
+            % calcualte the VAR of log-likelihood over bins of delta_pss_shift for
+            % each session
+            L_VAR(ses) = sum((LL_delta - post_LL).^2./numel(delta_tau_shift));
+
         end
 
-        out= nansum(LL_ses);
+        out = nansum(LL_ses); % estimated LL
+        out_sd = sqrt(nansum(L_VAR)); % S.D. of likelihood
 
         if checkPlot
             [~, order] = sort(adaptor_soas);
@@ -265,6 +271,13 @@ else
 
     end
 
+end
+
+if nargout > 1
+    varargout{1} = out;
+    varargout{2} = out_sd;
+else
+    varargout{1} = out;
 end
 
 end

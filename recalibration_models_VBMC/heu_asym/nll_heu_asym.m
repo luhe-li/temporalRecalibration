@@ -1,4 +1,6 @@
-function out   = nll_heu_asym(freeParam, model, data)
+function [out, out_sd] = nll_heu_asym(freeParam, model, data)
+
+out_sd = NaN;
 
 if strcmp(model.mode, 'initialize')
 
@@ -80,7 +82,7 @@ else
             title('PSS shift')
         end
 
-        LL_ses = NaN(1, model.num_ses);
+        [LL_ses, L_VAR] = deal(NaN(1, model.num_ses));
         for ses = 1:model.num_ses
 
             %% calculate pretest nLL
@@ -163,9 +165,14 @@ else
             % sum the negative likelihood of pre and post test
             LL_ses(ses)   = pre_LL + post_LL;
 
+            % calcualte the VAR of log-likelihood over bins of delta_pss_shift for
+            % each session
+            L_VAR(ses) = sum((LL_delta - post_LL).^2./numel(delta_tau_shift));
+
         end
 
-        out= nansum(LL_ses);
+        out = nansum(LL_ses); % estimated LL
+        out_sd = sqrt(nansum(L_VAR)); % S.D. of likelihood
 
         if checkPlot
             [~, order] = sort(adaptor_soas);
@@ -262,6 +269,13 @@ else
 
     end
 
+end
+
+if nargout > 1
+    varargout{1} = out;
+    varargout{2} = out_sd;
+else
+    varargout{1} = out;
 end
 
 end
