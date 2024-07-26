@@ -5,8 +5,8 @@ clear; clc; close all;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Update criterion, asymmetric'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym_xSigmaC1', 'cauInf_sym','fixed_asym','fixed_sym','criteria_asym'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -16,7 +16,7 @@ restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
 [tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
@@ -25,11 +25,11 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recalibration model results
 
-model_slc = 1:6;
+model_slc = 7;
 n_model = numel(model_slc);
 sub_slc = [1:4, 6:10];
-save_fig = 1;
-plotTOJ = 1;
+save_fig = 0;
+plotTOJ = 0;
 
 for mm = 1:n_model
     result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
@@ -186,9 +186,9 @@ for mm = 1:n_model
 
         blackL  = plot(adaptor_soa, toj_pss(ss,:),'ko', 'MarkerFaceColor','k','MarkerSize',3);
 
-        for jj = 1:9
-            plot([adaptor_soa(jj),adaptor_soa(jj)],[lb(ss, jj), ub(ss, jj)],'k-','LineWidth',1)
-        end
+%         for jj = 1:9
+%             plot([adaptor_soa(jj),adaptor_soa(jj)],[lb(ss, jj), ub(ss, jj)],'k-','LineWidth',1)
+%         end
 
         %% plot model prediction
 

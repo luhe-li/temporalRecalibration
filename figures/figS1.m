@@ -15,7 +15,7 @@ restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
 [tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 out_dir = fullfile(currentDir, mfilename);
