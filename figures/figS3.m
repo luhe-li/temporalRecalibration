@@ -1,14 +1,10 @@
+% fig S3: model recovery results
+
 clear; close all;
 
 %% select models
 
 specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
-% specifications = {'Heuristic\newlineModality-specific\newlineuncertainty',...
-%     'Heuristic\newlineModality-independent\newlineuncertainty',...
-%     'Causal inference\newlineModality-specific\newlineuncertainty',...
-%     'Causal inference\newlineModality-indepdent\newlineuncertainty',...
-%     'Fixed updated\newlineModality-specific\newlineuncertainty',...
-%     'Fixed updated\newlineModality-indepdent\newlineuncertainty'};
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
 %% manage path
@@ -98,7 +94,7 @@ xticklabels(specifications(model_slc))
 yticklabels(specifications(model_slc))
 xlabel('Model used for fitting','FontWeight','bold');
 ylabel('Data generating model','FontWeight','bold');
-title('Percentage of winning based on model evidence','fontsize',12)
+title({'Percentage of winning';'based on model evidence'},'fontsize',12)
 
 [num_rows, num_cols] = size(CM);
 for row = 1:num_rows
@@ -115,7 +111,7 @@ for row = 1:num_rows
     end
 end
 
-saveas(gca, fullfile(out_dir, 'CM'),'png');
+saveas(gca, fullfile(out_dir, 'CM'),'pdf');
 
 %% plot2: RMSE of the recalibration phase as the criterion of winning model
 
@@ -147,35 +143,4 @@ for row = 1:num_rows
     end
 end
 
-saveas(gca, fullfile(out_dir, 'CM_RMSE'),'png');
-
-%% compare model predictions
-% 
-% i_sample = 18;
-% sim_m = 1;
-% for fit_m = [1,4]
-%     figure;
-%     set(gcf, 'Position',[0 0 500 400])
-%     sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
-%     hold on
-%     plot(pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(pred{sim_m, fit_m, i_sample}.pss_shift,2),'--or')
-%     plot(fake_pred{sim_m, fit_m, i_sample}.adaptor_soa, mean(fake_pred{sim_m, fit_m, i_sample}.pss_shift,2),'k')
-%     saveas(gca, fullfile(out_dir, sprintf('recal_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
-% 
-%     figure;  hold on
-%     set(gcf, 'Position',[0 0 1000 400])
-%     sgtitle(sprintf('sim-Model %i, fit model%i, logME %.2f', sim_m, fit_m, elbo(sim_m, fit_m, i_sample)))
-%     subplot(2,5,1); hold on
-%     title('pretest')
-%     plot(pred{sim_m, fit_m, i_sample}.test_soa, pred{sim_m, fit_m, i_sample}.pre_pmf','--or')
-%     plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, fake_pred{sim_m, fit_m, i_sample}.pre_pmf,'k')
-% 
-%     for ses = 1:9
-%         subplot(2,5,ses+1);
-%         hold on
-%         plot(pred{sim_m, fit_m, i_sample}.test_soa, squeeze(pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:))','--or')
-%         plot(fake_pred{sim_m, fit_m, i_sample}.test_soa, squeeze((fake_pred{sim_m, fit_m, i_sample}.post_pmf(ses,:,:)))','k')
-%         title(['posttest' num2str(ses)])
-%     end
-%     saveas(gca, fullfile(out_dir, sprintf('toj_sim-Model %i, fit model%i', sim_m, fit_m)),'png');
-% end
+saveas(gca, fullfile(out_dir, 'CM_RMSE'),'pdf');
