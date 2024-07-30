@@ -65,9 +65,8 @@ end
 
 %% plot
 
-figure; hold on
+figure; 
 set(gcf, 'Position',[0,0,170,150]);
-% axis equal
 
 imagesc(CM); 
 colormap('bone')
