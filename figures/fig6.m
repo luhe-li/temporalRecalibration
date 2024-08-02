@@ -141,16 +141,24 @@ subplot('Position', [left, bottom, width, height]);
 set(gca, 'LineWidth', lw, 'FontSize', fontSz); hold on
 set(gca,'TickDir','out');
 
-[p_afirst, p_simul, p_vfirst, shat_sample] = pmf_exp_CI(model.test_soa, fixP,...
-    tau, sigma_a, sigma_v, criterion, lambda, p_common);
+% [p_afirst, p_simul, p_vfirst, shat_sample] = pmf_exp_CI(model.test_soa,
+% fixP,...w
+%     tau, sigma_a, sigma_v, criterion, lambda, p_common);
 
-nbin = 5;
+binwidth = 6;
 alpha = 1;
-histogram(shat_sample(shat_sample < -criterion),'BinWidth',nbin,'EdgeColor','none','FaceColor',cmp(3,:),'FaceAlpha',alpha); set(gca, 'YScale', 'log');
-histogram(shat_sample(shat_sample >= -criterion & shat_sample < criterion),'BinWidth',nbin,'EdgeColor','none','FaceColor',cmp(2,:),'FaceAlpha',alpha); set(gca, 'YScale', 'log');
-histogram(shat_sample(shat_sample >= criterion),'BinWidth',nbin,'EdgeColor','none','FaceColor',cmp(1,:),'FaceAlpha',alpha); set(gca, 'YScale', 'log');
+histogram(shat_sample(shat_sample < -criterion),'BinWidth',binwidth,'EdgeColor','none','FaceColor',cmp(3,:),'FaceAlpha',alpha); set(gca, 'YScale', 'log');
+histogram(shat_sample(shat_sample >= -criterion & shat_sample < criterion),'BinWidth',binwidth,'EdgeColor','none','FaceColor',cmp(2,:),'FaceAlpha',alpha);set(gca, 'YScale', 'log');
+histogram(shat_sample(shat_sample >= criterion),'BinWidth',binwidth,'EdgeColor','none','FaceColor',cmp(1,:),'FaceAlpha',alpha);set(gca, 'YScale', 'log');
 
-xline(mode(shat_sample), '-', 'LineWidth',lw);
+[counts, edges] = histcounts(shat_sample,'BinWidth',binwidth);
+bin_midpoints = edges(1:end-1) + diff(edges) / 2;
+% plot(bin_midpoints, counts, '-o', 'LineWidth', 2, 'Color', 'k');
+
+[~, max_bin_idx] = max(counts);
+bin_start = edges(max_bin_idx);
+bin_end = edges(max_bin_idx + 1);
+xline((bin_start+bin_end)/2, '-', 'LineWidth',lw);
 xline(-criterion,':','LineWidth',lw,'HandleVisibility','off');
 xline(criterion,':','LineWidth',lw);
 
