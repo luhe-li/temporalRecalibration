@@ -141,8 +141,8 @@ adaptor = model.sim_adaptor_soa;
 % color for pcc, dark to light
 % purple = [106, 61, 154; 223,209,230]./255;
 % green = [51, 160, 43; 178, 223, 138]./255;
-purple = [106, 61, 154; 230, 230, 230]./255;
-green = [51, 160, 43; 230, 230, 230]./255;
+purple = [106, 61, 154; 1]./255;
+green = [51, 160, 43; 178, 223, 138]./255;
 colorpicked = {purple, green};
 depth = 7;
 for c = 1:numel(colorpicked)
@@ -150,12 +150,10 @@ for c = 1:numel(colorpicked)
 end
 
 % color for taus, dark to light
-% blue = [30, 120, 180; 166, 206, 227]./255;
-% red = [227, 27, 27; 251, 154, 153]./255;
-blue = [30, 120, 180; 230, 230, 230]./255;
-red = [227, 27, 27; 230, 230, 230]./255;
+blue = [30, 120, 180; 166, 206, 227]./255;
+red = [227, 27, 27; 251, 154, 153]./255;
 colorpicked = {blue, red};
-depth = n_level+1;
+depth = n_level;
 
 for c = 1:numel(colorpicked)
     [grad{c},im{c}]= colorGradient(colorpicked{c}(1,:),colorpicked{c}(2,:),depth);
@@ -205,7 +203,7 @@ plot(adaptor, recal_tau,'LineWidth',lw*2);
 % Create an array of legend labels corresponding to \taus values
 legendLabels = cell(1, numel(taus));
 for i = 1:numel(taus)
-    legendLabels{i} = sprintf('%.2f', taus(i)/1000);
+    legendLabels{i} = sprintf('%.2f', taus(i));
 end
 leg  = legend(legendLabels, 'Location', 'northwest');
 leg.Title.String = 'Auditory and visual uncertainty';
@@ -239,7 +237,7 @@ set(gca, 'ColorOrder', grad{1});
 plot(adaptor, recal_tau_a,'LineWidth',lw*2)
 
 % Create an array of legend labels corresponding to \beta values
-legendLabels = cellstr(num2str(tau_as(:)/1e3));
+legendLabels = cellstr(num2str(tau_as(:)));
 
 % Add the legend with specified labels
 lgd = legend(legendLabels, 'Location', 'northwest');
@@ -270,7 +268,7 @@ set(gca, 'ColorOrder', grad{2});
 plot(adaptor, recal_tau_v,'LineWidth',lw*2)
 
 % Create an array of legend labels corresponding to \beta values
-legendLabels = cellstr(num2str(tau_vs(:)/1e3));
+legendLabels = cellstr(num2str(tau_vs(:)));
 
 % Add the legend with specified labels
 lgd = legend(legendLabels, 'Location', 'northwest');

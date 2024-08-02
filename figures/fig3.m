@@ -1,24 +1,14 @@
 % fig 3: illustration of recalibration models
-% A. distribution of auditory and visual arrival latencty
-% B. Recalibration of measurement distribution
-% C. recalibration models
-
-% out_dir = fullfile(cur_dir, 'fig6_exponential_demo');
+% A. recalibration models
+% B. distribution of auditory and visual arrival latencty, audiovisual
+% latency, with modality-specific uncertainty
+% C. distribution of auditory and visual arrival latencty, audiovisual
+% latency, with modality-independent uncertainty
 
 clear; close all;
 
 out_dir = fullfile(pwd, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
-
-%% set free param
-
-sigma_a = 60;
-sigma_v = 90;
-
-tau_a = 80;
-tau_v = 20;
-tau = tau_a - tau_v;
-soa = 0;
 
 lw = 1;
 fontSZ = 7;
@@ -26,95 +16,7 @@ titleSZ = 9;
 dotSZ = 10;
 cmp =  [216, 49, 91; 175, 213, 128; 88,193,238]./255;
 
-%% A. distribution of auditory and visual arrival latencty
-
-figure('Position', [0, 0, 420, 60])
-
-subplot 121;
-set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica');
-hold on
-
-x_axis        = 0:200; % ms
-
-g_v           = 1/sigma_v .* exp(-(1/sigma_v).*(x_axis - (soa + tau_v)));
-g_a           = 1/sigma_a .* exp(-(1/sigma_a).*(x_axis - (soa + tau_a)));
-
-idx_tau_v     = find(x_axis == soa + tau_v);
-idx_tau_a     = find(x_axis == soa + tau_a);
-
-v = plot(x_axis(idx_tau_v:end), g_v(idx_tau_v:end),'Color',cmp(1,:),'LineWidth',lw);
-plot([idx_tau_v,idx_tau_v], [0, g_v(idx_tau_v)],'Color',cmp(1,:),'LineWidth',lw)
-
-a = plot(x_axis(idx_tau_a:end), g_a(idx_tau_a:end),'Color',cmp(3,:),'LineWidth',lw);
-plot([idx_tau_a,idx_tau_a], [0, g_a(idx_tau_a)],'Color',cmp(3,:),'LineWidth',lw);
-
-lgd = legend([v,a],{'Visual signal', 'Auditory Signal'},'Location','best');
-legend boxoff 
-lgd.ItemTokenSize = [10,10];
-
-xlim([x_axis(1), x_axis(end)])
-xlabel('Arrival latency (s)')
-xticks([0:100:200])
-xticklabels({'0','0.1','0.2'})
-
-% Make the Y-axis and Y-axis label invisible
-ax = gca;
-ax.YAxis.Visible = 'off';
-ylabel(ax, 'Probability');
-
-%% B. recalibration of likelihood
-
-subplot 122;
-set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica');
-hold on
-
-% pre-recalibration
-soa = -400;
-min_x = -600;
-max_x = 200;
-x_axis = min_x:max_x;
-
-idx_peak = find(x_axis == (soa + tau));
-lx_axis = x_axis(1:idx_peak);
-rx_axis = x_axis(idx_peak+1:end);
-
-lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_v * (lx_axis - ((soa + tau))));
-rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_a * (rx_axis - ((soa + tau))));
-likelihood = [lf, rf];
-
-plot(lx_axis, lf,'--','Color',cmp(1,:),'LineWidth',lw);
-plot(rx_axis, rf,'--','Color',cmp(3,:),'LineWidth',lw);
-
-% post-recalibration
-soa = -200;
-min_x = -600;
-max_x = 200;
-x_axis = min_x:max_x;
-
-idx_peak = find(x_axis == (soa + tau));
-lx_axis = x_axis(1:idx_peak);
-rx_axis = x_axis(idx_peak+1:end);
-
-lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_v * (lx_axis - ((soa + tau))));
-rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_a * (rx_axis - ((soa + tau))));
-likelihood = [lf, rf];
-
-plot(lx_axis, lf,'Color',cmp(1,:),'LineWidth',lw);
-plot(rx_axis, rf,'Color',cmp(3,:),'LineWidth',lw);
-
-% look better
-xlabel('Measurement of SOA (s)')
-xticks([-500, 0, 500])
-xticklabels({'-0.5','0','0.5'})
-
-ax = gca;
-ax.YAxis.Visible = 'off';
-ylabel(ax, 'Probability');
-
-flnm = 'AB_exponential';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
-
-%% C. Illustration of models
+%% A. Illustration of models
 
 %% simulation
 
@@ -190,7 +92,143 @@ xticks(xtks)
 xlabel('Adapter SOA (s)')
 
 % save
-flnm = 'C_model';
+flnm = 'A_model';
+saveas(gca,fullfile(out_dir,flnm),'pdf')
+
+%% BC. distribution of auditory and visual arrival latencty
+
+sigma_a = 60;
+sigma_v = 100;
+
+tau_a = 80;
+tau_v = 20;
+tau = tau_a - tau_v;
+soa = 0;
+
+figure('Position', [0, 0, 420, 60])
+
+%% arrival latencty, modality-specific uncertainty
+
+subplot 141;
+set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica');
+hold on
+
+x_axis        = 0:200; % ms
+
+g_v           = 1/sigma_v .* exp(-(1/sigma_v).*(x_axis - (soa + tau_v)));
+g_a           = 1/sigma_a .* exp(-(1/sigma_a).*(x_axis - (soa + tau_a)));
+
+idx_tau_v     = find(x_axis == soa + tau_v);
+idx_tau_a     = find(x_axis == soa + tau_a);
+
+v = plot(x_axis(idx_tau_v:end), g_v(idx_tau_v:end),'Color',cmp(1,:),'LineWidth',lw);
+plot([idx_tau_v,idx_tau_v], [0, g_v(idx_tau_v)],'Color',cmp(1,:),'LineWidth',lw)
+
+a = plot(x_axis(idx_tau_a:end), g_a(idx_tau_a:end),'Color',cmp(3,:),'LineWidth',lw);
+plot([idx_tau_a,idx_tau_a], [0, g_a(idx_tau_a)],'Color',cmp(3,:),'LineWidth',lw);
+
+% lgd = legend([v,a],{'Visual signal', 'Auditory Signal'},'Location','best');
+% legend boxoff 
+% lgd.ItemTokenSize = [10,10];
+
+xline(0,'k','LineWidth',lw)
+xlim([x_axis(1)-50, x_axis(end)])
+xlabel('Arrival latency (s)')
+xticks([0:100:200])
+xticklabels({'0','0.1','0.2'})
+
+ax = gca;
+ax.YAxis.Visible = 'off';
+
+% difference distribution
+subplot 142;
+set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica');
+hold on
+
+% pre-recalibration
+soa = -0;
+min_x = -300;
+max_x = 300;
+x_axis = min_x:max_x;
+
+idx_peak = find(x_axis == (soa + tau));
+lx_axis = x_axis(1:idx_peak);
+rx_axis = x_axis(idx_peak+1:end);
+
+lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_v * (lx_axis - ((soa + tau))));
+rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_a * (rx_axis - ((soa + tau))));
+likelihood = [lf, rf];
+
+plot(lx_axis, lf,'-','Color',cmp(1,:),'LineWidth',lw);
+plot(rx_axis, rf,'-','Color',cmp(3,:),'LineWidth',lw);
+xline(0,'k','LineWidth',lw)
+xline(tau,'k:','LineWidth',lw)
+xticks([-200, 0, 200])
+xticklabels({'-0.2','0','0.2'})
+
+ax = gca;
+ax.YAxis.Visible = 'off';
+
+%% arrival latencty, modality-independent uncertainty
+
+subplot 143;
+set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica');
+hold on
+
+x_axis        = 0:200; % ms
+
+sigma_v = sigma_a;
+g_v           = 1/sigma_v .* exp(-(1/sigma_v).*(x_axis - (soa + tau_v)));
+g_a           = 1/sigma_a .* exp(-(1/sigma_a).*(x_axis - (soa + tau_a)));
+
+idx_tau_v     = find(x_axis == soa + tau_v);
+idx_tau_a     = find(x_axis == soa + tau_a);
+
+v = plot(x_axis(idx_tau_v:end), g_v(idx_tau_v:end),'Color',cmp(1,:),'LineWidth',lw);
+plot([idx_tau_v,idx_tau_v], [0, g_v(idx_tau_v)],'Color',cmp(1,:),'LineWidth',lw)
+
+a = plot(x_axis(idx_tau_a:end), g_a(idx_tau_a:end),'Color',cmp(3,:),'LineWidth',lw);
+plot([idx_tau_a,idx_tau_a], [0, g_a(idx_tau_a)],'Color',cmp(3,:),'LineWidth',lw);
+
+xline(0,'k','LineWidth',lw)
+xlim([x_axis(1)-50, x_axis(end)])
+xlabel('Arrival latency (s)')
+xticks([0:100:200])
+xticklabels({'0','0.1','0.2'})
+
+ax = gca;
+ax.YAxis.Visible = 'off';
+
+% difference distribution
+subplot 144;
+set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica');
+hold on
+
+% pre-recalibration
+soa = -0;
+min_x = -300;
+max_x = 300;
+x_axis = min_x:max_x;
+
+idx_peak = find(x_axis == (soa + tau));
+lx_axis = x_axis(1:idx_peak);
+rx_axis = x_axis(idx_peak+1:end);
+
+lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_v * (lx_axis - ((soa + tau))));
+rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_a * (rx_axis - ((soa + tau))));
+likelihood = [lf, rf];
+
+plot(lx_axis, lf,'-','Color',cmp(1,:),'LineWidth',lw);
+plot(rx_axis, rf,'-','Color',cmp(3,:),'LineWidth',lw);
+xline(0,'k','LineWidth',lw)
+xline(tau,'k:','LineWidth',lw)
+xticks([-200, 0, 200])
+xticklabels({'-0.2','0','0.2'})
+
+ax = gca;
+ax.YAxis.Visible = 'off';
+
+flnm = 'BC_exponential';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
 
 %% utility function
