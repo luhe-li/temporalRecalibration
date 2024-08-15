@@ -94,7 +94,7 @@ cmp =  [216, 49, 91; 175, 213, 128; 88,193,238]./255;
 %% subplot1: measurement pdf
 
 figure; hold on
-set(gcf, 'Position',[10 10 200 150])
+set(gcf, 'Position',[10 10 250 150])
 set(gcf, 'color', 'white')
 
 subplot 211;
@@ -114,17 +114,18 @@ lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_v * (lx_axis - ((soa + tau))));
 rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_a * (rx_axis - ((soa + tau))));
 measurement_dist = [lf, rf];
 
-l3 = plot(x_axis, measurement_dist, 'k','LineWidth',lw); 
+l3 = plot(x_axis, measurement_dist, 'k','LineWidth',lw);
+
 l1 = xline(tau,'LineWidth',lw);
 l2 = xline(-mu,':','LineWidth',lw);
 
-% lgd = legend([l1, l2, l3],{'s + \tau','\mu','\Psi_A(s = 0)'},'Location','bestoutside');
-% legend boxoff 
-% lgd.ItemTokenSize = [10,10];
+lgd = legend([l1, l2, l3],{'s + \tau','\mu','\Psi_A(s = 0)'},'Location','bestoutside');
+legend boxoff 
+lgd.ItemTokenSize = [10,10];
 
 % look better
-ylabel('Probability density')
-xlabel('Measurement  of a zero SOA (s)')
+ylabel('Probability')
+xlabel('Measurement of SOA (sec)')
 % yticks([yl(1), yl(2)])
 xticks([-500, 0, 500])
 xticklabels({'-0.5','0','0.5'})
@@ -144,8 +145,9 @@ set(gca,'TickDir','out');
     tau, sigma_a, sigma_v, criterion, lambda, p_common);
 
 % Perform kernel smoothing density estimation
-[f, xi] = ksdensity(shat_sample,'NumPoints',1000);
+[f, xi] = ksdensity(shat_sample);
 
+figure; hold on
 indices = xi<=-criterion;
 fill([xi(indices), fliplr(xi(indices))], [f(indices), zeros(size(f(indices)))], cmp(3,:), 'EdgeColor', 'none');
 
@@ -155,9 +157,17 @@ fill([xi(indices), fliplr(xi(indices))], [f(indices), zeros(size(f(indices)))], 
 indices = xi >= criterion;
 fill([xi(indices), fliplr(xi(indices))], [f(indices), zeros(size(f(indices)))], cmp(1,:), 'EdgeColor', 'none');
 
-ylabel('Probability density')
-xlabel('Estimate of a zero SOA (s)')
 
+lgd = legend({'\Psi_A(s = 0)','\Psi_S(s = 0)','\Psi_V(s = 0)','Mode','Criteria'},'Location','bestoutside');
+legend boxoff 
+lgd.ItemTokenSize = [10,10];
+% set(lgd, 'Position', [0.75 0.7 0.15 0.1]);
+% set(findobj(lgd, 'type', 'text'), 'FontSize', 8); 
+
+ylabel('Count')
+xlabel('Estimate of SOA (sec)')
+% yl = ylim; 
+% yticks([yl(1), 10^2, yl(2)])
 xlim([min_x, max_x])
 xticks([min_x, 0, max_x])
 xticklabels({'-0.5','0','0.5'})

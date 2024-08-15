@@ -107,7 +107,8 @@ end
 
 % labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
 xticklabels(splitStr);
-ylabel({'\Delta log model evidence'; 'relative to fixed-update'; 'modality-independent';'uncertainty model'});
+ylabel({'Relative log model evidence'; 'to fixed-update'; 'modality-independent';'-uncertainty model'});
+yline(log(10),'--','LineWidth',lw)
 
 flnm = 'A_BF';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
