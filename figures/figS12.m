@@ -16,7 +16,8 @@ sigma = 220.6; % Width of tuning curves
 alpha = 0.41; % Maximal proportional gain reduction
 sigma_a = 122.6; % Breadth of the gain field for adaptation
 G0 = 1; % Unadapted response gain
-adapted_soas = [-700, -300:100:300, 700];
+% adapted_soas = [-700, -300:100:300, 700];
+adapted_soas = [-1000, -200:100:200, 1000];
 
 x_max = 1000;
 adapted_SOA = -100; % example adaptor soa for subplot 1&2
