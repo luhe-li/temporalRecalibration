@@ -31,7 +31,7 @@ for tt                       = 1:exp_trial
     %% now we turn to the observer's perspective to make inference
 
     % perform causal inference to map measurements to estimates
-    [shat, post_C1] = cau_inf_map(soa_m, p_common, fixP);
+    [shat, post_C1] = cau_inf_map(soa_m - i_tau, p_common, fixP);
 
     % fail-safe: update the mean of the measurement if shat is not nan. nan can happen if L_C1/L_C2 = 0/0
     idx_update                   = ~isnan(shat);

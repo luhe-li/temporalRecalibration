@@ -154,6 +154,7 @@ for mm = order
     ub_sim_recal  = mean_sim_recal + se_sim_recal;
 
     % plot fitting range
+    plot(adaptor_soa, mean_sim_recal,'Color',repmat(0.7,1,3),'LineWidth',lw);
     p = patch([adaptor_soa, fliplr(adaptor_soa)], [lb_sim_recal, fliplr(ub_sim_recal)], ...
         clt, 'FaceAlpha', 0.2, 'EdgeColor','none');
 

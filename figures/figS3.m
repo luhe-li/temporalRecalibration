@@ -4,7 +4,8 @@ clear; close all;
 
 %% select models
 
-specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
+% specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
+specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-indepdent precision', 'Causal inference, modality-specific precision',  'Causal inference, modality-indepdent precision','Fixed updated, modality-specific precision', 'Fixed updated, modality-indepdent precision'};
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
 %% manage path
@@ -85,6 +86,7 @@ CM2 = CM2./num_i_sample;
 
 figure;
 set(gcf, 'Position',[0,0,420,300]);
+set(gca, 'FontSize', 4)
 
 imagesc(CM);
 colormap('bone')
