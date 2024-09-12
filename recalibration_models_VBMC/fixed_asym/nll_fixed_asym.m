@@ -196,7 +196,7 @@ else
 
         if model.adaptor_axis_finer ==1
             out.num_adaptor = 30;
-            out.adaptor_soa = linspace(model.sim_adaptor_soa(1), model.sim_adaptor_soa(end), out.num_adaptor );
+            out.adaptor_soa = linspace(model.sim_adaptor_soa(1), model.sim_adaptor_soa(end), out.num_adaptor);
         else
             out.adaptor_soa = model.sim_adaptor_soa;
             out.num_adaptor = numel(model.sim_adaptor_soa);

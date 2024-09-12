@@ -46,7 +46,6 @@ for pp = 1:size(files)
     % extract model predictions
     fake_pred(:, fit_m, i_sample) = r.fake_pred;
     fake_data(:, fit_m, i_sample) = r.fake_data;
-    gt(:, fit_m, i_sample) = r.fake_gt;
     fit_pred(:,fit_m, i_sample) = r.fit_pred;
     fit_est(:, fit_m,i_sample) = r.fit_est;
 
@@ -183,7 +182,7 @@ end
 
 %% optinal: choose 1 sample, show 6 sim models fitted by 6 fit models
 
-i_sample = 2;
+i_sample = 1;
 figure;
 set(gcf, 'Position',[0 0 1200 800])
 
@@ -205,4 +204,4 @@ for sim_m = 1:6
     end
 end
 
-saveas(gca, fullfile(out_dir, 'check_all_models'),'png');
+saveas(gca, fullfile(out_dir, ''),'png');
