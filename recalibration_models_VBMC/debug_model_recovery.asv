@@ -3,7 +3,6 @@
 clear; close all; clc;
 
 model_slc = 5;
-
 %% select models
 
 rng('shuffle'); rng('Shuffle');
@@ -94,7 +93,6 @@ end
 % set OPTIONS
 options = vbmc('defaults');
 options.TolStableCount = 15;
-options.SpecifyTargetNoise = true;
 
 sim_data = fake_data(model_slc, i_sample).data;
 currModelStr = model_info.FolderName{model_slc};
@@ -111,8 +109,7 @@ lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 % set likelihood
 model.mode = 'optimize';
 llfun = @(x) currModel(x, model, sim_data);
-% fun = @(x) llfun(x) + lpriorfun(x);
-fun = @(x) lpostfun(x,llfun,lpriorfun); 
+fun = @(x) llfun(x) + lpriorfun(x);
 
 fprintf('[%s] Start sim model-%s, fit model-%s, recovery sample-%i \n', mfilename, folders{sim_m}, currModelStr, i_sample);
 
@@ -126,7 +123,6 @@ Xs = vbmc_rnd(temp_vp,1e5);
 post_mean = mean(Xs,1);
 fit_est = post_mean;
 
-%%
 model.mode       = 'predict';
 pred =  currModel(post_mean, model, sim_data);
 
@@ -154,9 +150,7 @@ ll_est = llfun(EST);
 p_gt = fun(GT);
 p_est = fun(EST);
 % this should be one, since estimation's log posterior should be the largest
-p_gt < p_est
-
-
+p_gt < p_est 
 
 
 %% utility functions
