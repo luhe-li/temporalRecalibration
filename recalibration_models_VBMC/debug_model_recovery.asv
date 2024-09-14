@@ -3,6 +3,7 @@
 clear; close all; clc;
 
 model_slc = 5;
+
 %% select models
 
 rng('shuffle'); rng('Shuffle');
@@ -93,6 +94,7 @@ end
 % set OPTIONS
 options = vbmc('defaults');
 options.TolStableCount = 15;
+options.SpecifyTargetNoise = true;
 
 sim_data = fake_data(model_slc, i_sample).data;
 currModelStr = model_info.FolderName{model_slc};
@@ -109,7 +111,8 @@ lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 % set likelihood
 model.mode = 'optimize';
 llfun = @(x) currModel(x, model, sim_data);
-fun = @(x) llfun(x) + lpriorfun(x);
+% fun = @(x) llfun(x) + lpriorfun(x);
+fun = @(x) lpostfun(x,llfun,lpriorfun); 
 
 fprintf('[%s] Start sim model-%s, fit model-%s, recovery sample-%i \n', mfilename, folders{sim_m}, currModelStr, i_sample);
 
@@ -123,6 +126,7 @@ Xs = vbmc_rnd(temp_vp,1e5);
 post_mean = mean(Xs,1);
 fit_est = post_mean;
 
+%%
 model.mode       = 'predict';
 pred =  currModel(post_mean, model, sim_data);
 
@@ -150,8 +154,28 @@ ll_est = llfun(EST);
 p_gt = fun(GT);
 p_est = fun(EST);
 % this should be one, since estimation's log posterior should be the largest
-p_gt < p_est 
+p_gt < p_est
 
+%% test 3: see how sigma and alpha influences NLL
+
+model.mode       = 'predict';
+adaptor_soa = pred.adaptor_soa;
+sigmas = 40:10:80;
+alphas = 0.0001:0.0001:0.0004;
+for ii = 1:numel(sigmas)
+for jj = 1:numel(alphas)
+
+    test_p = [41.1716, sigmas(ii), 41.0812, 240.9095, 0.0372, alphas(jj)];
+    nll(ii,jj) = fun(test_p);
+    pred =  currModel(test_p, model, sim_data);
+    psss(ii,jj,:) = mean(pred.pss_shift,2);
+
+    subplot(numel(sigmas), numel(alphas), (ii-1)*numel(alphas) + jj)
+    plot(adaptor_soa, psss(ii,jj,:))
+    ylim([-200 200])
+    title(sprintf('NLL '))
+end
+end
 
 %% utility functions
 

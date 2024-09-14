@@ -156,8 +156,34 @@ p_est = fun(EST);
 % this should be one, since estimation's log posterior should be the largest
 p_gt < p_est
 
+%% test 3: see how sigma and alpha influences NLL
 
+model.mode       = 'predict';
+adaptor_soa = pred.adaptor_soa;
+sigmas = 40:10:80;
+alphas = 0.0001:0.0001:0.0004;
+figure;
+set(gcf, 'Position', get(0, 'Screensize'));
 
+for ii = 1:numel(sigmas)
+for jj = 1:numel(alphas)
+% 
+    test_p = [41.1716, sigmas(ii), 41.0812, 240.9095, 0.0372, alphas(jj)];
+    ll(ii,jj) = llfun(test_p);
+    pred =  currModel(test_p, model, sim_data);
+    psss(ii,jj,:) = mean(pred.pss_shift,2);
+
+    subplot(numel(sigmas), numel(alphas), (ii-1)*numel(alphas) + jj)
+    hold on
+    plot(fake_data(model_slc, i_sample).pred.adaptor_soa, mean(fake_data(model_slc, i_sample).pred.pss_shift, 2),'-ok')
+    plot(adaptor_soa, squeeze(psss(ii,jj,:)),'--r')
+    ylim([-200 200])
+    xlim([-700 700])
+    title(sprintf('LL %.2f, sigma %.2f, alpha %.4f', ll(ii,jj), sigmas(ii), alphas(jj)))
+end
+end
+
+saveas(gca, fullfile(outDir,'NLL test'),'png')
 
 %% utility functions
 
