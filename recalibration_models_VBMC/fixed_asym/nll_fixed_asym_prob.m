@@ -1,4 +1,5 @@
-function [out, out_sd] = nll_fixed_asym(freeParam, model, data)
+function [out, out_sd] = nll_fixed_asym_prob(freeParam, model, data)
+% data are simulated as in probabilty, not binary responses
 
 out_sd = NaN;
 if strcmp(model.mode, 'initialize')
@@ -64,7 +65,7 @@ else
         %% simulate shift_mu of all adaptors
 
         % simulate using adaptor_soa in session order
-        adaptor_soas = [data(1:model.num_ses).adaptor_soa];
+        adaptor_soas = [data.adaptor_soa];
         tau_shift = NaN(numel(adaptor_soas), model.expo_num_sim);
 
         for t    = 1:model.expo_num_sim
@@ -86,9 +87,7 @@ else
 
             %% calculate pretest nLL
 
-            pre_LL = data(ses).pre_nT_A1st*log(pre_afirst)'...
-                + data(ses).pre_nT_V1st*log(pre_vfirst)'...
-                + data(ses).pre_nT_simul*log(pre_simul)';
+            pre_LL = sum(data.pre_pmf.*[pre_afirst; pre_simul; pre_vfirst],'all');
 
             %% extract the simulated mu_shift for this session
 
@@ -145,9 +144,11 @@ else
                     figure; plot(model.test_soa, [post_afirst; post_simul; post_vfirst] ,'-o');
                 end
 
-                LL_delta(i) = data(ses).post_nT_A1st*log(post_afirst)'...
-                    + data(ses).post_nT_V1st*log(post_vfirst)'...
-                    + data(ses).post_nT_simul*log(post_simul)';
+%                 LL_delta(i) = data(ses).post_nT_A1st*log(post_afirst)'...
+%                     + data(ses).post_nT_V1st*log(post_vfirst)'...
+%                     + data(ses).post_nT_simul*log(post_simul)';
+
+                LL_delta(i) = sum(squeeze(data.post_pmf(ses,:,:)).*[post_afirst; post_simul; post_vfirst],'all');
 
             end
 
@@ -170,7 +171,7 @@ else
 
         end
 
-        out = -nansum(LL_ses); % estimated LL
+        out = nansum(LL_ses); % estimated LL
         out_sd = sqrt(nansum(L_VAR)); % S.D. of likelihood
 
         if checkPlot

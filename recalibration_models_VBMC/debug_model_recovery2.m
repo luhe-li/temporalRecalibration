@@ -3,6 +3,7 @@
 clear; close all; clc;
 
 model_slc = 5;
+
 %% select models
 
 rng('shuffle'); rng('Shuffle');
@@ -20,6 +21,7 @@ currentDir= pwd;
 dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
+addpath(genpath(fullfile(tempDir, 'bads')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 outDir = fullfile(currentDir, mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
@@ -90,9 +92,8 @@ end
 
 %% fitting
 
-% set OPTIONS
-options = vbmc('defaults');
-options.TolStableCount = 15;
+OPTIONS.MaxIterations = 1000; % for debug
+OPTIONS.TolMesh = 1e-4;
 
 sim_data = fake_data(model_slc, i_sample).data;
 currModelStr = model_info.FolderName{model_slc};
@@ -102,34 +103,21 @@ model.mode = 'initialize';
 Val = currModel([], model, []);
 model.initVal = Val;
 
-% set priors
-lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
-% lpriorfun = @(x) msplinetrapezlogpdf(x, mu_GT - 3*sd_GT, mu_GT - sd_GT,  mu_GT + sd_GT, mu_GT + 3*sd_GT);
-
 % set likelihood
 model.mode = 'optimize';
-llfun = @(x) currModel(x, model, sim_data);
-fun = @(x) llfun(x) + lpriorfun(x);
 
-fprintf('[%s] Start sim model-%s, fit model-%s, recovery sample-%i \n', mfilename, folders{sim_m}, currModelStr, i_sample);
+[estP,NLL] = bads(@(x) currModel(x, model, sim_data),...
+    Val.init(1,:), Val.lb,...
+    Val.ub, Val.plb, Val.pub,[],OPTIONS);
 
-% vp: variational posterior
-% elbo: Variational Evidence Lower Bound
-[temp_vp, temp_elbo, temp_elbo_sd, temp_exitflag,temp_output] = vbmc(fun, Val.init(randi(model.num_runs,1),:), Val.lb,...
-    Val.ub, Val.plb, Val.pub, options);
-
-% make predictions
-Xs = vbmc_rnd(temp_vp,1e5);
-post_mean = mean(Xs,1);
-fit_est = post_mean;
-
+%%
 model.mode       = 'predict';
-pred =  currModel(post_mean, model, sim_data);
+pred =  currModel(estP, model, sim_data);
 
 %% test 1: compare estimates
 
-disp(fake_data(model_slc, i_sample).gt_p')
-disp(fit_est)
+disp(GT_samples')
+disp(estP)
 
 % Estimates are close to the ground truth.
 
@@ -140,7 +128,7 @@ plot(fake_data(model_slc, i_sample).pred.adaptor_soa, mean(fake_data(model_slc, 
 plot(pred.adaptor_soa, mean(pred.pss_shift,2),'--r')
 
 % Test if LL of GT > LL of fitted estimates
-GT = fake_data(model_slc, i_sample).gt_p';
+GT = GT_samples';
 EST = fit_est; 
 
 ll_gt = llfun(GT);
@@ -150,7 +138,9 @@ ll_est = llfun(EST);
 p_gt = fun(GT);
 p_est = fun(EST);
 % this should be one, since estimation's log posterior should be the largest
-p_gt < p_est 
+p_gt < p_est
+
+
 
 
 %% utility functions

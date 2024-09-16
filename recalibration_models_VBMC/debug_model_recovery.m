@@ -118,8 +118,13 @@ fprintf('[%s] Start sim model-%s, fit model-%s, recovery sample-%i \n', mfilenam
 
 % vp: variational posterior
 % elbo: Variational Evidence Lower Bound
-[temp_vp, temp_elbo, temp_elbo_sd, temp_exitflag,temp_output] = vbmc(fun, Val.init(randi(model.num_runs,1),:), Val.lb,...
-    Val.ub, Val.plb, Val.pub, options);
+% [temp_vp, temp_elbo, temp_elbo_sd, temp_exitflag,temp_output] = vbmc(fun, Val.init(randi(model.num_runs,1),:), Val.lb,...
+%     Val.ub, Val.plb, Val.pub, options);
+
+% try fit using bads
+[estP,NLL] = bads(@(p) tempFunc(p, tempModel, data),...
+    tempVal.init(i,:), tempVal.lb,...
+    tempVal.ub, tempVal.plb, tempVal.pub, [], OPTIONS);
 
 % make predictions
 Xs = vbmc_rnd(temp_vp,1e5);
