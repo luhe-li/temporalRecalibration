@@ -256,13 +256,38 @@ else
             R  = corr(predicted_y(:), observed_y(:));
             out.R2(jj)     = R^2;
 
+            %if R2 is big enough, we fit a Gaussian, else use ksdensity
+            if out.R2(jj)  > model.thres_R2; pdf_delta = gauss_pdf;
+            else; pdf_delta = ksdensity(i_tau_shift); end
+            pdf_delta = pdf_delta./sum(pdf_delta);
+
+
             %% posttest TOJ
+            if out.R2(jj) > model.thres_R2
 
-            [post_afirst, post_simul, post_vfirst] = pmf_exp(out.test_soa,...
-                tau + mean(i_tau_shift), sigma_a, sigma_v, -criterion, criterion, lambda);
+                [post_afirst, post_simul, post_vfirst] = pmf_exp(out.test_soa,...
+                    tau + mean(i_tau_shift), sigma_a, sigma_v, -criterion, criterion, lambda);
 
-            out.post_tau(jj) = tau + mean(i_tau_shift);
-            out.post_pmf(jj, :, :) = [post_vfirst; post_simul; post_afirst];
+                out.post_tau(jj) = tau + mean(i_tau_shift);
+                out.post_pmf(jj, :, :) = [post_vfirst; post_simul; post_afirst];
+
+            else
+
+                for i = 1:numel(delta_tau_shift)
+                    [post_afirst_all(i, :) , post_simul_all(i, :) , post_vfirst_all(i,:)] =...
+                        pmf_exp(out.test_soa, tau + delta_tau_shift(i), ...
+                        sigma_a, sigma_v, -criterion, criterion, lambda);
+
+                end
+                % Integrate over delta_tau_shift weight probabilities by pdf_delta
+                weighted_post_afirst = pdf_delta * post_afirst_all;
+                weighted_post_simul = pdf_delta * post_simul_all;
+                weighted_post_vfirst = pdf_delta * post_vfirst_all;
+
+                out.post_tau(jj) = tau + sum(delta_tau_shift .* pdf_delta);
+                out.post_pmf(jj, :, :) =  [weighted_post_vfirst; weighted_post_simul; weighted_post_afirst];
+
+            end
 
         end
 
