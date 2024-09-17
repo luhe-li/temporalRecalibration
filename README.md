@@ -1,6 +1,6 @@
 # Audiovisual temporal recalibration
 
-This project develops models of audiovisual temporal recalibration. It contains scripts for experiments, model fitting, simulation, GUI of major models, and plotting related to all the recalibration models in the [paper](https://elifesciences.org/reviewed-preprints/97765).
+This project develops models of audiovisual temporal recalibration, containing scripts for experiments, model fitting, GUI simulation, and plotting related to all the recalibration models in the [paper](https://elifesciences.org/reviewed-preprints/97765).
 
 ## Folder Structure
 
