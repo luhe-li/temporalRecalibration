@@ -1,4 +1,5 @@
 % part 2 of model recovry: organize 100 simulated datesets to 1 file
+% only used when s1 is done on hpc
 
 clear; close all; clc;
 

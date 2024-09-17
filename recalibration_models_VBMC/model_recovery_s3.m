@@ -84,10 +84,10 @@ options.TolStableCount = 15;
 
 %% load similated data
 
-result_folder = fullfile(projectDir, 'recalibration_models_VBMC', 'model_recovery_s2');
+result_folder = fullfile(projectDir, 'recalibration_models_VBMC', 'model_recovery_s1');
 d = load(fullfile(result_folder, 'sim_data.mat')); % load struct `sim`
 
-parfor sim_m = 1:numCores
+parfor sim_m = 1:(numCores-1)
 
     temp_d = d;
     temp_model = model;
@@ -146,7 +146,7 @@ model.output = output;
 
 %% summariz some metrics
 
-for sim_m = 1:numCores
+for sim_m = 1:(numCores-1)
     
     summ.bestELCBO(sim_m) = model.elbo(sim_m) - 3*model.elbo_sd(sim_m);
     summ.bestELBO(sim_m) = model.elbo(sim_m);
