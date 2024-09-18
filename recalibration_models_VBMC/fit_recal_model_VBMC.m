@@ -107,7 +107,7 @@ fun = @(x) lpostfun(x,llfun,lpriorfun);
 [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 
 %test
-pp = fun(Val.init(1,:));
+% pp = fun(Val.init(1,:));
 
 for i  = 1:model.num_runs
     

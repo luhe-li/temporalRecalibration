@@ -103,7 +103,7 @@ for sim_m = 1:numel(folders)
     GT_samples = generate_samples(Val, mu_GT, sd_GT, n_sample);
     model.mode = 'predict';
 
-    parfor i_sample = 1:n_sample
+    pafor i_sample = 1:n_sample
         temp_sim_func = sim_func;
         pred =  temp_sim_func(GT_samples, model, []);
         sim_data = simulateData(pred, data);
