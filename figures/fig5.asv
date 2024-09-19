@@ -22,11 +22,11 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 % initialize with symmetrical parameters
 beta = 0;
-tau_a = 80;
-tau_v = 80;
+tau_a = 70;
+tau_v = 70;
 criterion = 77.23;
 lambda = 0.018;
-p_common = 0.7;
+p_common = 0.5;
 alpha = 0.0052;
 sigma_C1 = 51.9;
 sigma_C2 = 261.39;
@@ -80,7 +80,7 @@ if ~exist(fullfile(out_dir, fileName), 'file') || recompute
 
     fprintf('File does not exist. Performing simulation...\n');
 
-    taus = 40:10:90;
+    taus = 40:10:100;
     n_level = numel(taus);
     parfor i = 1:n_level
         tempModel = currModel;
@@ -104,7 +104,7 @@ if ~exist(fullfile(out_dir, fileName), 'file') || recompute
     fprintf('File does not exist. Performing simulation...\n');
 
     %% 1. sim tau_a
-    tau_as = 40:10:80;
+    tau_as = 30:10:70;
     n_level = numel(tau_as);
     parfor i = 1:n_level
         tempModel = currModel;
@@ -114,7 +114,7 @@ if ~exist(fullfile(out_dir, fileName), 'file') || recompute
     end
 
     %% 2. sim tau_v
-    tau_vs = 40:10:80;
+    tau_vs = 30:10:70;
     n_level = numel(tau_vs);
     parfor i = 1:n_level
         tempModel = currModel;
@@ -218,6 +218,7 @@ yl = 200;
 ylim([-yl, yl])
 yticks([-yl, 0, yl])
 yticklabels([-yl, 0, yl]./1e3)
+ylabel('Recalibration effect (s)')
 xlabel('Adapter SOA (s)')
 xticks(adaptor)
 xticklabels(adaptor/1e3)

@@ -5,7 +5,7 @@ clear; close all; rng('shuffle');
 %% set environment
 
 currModelStr = 'cauInf_asym';
-useCluster = false;
+useCluster = true;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -63,7 +63,7 @@ model.num_ses = 9;
 model.thres_R2 = 0.95;
 model.expo_num_sim = 1e3; % number of simulation for exposure phase
 model.expo_num_trial = 250; % number of *real* trials in exposure phase
-model.num_runs = numCores; % fit the model multiple times, each with a different initialization
+model.num_runs = numCores-1; % fit the model multiple times, each with a different initialization
 model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
 model.bound_full = 10*1e3; % in second, the bound for prior axis
 model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
@@ -78,6 +78,7 @@ model.currModelStr = currModelStr; % current model folder
 options = vbmc('defaults');
 options.MaxFunEvals = 500;
 options.TolStableCount = 15;
+options.SpecifyTargetNoise = true;
 
 %% sample ground-truth from best parameter estimates
 
@@ -116,7 +117,7 @@ lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 % set likelihood
 model.mode = 'optimize';
 llfun = @(x) currModel(x, model, fake_data);
-fun = @(x) llfun(x) + lpriorfun(x);
+fun = @(x) lpostfun(x,llfun,lpriorfun); 
 
 [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 

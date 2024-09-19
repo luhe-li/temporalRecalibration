@@ -32,7 +32,7 @@ save_fig = 0;
 plotTOJ = 0;
 
 for mm = 1:n_model
-    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
+    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{model_slc(mm)});
     R(mm, :) = load_subject_data(result_folder, sub_slc, 'sub-*');
     
     for ss = 1:numel(sub_slc)
