@@ -3,8 +3,8 @@ function fit_recal_model_VBMC(i_model, useCluster, sub)
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Update criterion, asymmetric'}; 
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','criteria_asym'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Causal inference, biased prior'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','cauInf_sym_biasedPrior'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
