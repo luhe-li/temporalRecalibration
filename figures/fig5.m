@@ -185,7 +185,7 @@ leg.ItemTokenSize = [repmat(10,1,7)];
 % Add yline (excluding it from the legend)
 yline(0,'--','LineWidth',lw,'HandleVisibility','off')
 
-yl = 200;
+yl = 100;
 ylim([-yl, yl])
 yticks([-yl, 0, yl])
 yticklabels([-yl, 0, yl]./1e3)
@@ -215,7 +215,7 @@ leg.ItemTokenSize = [repmat(10,1,7)];
 % Add yline (excluding it from the legend)
 yline(0,'--','LineWidth',lw,'HandleVisibility','off')
 
-yl = 200;
+yl = 100;
 ylim([-yl, yl])
 yticks([-yl, 0, yl])
 yticklabels([-yl, 0, yl]./1e3)
