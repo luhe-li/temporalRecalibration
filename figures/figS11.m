@@ -5,7 +5,7 @@ clear; close all;
 %% select models
 
 % specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
-specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-indepdent precision', 'Causal inference, modality-specific precision',  'Causal inference, modality-indepdent precision','Fixed updated, modality-specific precision', 'Fixed updated, modality-indepdent precision'};
+specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-indepdent precision', 'Causal inference, modality-specific precision',  'Causal inference, modality-independent precision','Fixed updated, modality-specific precision', 'Fixed updated, modality-independent precision'};
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
 %% manage path
@@ -96,7 +96,7 @@ xticklabels(specifications(model_slc))
 yticklabels(specifications(model_slc))
 xlabel('Model used for fitting','FontWeight','bold');
 ylabel('Data generating model','FontWeight','bold');
-title({'Percentage of winning';'based on model evidence'},'fontsize',12)
+title({'Percentage of winning'},'fontsize',12)
 
 [num_rows, num_cols] = size(CM);
 for row = 1:num_rows
@@ -114,35 +114,3 @@ for row = 1:num_rows
 end
 
 saveas(gca, fullfile(out_dir, 'CM'),'pdf');
-
-%% plot2: RMSE of the recalibration phase as the criterion of winning model
-
-figure;
-set(gcf, 'Position',[0,0,420,300]);
-
-imagesc(CM2);
-colormap('bone')
-xticks(1:6)
-yticks(1:6)
-xticklabels(specifications(model_slc))
-yticklabels(specifications(model_slc))
-xlabel('Model used for fitting','FontWeight','bold');
-ylabel('Data generating model','FontWeight','bold');
-title({'Percentage of winning based on';'RMSE of recalibration prediction'},'fontsize',12)
-
-[num_rows, num_cols] = size(CM2);
-for row = 1:num_rows
-    for col = 1:num_cols
-        val = CM2(row, col);
-        % Choose text color for better contrast
-        textColor = 'w'; % default black
-        if val >= 0.3
-            textColor = 'k'; % white for contrast
-        end
-        text(col, row, num2str(val, '%0.2f'), ...
-            'HorizontalAlignment', 'center', ...
-            'Color', textColor);
-    end
-end
-
-saveas(gca, fullfile(out_dir, 'CM_RMSE'),'pdf');

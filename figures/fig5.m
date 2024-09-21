@@ -16,6 +16,7 @@ currentDir= pwd;
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC', model_str)));
 out_dir = fullfile(currentDir, mfilename);
+addpath(genpath(out_dir))
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% free parameters
