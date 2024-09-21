@@ -1,124 +1,156 @@
-% fig S10. Simulation of the causal inference model
-% Effect of increasing bias, \beta on recalibration magnitude
+% fig S10: data analysis of the oddball-detection task
 
 clear; clc; close all;
-recompute = 0;
-model_str = 'cauInf_asym';
 
-%% manage paths
+%% Manage Paths
 
 restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC', model_str)));
-out_dir = fullfile(currentDir, mfilename);
-if ~exist(out_dir, 'dir'); mkdir(out_dir); end
+current_dir = pwd;
+[project_dir, ~] = fileparts(current_dir);
+addpath(genpath(fullfile(project_dir, 'data')));
+out_dir = fullfile(current_dir, mfilename);
+if ~exist(out_dir, 'dir')
+    mkdir(out_dir);
+end
 
-%% free parameters
+%% Set Up
 
-% initialize with symmetrical parameters
-beta = 0;
-tau_a = 60;
-tau_v = 60;
-criterion = 77.23;
-lambda = 0.018;
-p_common = 0.5;
-alpha = 0.0052;
-sigma_C1 = 51.9;
-sigma_C2 = 261.39;
+subject_list = [1:4, 6:10]; % Selected subjects
+num_subjects = 10;
+num_sessions = 9;
 
-%% set up model
+[hit_rate, false_alarm] = deal(NaN(2, num_subjects, 2)); % Preallocate Hit Rate and False Alarm arrays
 
-% set fixed & set-up parameters
-model.num_ses = 9;
-model.thres_R2 = 0.95;
-model.expo_num_sim = 1e3; % number of simulation for exposure phase
-model.expo_num_trial = 250; % number of *real* trials in exposure phase
-model.num_runs = 10; % fit the model multiple times, each with a different initialization
-model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
-model.bound_full = 10*1e3; % in second, the bound for prior axis
-model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
-model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
-model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
-model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
-model.toj_axis_finer = 0; % simulate pmf with finer axis
-model.adaptor_axis_finer = 0; % simulate with more adpators
+%% Load and Process Data
 
-model_str = 'cauInf_asym';
-currModel = str2func(['nll_' model_str]);
-model.mode       = 'predict';
-
-%% simulation, varying bias
-
-fileName = 'sim_beta.mat';
-if exist(fullfile(out_dir, fileName), 'file') == 2  
-    fprintf('File found! Loading %s\n', fileName);
-    load(fullfile(out_dir, fileName));
-else
-    fprintf('File does not exist. Performing simulation...\n');
-
-    betas = -100:50:100;
-    n_level = numel(betas);
-    parfor i = 1:n_level
-        tempModel = currModel;
-        i_beta = betas(i);
-        pred =  tempModel([i_beta, tau_a, tau_v, criterion, lambda, p_common, alpha, sigma_C1, sigma_C2], model, []);
-        recal_bias(i,:)       = mean(pred.pss_shift, 2);
+for subj = subject_list
+    % Preallocate response and oddball arrays
+    [expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis] = deal([]);
+    [post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis] = deal([]);
+    
+    for sess = 1:num_sessions
+        % Load exposure session data
+        load(sprintf('exposure_sub%i_session%i.mat', subj, sess));
+        [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(1, ExpInfo.nTTrials, ExpInfo.idxOddballA, ExpInfo.idxOddballV, Response.oddball);
+        expo_resp_aud = [expo_resp_aud, resp_aud];
+        expo_oddball_aud = [expo_oddball_aud, oddball_aud];
+        expo_resp_vis = [expo_resp_vis, resp_vis];
+        expo_oddball_vis = [expo_oddball_vis, oddball_vis];
+        
+        % Load post-test session data
+        load(sprintf('posttest_sub%i_session%i.mat', subj, sess));
+        [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(1, ExpInfo.expoNTTrials, ExpInfo.idxOddballA, ExpInfo.idxOddballV, ExpoResponse.oddball);
+        post_resp_aud = [post_resp_aud, resp_aud];
+        post_oddball_aud = [post_oddball_aud, oddball_aud];
+        post_resp_vis = [post_resp_vis, resp_vis];
+        post_oddball_vis = [post_oddball_vis, oddball_vis];
     end
-    save(fullfile(out_dir, fileName))
+
+    % Exclude trials with both oddballs present
+    expo_exclude_idx = expo_oddball_aud & expo_oddball_vis;
+    post_exclude_idx = post_oddball_aud & post_oddball_vis;
+    
+    % Remove excluded trials
+    [expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis] = remove_excluded_trials(expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis, expo_exclude_idx);
+    [post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis] = remove_excluded_trials(post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis, post_exclude_idx);
+    
+    % Calculate Hit Rates (HR) and False Alarms (FA)
+    hit_rate(:, subj, :) = [sum(expo_oddball_aud & expo_resp_aud) / sum(expo_oddball_aud), sum(expo_oddball_vis & expo_resp_vis) / sum(expo_oddball_vis); ...
+                            sum(post_oddball_aud & post_resp_aud) / sum(post_oddball_aud), sum(post_oddball_vis & post_resp_vis) / sum(post_oddball_vis)];
+    false_alarm(:, subj, :) = [sum(~expo_oddball_aud & expo_resp_aud) / sum(~expo_oddball_aud), sum(~expo_oddball_vis & expo_resp_vis) / sum(~expo_oddball_vis); ...
+                               sum(~post_oddball_aud & post_resp_aud) / sum(~post_oddball_aud), sum(~post_oddball_vis & post_resp_vis) / sum(~post_oddball_vis)];
 end
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% plotting section
+%% Calculate d-prime and Criterion
 
-lw = 0.5;
-fontsz = 7;
-titleFontSz = 10;
-adaptor = model.sim_adaptor_soa;
+dprime = NaN(2, numel(subject_list), 2);
+criteria = NaN(2, numel(subject_list), 2);
 
-% color for pcc, dark to light
-brown = [99, 71, 44; 204, 172, 142]./255;
-colorpicked = {brown};
-depth = 5;
-for c = 1:numel(colorpicked)
-    [grad{c},im{c}]= colorGradient(colorpicked{c}(1,:),colorpicked{c}(2,:),depth);
+for task = 1:2
+    for idx = 1:numel(subject_list)
+        subj = subject_list(idx);
+        for av = 1:2 % 1 = Auditory; 2 = Visual
+            [dprime(task, idx, av), criteria(task, idx, av)] = calculate_dprime(hit_rate(task, subj, av), false_alarm(task, subj, av), [numel(expo_resp_aud), numel(post_resp_aud)]);
+        end
+    end
 end
 
-%% plot beta
+%% Display Stats
+
+fprintf('[%s] Mean of auditory d-prime %.2f and visual d-prime %.2f\n', mfilename, mean(dprime(:, :, 1), 'all'), mean(dprime(:, :, 2), 'all'));
+re_dprime = reshape(dprime, [2 * numel(subject_list), 2]);
+fprintf('[%s] S.D. of auditory d-prime %.2f and visual d-prime %.2f\n', mfilename, std(re_dprime(:, 1)), std(re_dprime(:, 2)));
+
+%% Plot
+
+clt = [202, 0, 32; 5, 113, 176] ./ 255; % red and blue
+lw = 1.5;
+font_sz = 15;
+title_sz = 20;
+dot_sz = 120;
+label = {'auditory'; 'visual'};
 
 figure;
-set(gcf, 'Position', [0,0,420,150]); hold on
+set(gcf, 'Position', [10 10 450 400]);
+axis equal;
+set(gca, 'LineWidth', lw, 'FontSize', font_sz, 'TickDir', 'out');
+hold on;
+scatter(dprime(1, :, 1), dprime(2, :, 1), dot_sz, 'filled', 'MarkerFaceColor', clt(1, :), 'MarkerEdgeColor', 'w', 'LineWidth', lw);
+scatter(dprime(1, :, 2), dprime(2, :, 2), dot_sz, 'filled', 'MarkerFaceColor', clt(2, :), 'MarkerEdgeColor', 'w', 'LineWidth', lw);
 
-subplot(1,2,1); hold on
-set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
-set(gca, 'ColorOrder', grad{1});
-plot(adaptor, recal_bias,'LineWidth',lw*2)
+lb = 1;
+ub = 4.5;
+x = linspace(lb, ub, 10);
+plot(x, x, 'k--', 'LineWidth', 1, 'HandleVisibility', 'off');
 
-% Create an array of legend labels corresponding to \tau values
-legendLabels = cell(1, numel(betas));
-for i = 1:numel(betas)
-    legendLabels{i} = sprintf('%.0f', betas(i)./1e3);
+xlim([lb, ub]);
+xticks(lb:ub);
+ylim([lb, ub]);
+yticks(lb:ub);
+
+xlabel('d'', exposure phase')%, 'Interpreter', 'latex');
+ylabel('d'', post-test phase')%, 'Interpreter', 'latex');
+
+legend({'Audition', 'Vision'}, 'Location', 'southeast');
+
+flnm = 'oddball_result';
+saveas(gca, fullfile(out_dir, flnm), 'pdf');
+
+%% Helper Functions
+
+function [d, c] = calculate_dprime(hit_rate, false_alarm, n_trial)
+    iHR = hit_rate;
+    iFA = false_alarm;
+    if hit_rate == 1
+        iHR = 1 - 0.5 / n_trial; % or 1 - 0.5(hit_rate + false_alarm)
+    elseif hit_rate == 0
+        iHR = 0.5 / n_trial;
+    elseif false_alarm == 1
+        iFA = 1 - 0.5 / n_trial;
+    elseif false_alarm == 0
+        iFA = 0.5 / n_trial;
+    end
+    d = norminv(iHR, 0, 1) - norminv(iFA, 0, 1);
+    c = norminv(1 - iFA, 0, 1);
 end
 
-% Add the legend with specified labels
-leg  = legend(legendLabels, 'Location', 'northwest');
-leg.Title.String = 'Audiovisual bias (s)';
-leg.ItemTokenSize = [repmat(10,1,5)];
+function [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(start_trial, end_trial, idx_oddball_aud, idx_oddball_vis, response)
+    oddball_aud = zeros(1, length(response));
+    oddball_aud(idx_oddball_aud) = 1; % oddball presence
+    resp_aud = ismember(response, [2, 3]); % oddball response
+    oddball_aud = oddball_aud(start_trial:end_trial);
+    resp_aud = resp_aud(start_trial:end_trial);
+    
+    oddball_vis = zeros(1, length(response));
+    oddball_vis(idx_oddball_vis) = 1; % oddball presence
+    resp_vis = ismember(response, [2, 1]); % oddball response
+    oddball_vis = oddball_vis(start_trial:end_trial);
+    resp_vis = resp_vis(start_trial:end_trial);
+end
 
-% Add yline (excluding it from the legend)
-yline(0,'--','LineWidth',lw,'HandleVisibility','off')
-
-yl = 100;
-ylim([-yl, yl])
-yticks([-yl, 0, yl])
-yticklabels([-yl, 0, yl]./1e3)
-xlabel('Adaptor SOA (s)')
-ylabel('Recalibration effect (s)')
-xticks(adaptor)
-xticklabels(adaptor/1e3)
-xlim([min(adaptor)-50, max(adaptor)+50])
-
-flnm = 'sim_beta';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
-
+function [resp_aud, oddball_aud, resp_vis, oddball_vis] = remove_excluded_trials(resp_aud, oddball_aud, resp_vis, oddball_vis, exclude_idx)
+    resp_aud(exclude_idx) = [];
+    oddball_aud(exclude_idx) = [];
+    resp_vis(exclude_idx) = [];
+    oddball_vis(exclude_idx) = [];
+end

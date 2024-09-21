@@ -1,257 +1,148 @@
-% figS11: compare causal inference model and heuritic model with asymmetric
-% likelihood, with the same parameters
+% fig S11: model recovery results
 
-clear; clc; close all;
-recompute = 1;
+clear; close all;
 
-%% manage paths
+%% select models
 
-restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-addpath(genpath(fullfile(projectDir, 'utils')));
-out_dir = fullfile(currentDir, mfilename);
-if ~exist(out_dir, 'dir'); mkdir(out_dir); end
+% specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
+specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-indepdent precision', 'Causal inference, modality-specific precision',  'Causal inference, modality-indepdent precision','Fixed updated, modality-specific precision', 'Fixed updated, modality-indepdent precision'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
-%% set up model
+%% manage path
 
-% set fixed & set-up parameters
-model.num_ses = 9;
-model.thres_R2 = 0.95;
-model.expo_num_sim = 1e3; % number of simulation for exposure phase
-model.expo_num_trial = 250; % number of *real* trials in exposure phase
-model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
-model.bound_full = 10*1e3; % in second, the bound for prior axis
-model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
-model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
-model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
-model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
-model.toj_axis_finer = 0; % simulate pmf with finer axis
-model.adaptor_axis_finer = 0; % simulate with more adpators
-model.mode       = 'predict';
+cur_dir               = pwd;
+[project_dir, ~]      = fileparts(cur_dir);
+[git_dir, ~] = fileparts(project_dir);
+% dataDir = fullfile(git_dir,'temporalRecalibrationData');
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
+addpath(genpath(fullfile(project_dir, 'utils')));
+addpath(genpath(fullfile(project_dir, 'vbmc')));
+out_dir               = fullfile(cur_dir, mfilename);
+if ~exist(out_dir,'dir') mkdir(out_dir); end
 
-%% A1. simulate from causal inference model
+%% load results
 
-model_str = 'cauInf_asym';
-currModel = str2func(['nll_' model_str]);
-addpath(genpath(fullfile(pwd, model_str)));
+results_folder = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
+files = dir(fullfile(results_folder, 'fitM*'));
+pattern = 'fitM(\d+)_sample-(\d+)_';
 
-% initialize with symmetrical parameters
-beta = 0;
-tau_a = 60;
-tau_v = 60;
-criterion = 77.23;
-lambda = 0.018;
-p_common = 0.5;
-alpha = 0.0052;
-sigma_C1 = 51.9;
-sigma_C2 = 261.39;
+model_slc = 1:6;
+log_model_evidence = nan(6, 6, 100);
+for pp = 1:size(files)
 
-fileName = 'sim_cauInf_taus.mat';
+    flnm =  files(pp).name;
+    r = load(fullfile(results_folder, flnm));
+    tokens = regexp(flnm, pattern, 'tokens');
+    fit_m = str2double(tokens{1}{1});
+    i_sample = str2double(tokens{1}{2});
 
-if ~exist(fullfile(out_dir, fileName), 'file') || recompute
+    % metric fo rmodel comparison
+    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
+    RMSE(:, fit_m, i_sample) = r.summ.RMSE;
 
-    fprintf('File does not exist. Performing simulation...\n');
-
-    tau_as = [30:10:70];
-    n_level = numel(tau_as);
-    
-    parfor i = 1:n_level
-        tempModel = currModel;
-        i_tau_a = tau_as(i);
-        pred =  tempModel([beta, i_tau_a, tau_v, criterion, lambda, p_common, alpha, sigma_C1, sigma_C2], model, []);
-        recal_cauInf(i,:)       = mean(pred.pss_shift, 2);
-    end
-    save(fullfile(out_dir, fileName))
-
-else
-    fprintf('File found! Loading %s\n', fileName);
-    load(fullfile(out_dir, fileName));  
+    % extract model predictions
+    fake_pred(:, fit_m, i_sample) = r.fake_pred;
+    fake_data(:, fit_m, i_sample) = r.fake_data;
+    fit_pred(:,fit_m, i_sample) = r.fit_pred;
+    fit_est(:, fit_m,i_sample) = r.fit_est;
 
 end
 
-%% A2. simulate from heuristic model
+% use model_evidence for CM
+log_model_evidence = log_model_evidence(model_slc,model_slc,:);
+[num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
+CM = zeros(num_sim_m, num_fit_m);
+for sim_m = 1:num_sim_m
 
-model_str = 'heu_asym';
-currModel = str2func(['nll_' model_str]);
-addpath(genpath(fullfile(pwd, model_str)));
+    for i_sample = 1:num_i_sample
 
-% initialize with symmetrical parameters
-beta = 0;
-tau_a = 60;
-tau_v = 60;
-criterion = 77.23;
-lambda = 0.018;
-alpha = 2;
+        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
+        [~, max_fit_m_index] = max(log_model_evidence(sim_m, :, i_sample));
+        % Increment the count for the corresponding fit_m
+        CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
 
-fileName = 'sim_heu_taus.mat';
-if ~exist(fullfile(out_dir, fileName), 'file') || recompute
-
-    fprintf('File does not exist. Performing simulation...\n');
-
-    tau_as = [30:10:70];
-    n_level = numel(tau_as);
-    parfor i = 1:n_level
-        tempModel = currModel;
-        i_tau_a = tau_as(i);
-        pred =  tempModel([beta, i_tau_a, tau_v, criterion, lambda, alpha], model, []);
-        recal_heu(i,:)       = mean(pred.pss_shift, 2);
     end
-    save(fullfile(out_dir, fileName))
-
-else
-    fprintf('File found! Loading %s\n', fileName);
-    load(fullfile(out_dir, fileName));
-
 end
+CM = CM./num_i_sample;
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% plotting section
+% use RMSE of the recalibration prediction for CM
+RMSE = RMSE(model_slc,model_slc,:);
+[num_sim_m, num_fit_m, num_i_sample] = size(RMSE);
+CM2 = zeros(num_sim_m, num_fit_m);
+for sim_m = 1:num_sim_m
 
-lw = 0.5;
-fontsz = 7;
-titleFontSz = 10;
-adaptor = model.sim_adaptor_soa;
+    for i_sample = 1:num_i_sample
 
-% color for taus, dark to light
-blue = [30, 120, 180; 166, 206, 227]./255;
-red = [227, 27, 27; 251, 154, 153]./255;
-colorpicked = {blue};
-depth = n_level;
+        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
+        [~, min_fit_m_index] = min(RMSE(sim_m, :, i_sample));
+        % Increment the count for the corresponding fit_m
+        CM2(sim_m, min_fit_m_index) = CM2(sim_m, min_fit_m_index) + 1;
 
-for c = 1:numel(colorpicked)
-    if c ==2
-        depth = 5;
     end
-    [grad{c},im{c}]= colorGradient(colorpicked{c}(1,:),colorpicked{c}(2,:),depth);
 end
+CM2 = CM2./num_i_sample;
 
-%% A1. plot causal inference model
+%% plot 
 
 figure;
-set(gcf, 'Position', [0,0,420,150]); hold on
+set(gcf, 'Position',[0,0,420,300]);
+set(gca, 'FontSize', 4)
 
-subplot(1,2,1); hold on
-set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
-set(gca, 'ColorOrder', grad{1});
+imagesc(CM);
+colormap('bone')
+xticks(1:6)
+yticks(1:6)
+xticklabels(specifications(model_slc))
+yticklabels(specifications(model_slc))
+xlabel('Model used for fitting','FontWeight','bold');
+ylabel('Data generating model','FontWeight','bold');
+title({'Percentage of winning';'based on model evidence'},'fontsize',12)
 
-plot(adaptor, recal_cauInf,'LineWidth',lw*2)
-yline(0,'--','LineWidth',lw,'HandleVisibility','off')
+[num_rows, num_cols] = size(CM);
+for row = 1:num_rows
+    for col = 1:num_cols
+        val = CM(row, col);
+        % Choose text color for better contrast
+        textColor = 'w'; % default black
+        if val >= 0.3
+            textColor = 'k'; % white for contrast
+        end
+        text(col, row, num2str(val, '%0.2f'), ...
+            'HorizontalAlignment', 'center', ...
+            'Color', textColor);
+    end
+end
 
-title('Causal-inference model')
-xlabel('Adapter SOA (s)')
-yl = 100;
-ylim([-yl, yl])
-yticks([-yl, 0, yl])
-yticklabels([-yl, 0, yl]./1e3)
-ylabel('Recalibration effect (s)')
-xticks(adaptor)
-xticklabels(adaptor/1e3)
-xtickangle(45)
-xlim([min(adaptor)-50, max(adaptor)+50])
+saveas(gca, fullfile(out_dir, 'CM'),'pdf');
 
-%% A2. plot heuristic model
-
-subplot(1,2,2); hold on
-set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
-set(gca, 'ColorOrder', grad{1});
-
-plot(adaptor, recal_heu,'LineWidth',lw*2)
-yline(0,'--','LineWidth',lw,'HandleVisibility','off')
-
-% Create an array of legend labels corresponding to parameter values
-legendLabels = cellstr(num2str(tau_as(:)));
-
-% Add the legend with specified labels
-lgd = legend(legendLabels, 'Location', 'northwest');
-lgd.Title.String = '\tau_{A}';
-ldg.LineWidth = lw;
-lgd.ItemTokenSize = [10,10];
-
-title('Heuristic model')
-xlabel('Adapter SOA (s)')
-yl = 100;
-ylim([-yl, yl])
-yticks([-yl, 0, yl])
-yticklabels([-yl, 0, yl]./1e3)
-ylabel('Recalibration effect (s)')
-xticks(adaptor)
-xticklabels(adaptor/1e3)
-xtickangle(45)
-xlim([min(adaptor)-50, max(adaptor)+50])
-
-flnm = 'sim_cauinf_heu';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
-
-%% simulation of likelihood of cauinf, and p_simultaneous of heu
+%% plot2: RMSE of the recalibration phase as the criterion of winning model
 
 figure;
-set(gcf, 'Position', [0,0,210,70]); hold on
+set(gcf, 'Position',[0,0,420,300]);
 
-subplot(1,2,1); hold on
-set(gca, 'ColorOrder', grad{1});
+imagesc(CM2);
+colormap('bone')
+xticks(1:6)
+yticks(1:6)
+xticklabels(specifications(model_slc))
+yticklabels(specifications(model_slc))
+xlabel('Model used for fitting','FontWeight','bold');
+ylabel('Data generating model','FontWeight','bold');
+title({'Percentage of winning based on';'RMSE of recalibration prediction'},'fontsize',12)
 
-soa = 50;
-min_x = -200;
-max_x = 200;
-x_axis = min_x:max_x;
-n_level = numel(tau_as);
-
-idx_peak = find(x_axis == (soa + beta));
-lx_axis = x_axis(1:idx_peak);
-rx_axis = x_axis(idx_peak+1:end);
-
-prior = normpdf(x_axis, 0, 30);
-
-for i = 1:n_level
-
-    i_tau_a = tau_as(i);
-
-    lf = (1/(i_tau_a + tau_v)).* exp(1/i_tau_a * (lx_axis - ((soa + beta))));
-    rf = (1/(i_tau_a + tau_v)).* exp(-1/tau_v * (rx_axis - ((soa + beta))));
-    likelihood = [lf, rf];
-    likelihood = likelihood./sum(likelihood);
-
-    plot(x_axis, likelihood,'-','LineWidth',lw);
-
-end
-plot(x_axis, prior,'-','Color',repmat(0.7, 1,3),'LineWidth',lw);
-xticks(0)
-yticks([])
-
-subplot(1,2,2); hold on
-set(gca, 'ColorOrder', grad{1});
-
-soa = 0;
-min_x = -200;
-max_x = 200;
-x_axis = min_x:max_x;
-
-for i = 1:n_level
-
-    i_tau_a = tau_as(i);
-
-    p_m_given_simul = measurementGiven0(x_axis, beta, i_tau_a, tau_v);
-
-    plot(x_axis, p_m_given_simul,'-','LineWidth',lw);
-
+[num_rows, num_cols] = size(CM2);
+for row = 1:num_rows
+    for col = 1:num_cols
+        val = CM2(row, col);
+        % Choose text color for better contrast
+        textColor = 'w'; % default black
+        if val >= 0.3
+            textColor = 'k'; % white for contrast
+        end
+        text(col, row, num2str(val, '%0.2f'), ...
+            'HorizontalAlignment', 'center', ...
+            'Color', textColor);
+    end
 end
 
-xticks(0)
-yticks([])
-
-flnm = 'sim_inset';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
-
-%% utility functions
-
-function p = measurementGiven0(soa_m, tau, sigma_a, sigma_v)
-
-p = zeros(size(soa_m));
-% right side of measurement distribution
-bool_m = soa_m > tau;
-p(bool_m) = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (soa_m(bool_m) - tau));
-% left side of measurement distribution
-p(~bool_m) = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (soa_m(~bool_m) - tau));
-
-end
+saveas(gca, fullfile(out_dir, 'CM_RMSE'),'pdf');

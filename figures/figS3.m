@@ -1,148 +1,108 @@
-% fig S3: model recovery results
+% fig S3: individual results of recalibration model comparison
 
-clear; close all;
+clear; close all; clc;
 
-%% select models
+%% model info
 
-% specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
-specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-indepdent precision', 'Causal inference, modality-specific precision',  'Causal inference, modality-indepdent precision','Fixed updated, modality-specific precision', 'Fixed updated, modality-indepdent precision'};
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Atheoretical'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
+numbers = (1:numel(specifications))';
+model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
-%% manage path
+%% manage paths
 
-cur_dir               = pwd;
-[project_dir, ~]      = fileparts(cur_dir);
-[git_dir, ~] = fileparts(project_dir);
-% dataDir = fullfile(git_dir,'temporalRecalibrationData');
+restoredefaultpath;
+currentDir= pwd;
+[projectDir, ~]= fileparts(currentDir);
+[tempDir, ~] = fileparts(projectDir);
 dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
-addpath(genpath(fullfile(project_dir, 'utils')));
-addpath(genpath(fullfile(project_dir, 'vbmc')));
-out_dir               = fullfile(cur_dir, mfilename);
-if ~exist(out_dir,'dir') mkdir(out_dir); end
+addpath(genpath(fullfile(projectDir, 'data')));
+addpath(genpath(fullfile(projectDir, 'utils')));
+addpath(genpath(fullfile(projectDir, 'vbmc')));
+out_dir = fullfile(currentDir, mfilename);
+if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
-%% load results
+%% load recal models
 
-results_folder = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
-files = dir(fullfile(results_folder, 'fitM*'));
-pattern = 'fitM(\d+)_sample-(\d+)_';
+model_slc = [6,5,2,1,4,3];
+n_model = numel(model_slc);
+sub_slc = [1:4,6:10];
 
-model_slc = 1:6;
-log_model_evidence = nan(6, 6, 100);
-for pp = 1:size(files)
-
-    flnm =  files(pp).name;
-    r = load(fullfile(results_folder, flnm));
-    tokens = regexp(flnm, pattern, 'tokens');
-    fit_m = str2double(tokens{1}{1});
-    i_sample = str2double(tokens{1}{2});
-
-    % metric fo rmodel comparison
-    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
-    RMSE(:, fit_m, i_sample) = r.summ.RMSE;
-
-    % extract model predictions
-    fake_pred(:, fit_m, i_sample) = r.fake_pred;
-    fake_data(:, fit_m, i_sample) = r.fake_data;
-    fit_pred(:,fit_m, i_sample) = r.fit_pred;
-    fit_est(:, fit_m,i_sample) = r.fit_est;
-
-end
-
-% use model_evidence for CM
-log_model_evidence = log_model_evidence(model_slc,model_slc,:);
-[num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
-CM = zeros(num_sim_m, num_fit_m);
-for sim_m = 1:num_sim_m
-
-    for i_sample = 1:num_i_sample
-
-        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
-        [~, max_fit_m_index] = max(log_model_evidence(sim_m, :, i_sample));
-        % Increment the count for the corresponding fit_m
-        CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
-
-    end
-end
-CM = CM./num_i_sample;
-
-% use RMSE of the recalibration prediction for CM
-RMSE = RMSE(model_slc,model_slc,:);
-[num_sim_m, num_fit_m, num_i_sample] = size(RMSE);
-CM2 = zeros(num_sim_m, num_fit_m);
-for sim_m = 1:num_sim_m
-
-    for i_sample = 1:num_i_sample
-
-        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
-        [~, min_fit_m_index] = min(RMSE(sim_m, :, i_sample));
-        % Increment the count for the corresponding fit_m
-        CM2(sim_m, min_fit_m_index) = CM2(sim_m, min_fit_m_index) + 1;
-
-    end
-end
-CM2 = CM2./num_i_sample;
-
-%% plot 
-
-figure;
-set(gcf, 'Position',[0,0,420,300]);
-set(gca, 'FontSize', 4)
-
-imagesc(CM);
-colormap('bone')
-xticks(1:6)
-yticks(1:6)
-xticklabels(specifications(model_slc))
-yticklabels(specifications(model_slc))
-xlabel('Model used for fitting','FontWeight','bold');
-ylabel('Data generating model','FontWeight','bold');
-title({'Percentage of winning';'based on model evidence'},'fontsize',12)
-
-[num_rows, num_cols] = size(CM);
-for row = 1:num_rows
-    for col = 1:num_cols
-        val = CM(row, col);
-        % Choose text color for better contrast
-        textColor = 'w'; % default black
-        if val >= 0.3
-            textColor = 'k'; % white for contrast
-        end
-        text(col, row, num2str(val, '%0.2f'), ...
-            'HorizontalAlignment', 'center', ...
-            'Color', textColor);
+for mm = 1:n_model
+    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
+    R(mm, :) = load_subject_data(result_folder, sub_slc, 'sub-*');
+    
+    for ss = 1:numel(sub_slc)
+        log_model_evi(mm, ss) = R{mm, ss}.diag.bestELCBO;
     end
 end
 
-saveas(gca, fullfile(out_dir, 'CM'),'pdf');
+%% load atheoretical model
 
-%% plot2: RMSE of the recalibration phase as the criterion of winning model
+result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 
-figure;
-set(gcf, 'Position',[0,0,420,300]);
-
-imagesc(CM2);
-colormap('bone')
-xticks(1:6)
-yticks(1:6)
-xticklabels(specifications(model_slc))
-yticklabels(specifications(model_slc))
-xlabel('Model used for fitting','FontWeight','bold');
-ylabel('Data generating model','FontWeight','bold');
-title({'Percentage of winning based on';'RMSE of recalibration prediction'},'fontsize',12)
-
-[num_rows, num_cols] = size(CM2);
-for row = 1:num_rows
-    for col = 1:num_cols
-        val = CM2(row, col);
-        % Choose text color for better contrast
-        textColor = 'w'; % default black
-        if val >= 0.3
-            textColor = 'k'; % white for contrast
-        end
-        text(col, row, num2str(val, '%0.2f'), ...
-            'HorizontalAlignment', 'center', ...
-            'Color', textColor);
-    end
+for ss = 1:numel(sub_slc)
+   log_model_evi(n_model+1, ss)= atheo{ss}.diag.bestELCBO;
 end
 
-saveas(gca, fullfile(out_dir, 'CM_RMSE'),'pdf');
+%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% 1. plot model evidence with atheoretical model
+
+% max subtract other log model evidence
+delta_LME = max(log_model_evi, [], 1) - log_model_evi; 
+
+figure
+set(gcf, 'Position',[0 0 400 170])
+set(gca, 'FontSize', 8)
+
+h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
+    'Colormap', flipud(bone),...
+    'ColorLimits', [0, log(100)], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+    'FontSize', 8);
+colorbar;
+h.YDisplayLabels = specifications([model_slc,7]);
+h.XDisplayLabels = num2cell(1:numel(sub_slc));
+
+flnm = 'A_BF_all_models';
+saveas(gca, fullfile(out_dir, flnm),'pdf')
+
+%% 2. plot model evidence within recalibration model
+
+% max subtract other log model evidence
+delta_LME = max(log_model_evi(model_slc,:), [], 1) - log_model_evi(model_slc,:); 
+
+figure
+set(gcf, 'Position',[0 0 400 150])
+
+subplot('Position', [0.2, 0.1, 0.6, 0.8]); 
+set(gca, 'FontSize', 8)
+h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
+    'Colormap', flipud(bone),...
+    'ColorLimits', [0, log(100)], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+    'FontSize', 8);
+colorbar;
+
+h.YDisplayLabels = specifications(model_slc);
+h.XDisplayLabels = num2cell(1:numel(sub_slc));
+
+
+n_win = sum(delta_LME<log(10),2);
+subplot('Position', [0.9, 0.1, 0.1, 0.8]);
+
+b = barh(1:length(n_win), n_win, 'FaceColor', [0.8, 0.8, 0.8]);
+set(gca, 'YDir', 'reverse', 'XColor', 'none', 'YColor', 'none', 'Color', 'none'); % Remove axis and background
+
+yticks(1:length(n_win));
+yticklabels({' ', ' ', ' ', ' '});
+
+for i = 1:length(n_win)
+    text(n_win(i) + 0.5, i, num2str(n_win(i)), 'VerticalAlignment', 'middle');
+end
+
+set(gca, 'XLim', [0 max(n_win) + 2]);
+set(gca, 'YLim', [0.5 6.5]);
+
+flnm = 'B_BF_recal_models';
+saveas(gca, fullfile(out_dir, flnm),'pdf')

@@ -1,12 +1,11 @@
-% fig S9: individual TOJ model prediction of the causal-inference model with
-% modality-specific uncertainty
+% fig S9: outlier behavior
 
 clear; clc; close all;
 
 %% model info
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'}; 
+specifications = {'Exponential likelihood, shift criterion', 'Exponential likelihood, shift bias', 'Gaussian likelihood, shift criterion',  'Gaussian likelihood, shift bias',};
+folders = {'exp_shiftC', 'exp_shiftMu', 'gauss_shiftC', 'gauss_shiftMu'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -19,30 +18,24 @@ currentDir= pwd;
 dataDir = fullfile(tempDir,'temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
-%% load recal models
+%% load atheoretical results
 
 save_fig = 1;
-model_slc = 1;
-sub_slc = [1:4,6:10];
-num_ses = 9;
-
-result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{model_slc});
-R = load_subject_data(result_folder, sub_slc, 'sub-*');
-
-for ss = 1:numel(sub_slc)
-
-   pred{ss} = R{ss}.pred;
-
-end
-
-%% load atheoretical model
+sub_slc = 5;
 
 result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
 atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
+pred = atheo{1}.pred;
+
+% reorganize data
+for  ses  = 1:9
+    tempD(ses)  = organizeData(sub_slc, ses);
+end
+[sorted_adaptor_soa, order] = sort([tempD.adaptor_soa]);
+D.data = tempD(order);
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -54,78 +47,82 @@ cmp2 = [216, 49, 91; 175, 213, 128; 88,193,238]./255;
 lw = 0.5;
 fontSZ = 7;
 titleSZ = 9;
-dotSZ = 6;
+dotSZ = 10;
 
 tick_y = 0:0.5:1;
 tick_x = [-500, 0, 500];
-test_soa = pred{1}.test_soa;
-adaptor_soa = pred{1}.adaptor_soa;
+test_soa = pred.test_soa; %ms
+adaptor_soa = pred.adaptor_soa; %ms
+num_ses = 9;
 
-for  ss  = 1:numel(sub_slc)
+%% plot TOJ
 
-    figure; hold on
-    set(gcf, 'Position', [0,0,800,150]);
+for mm = 2%1:n_model
 
-    tl = tiledlayout(2,9);
-    sgtitle(sprintf('S%i',ss),'FontSize',titleSZ,'FontWeight','bold')
+        figure; hold on
+        set(gcf, 'Position', [0,0,800,150]);
 
-    for adapter = 1:9
+        tl = tiledlayout(2,9);
+        sgtitle('Temporal-order-judgmenst of excluded participant','FontSize',titleSZ,'FontWeight','bold')
+       
 
-        % pre
-        nexttile(adapter); hold on
-        set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
-        title(sprintf('Adapter SOA\n%.1f s', adaptor_soa(adapter)./1e3),'FontSize',fontSZ-1,'FontWeight','bold')
+        for adapter = 1:9
 
-        % data
-        scatter(atheo{ss}.data(adapter).pre_ms_unique, atheo{ss}.data(adapter).pre_pResp, dotSZ, 'filled');
+            % pre
+            nexttile(adapter); hold on
+            set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+            title(sprintf('Adapter SOA\n%.1f s', adaptor_soa(adapter)./1e3),'FontSize',fontSZ-1,'FontWeight','bold')
 
-        % prediction
-        plot(pred{ss}.test_soa, pred{ss}.pre_pmf, 'LineWidth',lw)
+            % data
+            scatter(D.data(adapter).pre_ms_unique, D.data(adapter).pre_pResp, dotSZ, 'filled');
 
-        % look better
-        xlim([-550 550])
-        xticks([])
-        yticks([])
+            % prediction
+            plot(pred.test_soa, pred.pre_pmf{adapter}, 'LineWidth',lw)
 
-        if adapter == 1
-            ylabel({'Pre-test', 'probability'}, 'FontSize',fontSZ,'FontWeight','bold')
+            % look better
+            xlim([-550 550])
+            xticks([])
+            yticks([])
+
+            if adapter == 1
+                ylabel({'Pre-test', 'probability'}, 'FontSize',fontSZ,'FontWeight','bold')
+                yticks(tick_y)
+                yticklabels(strsplit(num2str(tick_y)))
+            end
+
+            % post
+            nexttile(adapter+num_ses); hold on
+            set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+
+            % data
+            scatter(D.data(adapter).post_ms_unique, D.data(adapter).post_pResp, dotSZ, 'filled');
+
+            % prediction
+            plot(pred.test_soa, pred.post_pmf{adapter},'LineWidth',lw)
+            if adapter == 5
+                xlabel('Test SOA','FontSize',fontSZ,'FontWeight','bold')
+            end
+
+            % look better
+            xlim([-550 550])
+            xticks(tick_x)
+            xticklabels(strsplit(num2str(tick_x./1e3)))
             yticks(tick_y)
             yticklabels(strsplit(num2str(tick_y)))
+
+            if adapter == 1
+                ylabel({'Post-test'; 'probability'},'FontSize',fontSZ,'FontWeight','bold')
+                yticks(tick_y)
+                yticklabels(strsplit(num2str(tick_y)))
+            end
+
         end
 
-        % post
-        nexttile(adapter+num_ses); hold on
-        set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
-        if adapter == 5
-            xlabel('Test SOA','FontSize',fontSZ,'FontWeight','bold')
-        end
+        tl.TileSpacing = 'compact';
 
-        % data
-        scatter(atheo{ss}.data(adapter).post_ms_unique, atheo{ss}.data(adapter).post_pResp, dotSZ, 'filled');
-
-        % prediction
-        plot(pred{ss}.test_soa, squeeze(pred{ss}.post_pmf(adapter,:,:)),'LineWidth',lw)
-
-        % look better
-        xlim([-550 550])
-        xticks(tick_x)
-        xticklabels(strsplit(num2str(tick_x./1e3)))
-        yticks(tick_y)
-        yticklabels(strsplit(num2str(tick_y)))
-
-        if adapter == 1
-            ylabel({'Post-test'; 'probability'},'FontSize',fontSZ,'FontWeight','bold')
-            yticks(tick_y)
-            yticklabels(strsplit(num2str(tick_y)))
-        end
-
-    end
-
-    tl.TileSpacing = 'compact';
-
-    if save_fig
-        flnm  = sprintf('sub%02d_TOJ_prediction',ss);
-        saveas(gca, fullfile(out_dir, flnm),'pdf')
-    end
+        if save_fig
+            flnm  = sprintf('M-%s_S%s_TOJ', folders{mm}, sub_slc);
+            saveas(gca, fullfile(out_dir, flnm),'pdf')
+        end   
 
 end
