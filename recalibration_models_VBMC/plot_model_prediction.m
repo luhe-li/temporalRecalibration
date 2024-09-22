@@ -4,9 +4,8 @@
 clear; clc; close all;
 
 %% model info
-
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed update, asymmetric', 'Fixed update, symmetric','Update criterion, asymmetric'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym_xSigmaC1', 'cauInf_sym','fixed_asym','fixed_sym','criteria_asym'}; % Column 3: folder names
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -25,7 +24,7 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recalibration model results
 
-model_slc = 7;
+model_slc = 5:6;
 n_model = numel(model_slc);
 sub_slc = [1:4, 6:10];
 save_fig = 0;
@@ -156,7 +155,7 @@ for mm = 1:n_model
     xlabel(t, 'Adaptor SOA (s)','FontSize',titleSZ);
     ylabel(t,'Recalibration effect (s)','FontSize',titleSZ);
 
-    parts = strsplit(specifications{mm}, ', ');
+    parts = strsplit(specifications{model_slc(mm)}, ', ');
     title({parts{1}, parts{2}},'FontSize',fontSZ,'FontWeight', 'normal');
 
 end

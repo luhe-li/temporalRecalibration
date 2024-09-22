@@ -7,10 +7,16 @@
 
 clear; close all;
 
+restoredefaultpath;
+[projectDir, ~]= fileparts(pwd);
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
+addpath(genpath(fullfile(projectDir, 'utils')));
 out_dir = fullfile(pwd, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
-lw = 1;
+lw = 0.5;
+adapter = -0.7:0.01:0.7;
+xtks = [-0.7, 0, 0.7];
 fontSZ = 7;
 titleSZ = 9;
 dotSZ = 10;
@@ -20,24 +26,7 @@ cmp =  [216, 49, 91; 175, 213, 128; 88,193,238]./255;
 
 %% simulation
 
-tau = 0;
-sigma_a = 60;
-sigma_v = 80;
-criterion = 77.23;
-lambda = 0.018;
-p_common = 0.5;
-alpha = 0.0052;
-sigma_C1 = 51.9;
-sigma_C2 = 261.39;
-
-lw = 0.5;
-adapter = [-0.7:0.01:0.7];
-xtks = [-0.7, 0, 0.7];
-
-% heuristic model
-p = measurementGiven0(adapter*1e3, tau, sigma_a, sigma_v);
-
-% causal inference model
+% set model
 model.num_ses = 9;
 model.thres_R2 = 0.95;
 model.expo_num_sim = 1e2; % number of simulation for exposure phase
@@ -50,20 +39,49 @@ model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
 model.sim_adaptor_soa  = adapter*1e3;
 model.toj_axis_finer = 0; % simulate pmf with finer axis
 model.adaptor_axis_finer = 0; % simulate with more adpators
+
+% checkpoint model
+tau = 0;
+sigma_a = 60;
+sigma_v = 80;
+criterion = 200;
+lambda = 0.018;
+alpha = 0.000002;
+
+model_str = 'trigger_asym';
+addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC',model_str)));
+currModel = str2func(['nll_' model_str]);
+model.mode       = 'predict';
+pred =  currModel([tau, sigma_a, sigma_v, criterion, lambda, alpha], model, []);
+trigger_recal = mean(pred.pss_shift, 2);
+
+% heuristic model
+p = measurementGiven0(adapter*1e3, tau, sigma_a, sigma_v);
+
+% causal inference model
+tau = 0;
+sigma_a = 60;
+sigma_v = 80;
+criterion = 77.23;
+lambda = 0.018;
+p_common = 0.5;
+alpha = 0.0052;
+sigma_C1 = 51.9;
+sigma_C2 = 261.39;
+
 model_str = 'cauInf_asym';
-[projectDir, ~]= fileparts(pwd);
 addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC',model_str)))
 currModel = str2func(['nll_' model_str]);
 model.mode       = 'predict';
 pred =  currModel([tau, sigma_a, sigma_v, criterion, lambda, p_common, alpha, sigma_C1, sigma_C2], model, []);
-recal = mean(pred.pss_shift, 2);
+CI_recal = mean(pred.pss_shift, 2);
 
 %% plot
 figure('Position', [0, 0, 420, 90]);
 
 subplot 131
 set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
-plot(adapter, 0.3*adapter,'k','LineWidth',lw)
+plot(adapter, trigger_recal','k','LineWidth',lw)
 xticks(xtks)
 xlim([-0.7, 0.7])
 ylim([-0.7, 0.7])
@@ -83,7 +101,7 @@ xlabel('Adapter SOA (s)')
 
 subplot 133
 set(gca, 'LineWidth', 0.5, 'FontSize', fontSZ, 'TickDir', 'out', 'FontName', 'Helvetica'); hold on
-plot(adapter, recal', 'k','LineWidth',lw);
+plot(adapter, CI_recal', 'k','LineWidth',lw);
 yline(0,'--')
 ylim([-100, 100])
 xlim([-0.7, 0.7])

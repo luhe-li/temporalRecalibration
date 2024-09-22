@@ -1,9 +1,10 @@
-function [out, out_sd] = nll_cauInf_asym_update(freeParam, model, data)
+function [out, out_sd] = nll_trigger_asym_2criteria(freeParam, model, data)
 
 out_sd = NaN;
+
 if strcmp(model.mode, 'initialize')
 
-    out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
+    out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','\lambda','\alpha','c_{recal}'};
     out.num_para = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
@@ -12,10 +13,8 @@ if strcmp(model.mode, 'initialize')
     paraH.sigma_v  = [  10,   150]; % ms
     paraH.criterion= [   1,   300]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
-    paraH.p_common = [1e-4,1-1e-4]; % weight
-    paraH.alpha    = [1e-4,  0.02]; % percentage
-    paraH.sigma_C1 = [  10,   100]; % ms
-    paraH.sigma_C2 = [ 200,   500]; % ms
+    paraH.alpha    = [1e-5,  1e-3]; % percentage
+    paraH.c_recal  = [ 100,   800]; % ms the upper criterion of SOA range where recalibration stops
 
     % soft bounds, the range for PLB, PUB
     paraS.tau      = [ -40,    40]; % ms
@@ -23,12 +22,10 @@ if strcmp(model.mode, 'initialize')
     paraS.sigma_v  = [  50,    70]; % ms
     paraS.criterion= [  30,    80]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
-    paraS.p_common = [ 0.3,   0.7]; % weight
-    paraS.alpha    = [1e-3,  2e-3]; % percentage
-    paraS.sigma_C1 = [  30,    70]; % ms
-    paraS.sigma_C2 = [ 250,   350]; % ms
+    paraS.alpha    = [1e-4,  5e-4]; % percentage
+    paraS.c_recal  = [ 200,   400]; % the upper criterion of SOA range where recalibration stops
 
-    % reorganize parameter bounds
+    % reorganize parameter bounds 
     fn = fieldnames(paraH);
     for k= 1:numel(fn)
         out.lb(:,k)  = paraH.(fn{k})(1);
@@ -50,41 +47,19 @@ else
     sigma_v = freeParam(3);
     criterion = freeParam(4);
     lambda = freeParam(5);
-    p_common = freeParam(6);
-    alpha = freeParam(7);
-    sigma_C1 = freeParam(8);
-    sigma_C2 = freeParam(9);
-
-    %% pre-compute
+    alpha = freeParam(6);
+    c_recal = freeParam(7);
 
     checkPlot = 0;
-
-    % prior
-    fixP.x_axis     = -model.bound_full:1:model.bound_full;
-    fixP.x_axis_int = -model.bound_int:1:model.bound_int;
-    fixP.l_window   = find(fixP.x_axis == fixP.x_axis_int(1));
-    fixP.r_window   = find(fixP.x_axis == fixP.x_axis_int(end));
-    fixP.prior_C1   = normpdf(fixP.x_axis_int, 0, sigma_C1);
-    fixP.prior_C2   = normpdf(fixP.x_axis_int, 0, sigma_C2);
-    fixP.bound_int  = model.bound_int;
-
-    % likelihood that centers around 0
-    idx_peak   = ceil(length(fixP.x_axis)/2);
-    lf = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (fixP.x_axis(1:idx_peak)));
-    rf = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (fixP.x_axis(idx_peak+1:end)));
-    fixP.df_likelihood     = [lf, rf] + realmin;
-
-    % iCDF
-    fixP.y_criterion = sigma_v/(sigma_a + sigma_v);
-    fixP.num_sample = model.num_sample;
 
     %% loop for each session
 
     if strcmp(model.mode, 'optimize')
 
         %%  prediction of probability of three responses is shared across sessions
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
-            tau, sigma_a, sigma_v, criterion, lambda, p_common);
+
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(model.test_soa,...
+            tau, sigma_a, sigma_v, -criterion, criterion, lambda);
 
         if checkPlot
             figure; plot(model.test_soa, [pre_afirst; pre_simul; pre_vfirst],'-o');
@@ -99,8 +74,8 @@ else
         for t    = 1:model.expo_num_sim
 
             % simulate by adaptor soas in each session, unsorted
-            tau_shift(:, t)  = sim_recal_CI(model.expo_num_trial, adaptor_soas, fixP,...
-                tau, sigma_a, sigma_v, p_common, alpha);
+            tau_shift(:, t)  = sim_recal_trigger_2criteria(model.expo_num_trial, adaptor_soas, ...
+                tau, sigma_a, sigma_v, criterion, c_recal, alpha);
 
         end
 
@@ -167,9 +142,8 @@ else
             for i    = 1:numel(delta_tau_shift)
 
                 % delta_tau = tau_pre - tau_post, use tau_post to predict probability of three responses
-
-                [post_afirst, post_simul, post_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
-                    tau + delta_tau_shift(i), sigma_a, sigma_v, criterion, lambda, p_common);
+                [post_afirst, post_simul, post_vfirst] = pmf_exp(model.test_soa,...
+                    tau + delta_tau_shift(i), sigma_a, sigma_v, -criterion, criterion, lambda);
 
                 if checkPlot
                     figure; plot(model.test_soa, [post_afirst; post_simul; post_vfirst] ,'-o');
@@ -194,7 +168,7 @@ else
             % sum the negative likelihood of pre and post test
             LL_ses(ses)   = pre_LL + post_LL;
 
-            % calcualte the VAR of likelihood over bins of delta_pss_shift for
+            % calcualte the VAR of log-likelihood over bins of delta_pss_shift for
             % each session
             L_VAR(ses) = sum((LL_delta - post_LL).^2./numel(delta_tau_shift));
 
@@ -232,8 +206,8 @@ else
             out.num_adaptor = numel(model.sim_adaptor_soa);
         end
 
-        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI_noSim(out.test_soa, fixP,...
-            tau, sigma_a, sigma_v, criterion, lambda, p_common);
+        [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(out.test_soa,...
+            tau, sigma_a, sigma_v, -criterion, criterion, lambda);
         out.pre_pmf     = [pre_vfirst; pre_simul; pre_afirst];
 
         if checkPlot
@@ -247,8 +221,8 @@ else
         for t    = 1:model.expo_num_sim
 
             % simulate by sorted adaptor soas
-            [out.tau_shift(:,t), out.shat(:,t), out.post_C1(:,t)] = sim_recal_CI(model.expo_num_trial, out.adaptor_soa, fixP,...
-                tau, sigma_a, sigma_v, p_common, alpha);
+            out.tau_shift(:,t) = sim_recal_trigger_2criteria(model.expo_num_trial, out.adaptor_soa, ...
+                tau, sigma_a, sigma_v, criterion, c_recal, alpha);
 
         end
 
@@ -285,12 +259,11 @@ else
             observed_y     = histcounts(i_tau_shift, delta_shift_mu_edges)./numel(i_tau_shift); % manually normalize counts to probability
             R  = corr(predicted_y(:), observed_y(:));
             out.R2(jj)     = R^2;
-            
+
             %if R2 is big enough, we fit a Gaussian, else use ksdensity
             if out.R2(jj)  > model.thres_R2; pdf_delta = gauss_pdf;
             else; pdf_delta = ksdensity(i_tau_shift); end
             pdf_delta = pdf_delta./sum(pdf_delta);
-
 
             %% posttest TOJ
             if out.R2(jj) > model.thres_R2
@@ -318,7 +291,6 @@ else
                 out.post_pmf(jj, :, :) =  [weighted_post_vfirst; weighted_post_simul; weighted_post_afirst];
 
             end
-
         end
 
     end

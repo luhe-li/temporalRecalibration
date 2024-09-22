@@ -1,4 +1,4 @@
-function [out, out_sd] = nll_cauInf_asym_update(freeParam, model, data)
+function [out, out_sd] = nll_cauInf_asym_trigger(freeParam, model, data)
 
 out_sd = NaN;
 if strcmp(model.mode, 'initialize')

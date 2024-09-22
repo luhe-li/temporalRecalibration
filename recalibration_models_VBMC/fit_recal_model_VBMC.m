@@ -3,8 +3,8 @@ function fit_recal_model_VBMC(i_model, useCluster, sub)
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior'}; 
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior', 'Causal inference, asymmetric, trigger','Causal inference, symmetric, update','Trigger, asymmetric, 2 criteria'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior','cauInf_asym_trigger','cauInf_asym_update','trigger_asym_2criteria'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
@@ -37,7 +37,7 @@ switch useCluster
 
     case false
         % for local debug
-        numCores = 3;%feature('numcores');
+        numCores = 21;%feature('numcores');
 end
 
 
@@ -109,7 +109,7 @@ fun = @(x) lpostfun(x,llfun,lpriorfun);
 %test
 % pp = fun(Val.init(1,:));
 
-parfor i  = 1:model.num_runs
+for i  = 1:model.num_runs
     
         fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
         tempVal = Val;

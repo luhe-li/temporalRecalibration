@@ -1,4 +1,4 @@
-function [tau_shift, shat, post_C1] = sim_recal_CI_update(exp_trial, adaptor_soa, fixP, ...
+function [tau_shift, shat, post_C1] = sim_recal_CI(exp_trial, adaptor_soa, fixP, ...
     tau, sigma_a, sigma_v, p_common, alpha)
 
 % We model the recalibration process as the shift of measurement after
@@ -34,10 +34,9 @@ for tt                       = 1:exp_trial
     [shat, post_C1] = cau_inf_map(soa_m - i_tau, p_common, fixP);
 
     % fail-safe: update the mean of the measurement if shat is not nan. nan can happen if L_C1/L_C2 = 0/0
-    % update to measurement but by the rate of post_C1
-    idx_update                   = ~isnan(soa_m);
-    delta_tau(idx_update, tt+1)  = delta_tau(idx_update, tt) - alpha .* soa_m(idx_update) .* post_C1;
-    delta_tau(~idx_update, tt+1) = delta_tau(~idx_update, tt); % carry over mu from the last trial
+    idx_update = post_C1 > 0.5;
+    delta_tau(idx_update,tt+1) = delta_tau(idx_update,tt) - alpha .* soa_m (idx_update);
+    delta_tau(~idx_update,tt+1) = delta_tau(~idx_update,tt); 
 
     if checkPlot
         figure;hold on

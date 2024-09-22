@@ -6,8 +6,8 @@ clear; clc; close all;
 
 %% model info
 
-specifications = {'Heuristic, modality-specific uncertainty', 'Heuristic, modality-independent uncertainty', 'Causal-inference, modality-specific uncertainty',  'Causal-inference, modality-independent uncertainty','Fixed update, modality-specific uncertainty', 'Fixed-update, modality-independent uncertainty','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','exp_shiftMu'}; % Column 3: folder names
+specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-independent precision', 'Causal-inference, modality-specific precision',  'Causal-inference, modality-independent precision','Checkpoint, modality-specific precision', 'Checkpoint, modality-independent precision','Atheoretical'}; % Column 2: specifications
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','exp_shiftMu'}; % Column 3: folder names
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -17,7 +17,7 @@ restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
 [tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(projectDir, 'vbmc')));
@@ -105,10 +105,9 @@ for i = 1:numel(labels)
     splitStr{i} = strjoin(parts, '\n');
 end
 
-% labels = cellfun(@(x) strrep(x,',','\newline'), labels,'UniformOutput',false);
-xticklabels(splitStr);
-ylabel({'Relative log model evidence'; 'to fixed-update'; 'modality-independent';'-uncertainty model'});
-yline(log(10),'--','LineWidth',lw)
+xticklabels(folders);
+ylabel({'Log Bayes factor'; 'relative to the checkpoint,'; 'modality-independent';'-precision model'});
+% yline(log(10),'--','LineWidth',lw)
 
 flnm = 'A_BF';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
@@ -167,7 +166,7 @@ for mm = order
     xtickangle(0)
     xlim([min(adaptor_soa)-50, max(adaptor_soa)+50])
 
-    parts = strsplit(specifications{mm},',');
+    parts = strsplit(specifications{mm},' ');
     title({parts{1};parts{2}},'FontSize',fontSZ,'FontWeight', 'bold');
 
 end
