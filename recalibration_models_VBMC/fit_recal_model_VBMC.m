@@ -3,8 +3,8 @@ function fit_recal_model_VBMC(i_model, useCluster, sub)
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric','Causal inference, biased prior'}; 
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym','cauInf_sym_biasedPrior'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
@@ -109,7 +109,7 @@ fun = @(x) lpostfun(x,llfun,lpriorfun);
 %test
 % pp = fun(Val.init(1,:));
 
-for i  = 1:model.num_runs
+parfor i  = 1:model.num_runs
     
         fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
         tempVal = Val;
