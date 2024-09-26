@@ -1,7 +1,11 @@
-% fig S13: parameter recovery of causal-inference model with asymmetrical
-% likelihood
-
+% fig S12: confusion matrix of model recovery of variants of causal-inference recalibration
+% models
 clear; close all;
+
+%% select models
+
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
 %% manage path
 
@@ -10,93 +14,82 @@ cur_dir               = pwd;
 [git_dir, ~] = fileparts(project_dir);
 dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
 addpath(genpath(fullfile(project_dir, 'utils')));
+addpath(genpath(fullfile(project_dir, 'vbmc')));
 out_dir               = fullfile(cur_dir, mfilename);
 if ~exist(out_dir,'dir') mkdir(out_dir); end
 
-%% load results
+%% load fitting results
 
-results_folder           = fullfile(dataDir,'recalibration_models_VBMC','param_recovery');
-files = dir(fullfile(results_folder, 'sample-*'));
+fit_model = [8,10];
+sim_model = [8,10];
+num_total_trials = 300*9;
 
-for jj = 1:size(files)
+for i = 1:numel(fit_model)
 
-    r = load(fullfile(results_folder, files(jj).name));
+    for j = 1:numel(sim_model)
 
-    try
-        gt(jj,:) = r.summ.gt;
-        est(jj,:) = r.summ.est;
-    catch
-        continue
+        fit_dir = fullfile(dataDir, 'recalibration_models_VBMC','model_recovery_CIvariant',sprintf('M%i', fit_model(i)));
+        flnm = sprintf('results_simM%i', sim_model(j));
+        all_files = dir(fullfile(fit_dir, [flnm '*.mat']));
+
+        nll = [];
+        aic = [];
+        bic = [];
+
+        for k = 1:3 % num_batch
+
+            load(fullfile(fit_dir,all_files(k).name))
+            nll = [nll, modelRecov.minNLL];
+            aic = [aic, 2*modelRecov.minNLL + 2*model.num_para];
+            bic = [bic, 2*modelRecov.minNLL + model.num_para*log(num_total_trials)];
+
+        end
+       
+        % sim model, fit model, repeat
+        NLL(j, i, :) = nll;
+        AIC(j, i, :) = aic;
+        BIC(j, i, :) = bic;
+
     end
 
 end
 
-% info
-model_str = r.model.currModelStr;
-paraID = {'\beta','\tau_A','\tau_V','Criterion','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
-num_para = numel(paraID);
-lb = r.model.initVal.lb;
-ub = r.model.initVal.ub;
+for i = 1:numel(sim_model)
 
-%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-lw = 0.5;
-fontSZ = 7;
-titleSZ = 9;
-dotSZ = 10;
-
-figure;
-set(gcf, 'Position', [0, 0, 420, 300]);
-
-nPlot = num_para;
-nRow  = ceil(sqrt(nPlot));
-nCol  = ceil(sqrt(nPlot));
-if nPlot <= (nRow*nCol)-nCol, nRow = nRow-1; end
-
-for jj = 1:num_para
-
-    subplot(nRow,nCol,jj);
-    set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
-    set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
-    set(gca, 'FontName', 'Helvetica');
-    axis square;
-    axis equal
-    hold on
-    scatter(gt(:,jj), est(:,jj),10,'MarkerEdgeColor','k','MarkerFaceColor','none');
-    xlim([lb(jj) ub(jj)])
-    ylim([lb(jj) ub(jj)])
-
-    % identity line
-    ax = gca;
-    x_limits = ax.XLim;
-    y_limits = ax.YLim;
-    line_min = min([x_limits y_limits]);
-    line_max = max([x_limits y_limits]);
-    plot([line_min line_max], [line_min line_max], 'k--', 'LineWidth', lw);
-
-    % Calculate the Pearson correlation coefficient and p-value
-    [R, P] = corrcoef(gt(:, jj), est(:, jj));
-
-    % Extract the correlation coefficient and p-value
-    r = R(1,2);
-    p_value = P(1,2);
-
-    % Label the r and p in the title
-
-    if p_value < 0.01
-        title(sprintf('%s \n r = %.2f, p < 0.01', paraID{jj}, r),'FontSize',fontSZ,'FontWeight','normal');
-    else
-        title(sprintf('%s \n r = %.2f, p = %.3f', paraID{jj}, r, round(p_value, 3)),'FontSize',fontSZ,'FontWeight','normal');
-    end
-
-    if jj == 4
-        ylabel('Model prediction','FontSize',titleSZ)
-    elseif jj == 8
-        xlabel('Ground-truth','FontSize',titleSZ)
-    end
+    iAIC = squeeze(AIC(i,:,:));
+    [~, bestM] = min(iAIC); % return index of model with smallest AIC
+    CM(i,1) = sum(bestM == 1)./numel(bestM);
+    CM(i,2) = sum(bestM == 2)./numel(bestM);
 
 end
 
-% Save figure
-flnm = 'param_recovery';
-saveas(gcf, fullfile(out_dir, flnm), 'pdf');
+%% plot
+
+figure; 
+set(gcf, 'Position',[0,0,170,150]);
+
+imagesc(CM); 
+colormap('bone')
+xticks(1:2)
+yticks(1:2)
+xticklabels({'Update','Percept'})
+yticklabels({'Update','Percept'})
+xlabel('Model used for fitting','FontWeight','bold');
+ylabel('Data generating model','FontWeight','bold');
+
+[num_rows, num_cols] = size(CM);
+for row = 1:num_rows
+    for col = 1:num_cols
+        val = CM(row, col);
+        % Choose text color for better contrast
+        textColor = 'w'; % default black
+        if val > 0.5
+            textColor = 'k'; % white for contrast
+        end
+        text(col, row, num2str(val, '%0.2f'), ...
+            'HorizontalAlignment', 'center', ...
+            'Color', textColor);
+    end
+end
+
+saveas(gca, fullfile(out_dir, 'cm'),'pdf')

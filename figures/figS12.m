@@ -1,10 +1,11 @@
-% fig S12: confusion matrix of model recovery of variants of causal-inference recalibration
-% models
+% fig S11: model recovery results
+
 clear; close all;
 
 %% select models
 
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
+% specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
+specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-indepdent precision', 'Causal inference, modality-specific precision',  'Causal inference, modality-independent precision','Fixed updated, modality-specific precision', 'Fixed updated, modality-independent precision'};
 folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
 
 %% manage path
@@ -12,70 +13,90 @@ folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixe
 cur_dir               = pwd;
 [project_dir, ~]      = fileparts(cur_dir);
 [git_dir, ~] = fileparts(project_dir);
+% dataDir = fullfile(git_dir,'temporalRecalibrationData');
 dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
 addpath(genpath(fullfile(project_dir, 'utils')));
 addpath(genpath(fullfile(project_dir, 'vbmc')));
 out_dir               = fullfile(cur_dir, mfilename);
 if ~exist(out_dir,'dir') mkdir(out_dir); end
 
-%% load fitting results
+%% load results
 
-fit_model = [8,10];
-sim_model = [8,10];
-num_total_trials = 300*9;
+results_folder = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
+files = dir(fullfile(results_folder, 'fitM*'));
+pattern = 'fitM(\d+)_sample-(\d+)_';
 
-for i = 1:numel(fit_model)
+model_slc = 1:6;
+log_model_evidence = nan(6, 6, 100);
+for pp = 1:size(files)
 
-    for j = 1:numel(sim_model)
+    flnm =  files(pp).name;
+    r = load(fullfile(results_folder, flnm));
+    tokens = regexp(flnm, pattern, 'tokens');
+    fit_m = str2double(tokens{1}{1});
+    i_sample = str2double(tokens{1}{2});
 
-        fit_dir = fullfile(dataDir, 'recalibration_models_VBMC','model_recovery_CIvariant',sprintf('M%i', fit_model(i)));
-        flnm = sprintf('results_simM%i', sim_model(j));
-        all_files = dir(fullfile(fit_dir, [flnm '*.mat']));
+    % metric fo rmodel comparison
+    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
+    RMSE(:, fit_m, i_sample) = r.summ.RMSE;
 
-        nll = [];
-        aic = [];
-        bic = [];
+    % extract model predictions
+    fake_pred(:, fit_m, i_sample) = r.fake_pred;
+    fake_data(:, fit_m, i_sample) = r.fake_data;
+    fit_pred(:,fit_m, i_sample) = r.fit_pred;
+    fit_est(:, fit_m,i_sample) = r.fit_est;
 
-        for k = 1:3 % num_batch
+end
 
-            load(fullfile(fit_dir,all_files(k).name))
-            nll = [nll, modelRecov.minNLL];
-            aic = [aic, 2*modelRecov.minNLL + 2*model.num_para];
-            bic = [bic, 2*modelRecov.minNLL + model.num_para*log(num_total_trials)];
+% use model_evidence for CM
+log_model_evidence = log_model_evidence(model_slc,model_slc,:);
+[num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
+CM = zeros(num_sim_m, num_fit_m);
+for sim_m = 1:num_sim_m
 
-        end
-       
-        % sim model, fit model, repeat
-        NLL(j, i, :) = nll;
-        AIC(j, i, :) = aic;
-        BIC(j, i, :) = bic;
+    for i_sample = 1:num_i_sample
+
+        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
+        [~, max_fit_m_index] = max(log_model_evidence(sim_m, :, i_sample));
+        % Increment the count for the corresponding fit_m
+        CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
 
     end
-
 end
+CM = CM./num_i_sample;
 
-for i = 1:numel(sim_model)
+% use RMSE of the recalibration prediction for CM
+RMSE = RMSE(model_slc,model_slc,:);
+[num_sim_m, num_fit_m, num_i_sample] = size(RMSE);
+CM2 = zeros(num_sim_m, num_fit_m);
+for sim_m = 1:num_sim_m
 
-    iAIC = squeeze(AIC(i,:,:));
-    [~, bestM] = min(iAIC); % return index of model with smallest AIC
-    CM(i,1) = sum(bestM == 1)./numel(bestM);
-    CM(i,2) = sum(bestM == 2)./numel(bestM);
+    for i_sample = 1:num_i_sample
 
+        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
+        [~, min_fit_m_index] = min(RMSE(sim_m, :, i_sample));
+        % Increment the count for the corresponding fit_m
+        CM2(sim_m, min_fit_m_index) = CM2(sim_m, min_fit_m_index) + 1;
+
+    end
 end
+CM2 = CM2./num_i_sample;
 
-%% plot
+%% plot 
 
-figure; 
-set(gcf, 'Position',[0,0,170,150]);
+figure;
+set(gcf, 'Position',[0,0,420,300]);
+set(gca, 'FontSize', 4)
 
-imagesc(CM); 
+imagesc(CM);
 colormap('bone')
-xticks(1:2)
-yticks(1:2)
-xticklabels({'Update','Percept'})
-yticklabels({'Update','Percept'})
+xticks(1:6)
+yticks(1:6)
+xticklabels(specifications(model_slc))
+yticklabels(specifications(model_slc))
 xlabel('Model used for fitting','FontWeight','bold');
 ylabel('Data generating model','FontWeight','bold');
+title({'Percentage of winning'},'fontsize',12)
 
 [num_rows, num_cols] = size(CM);
 for row = 1:num_rows
@@ -83,7 +104,7 @@ for row = 1:num_rows
         val = CM(row, col);
         % Choose text color for better contrast
         textColor = 'w'; % default black
-        if val > 0.5
+        if val >= 0.3
             textColor = 'k'; % white for contrast
         end
         text(col, row, num2str(val, '%0.2f'), ...
@@ -92,4 +113,4 @@ for row = 1:num_rows
     end
 end
 
-saveas(gca, fullfile(out_dir, 'cm'),'pdf')
+saveas(gca, fullfile(out_dir, 'CM'),'pdf');

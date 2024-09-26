@@ -1,257 +1,102 @@
-% figS11: compare causal inference model and heuritic model with asymmetric
-% likelihood, with the same parameters
+% fig S13: parameter recovery of causal-inference model with asymmetrical
+% likelihood
 
-clear; clc; close all;
-recompute = 1;
+clear; close all;
 
-%% manage paths
+%% manage path
 
-restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-addpath(genpath(fullfile(projectDir, 'utils')));
-out_dir = fullfile(currentDir, mfilename);
-if ~exist(out_dir, 'dir'); mkdir(out_dir); end
+cur_dir               = pwd;
+[project_dir, ~]      = fileparts(cur_dir);
+[git_dir, ~] = fileparts(project_dir);
+dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
+addpath(genpath(fullfile(project_dir, 'utils')));
+out_dir               = fullfile(cur_dir, mfilename);
+if ~exist(out_dir,'dir') mkdir(out_dir); end
 
-%% set up model
+%% load results
 
-% set fixed & set-up parameters
-model.num_ses = 9;
-model.thres_R2 = 0.95;
-model.expo_num_sim = 1e3; % number of simulation for exposure phase
-model.expo_num_trial = 250; % number of *real* trials in exposure phase
-model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
-model.bound_full = 10*1e3; % in second, the bound for prior axis
-model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
-model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
-model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
-model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
-model.toj_axis_finer = 0; % simulate pmf with finer axis
-model.adaptor_axis_finer = 0; % simulate with more adpators
-model.mode       = 'predict';
+results_folder           = fullfile(dataDir,'recalibration_models_VBMC','param_recovery');
+files = dir(fullfile(results_folder, 'sample-*'));
 
-%% A1. simulate from causal inference model
+for jj = 1:size(files)
 
-model_str = 'cauInf_asym';
-currModel = str2func(['nll_' model_str]);
-addpath(genpath(fullfile(pwd, model_str)));
+    r = load(fullfile(results_folder, files(jj).name));
 
-% initialize with symmetrical parameters
-beta = 0;
-tau_a = 60;
-tau_v = 60;
-criterion = 77.23;
-lambda = 0.018;
-p_common = 0.5;
-alpha = 0.0052;
-sigma_C1 = 51.9;
-sigma_C2 = 261.39;
-
-fileName = 'sim_cauInf_taus.mat';
-
-if ~exist(fullfile(out_dir, fileName), 'file') || recompute
-
-    fprintf('File does not exist. Performing simulation...\n');
-
-    tau_as = [30:10:70];
-    n_level = numel(tau_as);
-    
-    parfor i = 1:n_level
-        tempModel = currModel;
-        i_tau_a = tau_as(i);
-        pred =  tempModel([beta, i_tau_a, tau_v, criterion, lambda, p_common, alpha, sigma_C1, sigma_C2], model, []);
-        recal_cauInf(i,:)       = mean(pred.pss_shift, 2);
+    try
+        gt(jj,:) = r.summ.gt;
+        est(jj,:) = r.summ.est;
+    catch
+        continue
     end
-    save(fullfile(out_dir, fileName))
-
-else
-    fprintf('File found! Loading %s\n', fileName);
-    load(fullfile(out_dir, fileName));  
 
 end
 
-%% A2. simulate from heuristic model
+% info
+model_str = r.model.currModelStr;
+paraID = {'\beta','\tau_A','\tau_V','Criterion','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
+num_para = numel(paraID);
+lb = r.model.initVal.lb;
+ub = r.model.initVal.ub;
 
-model_str = 'heu_asym';
-currModel = str2func(['nll_' model_str]);
-addpath(genpath(fullfile(pwd, model_str)));
-
-% initialize with symmetrical parameters
-beta = 0;
-tau_a = 60;
-tau_v = 60;
-criterion = 77.23;
-lambda = 0.018;
-alpha = 2;
-
-fileName = 'sim_heu_taus.mat';
-if ~exist(fullfile(out_dir, fileName), 'file') || recompute
-
-    fprintf('File does not exist. Performing simulation...\n');
-
-    tau_as = [30:10:70];
-    n_level = numel(tau_as);
-    parfor i = 1:n_level
-        tempModel = currModel;
-        i_tau_a = tau_as(i);
-        pred =  tempModel([beta, i_tau_a, tau_v, criterion, lambda, alpha], model, []);
-        recal_heu(i,:)       = mean(pred.pss_shift, 2);
-    end
-    save(fullfile(out_dir, fileName))
-
-else
-    fprintf('File found! Loading %s\n', fileName);
-    load(fullfile(out_dir, fileName));
-
-end
-
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% plotting section
+%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 lw = 0.5;
-fontsz = 7;
-titleFontSz = 10;
-adaptor = model.sim_adaptor_soa;
+fontSZ = 7;
+titleSZ = 9;
+dotSZ = 10;
 
-% color for taus, dark to light
-blue = [30, 120, 180; 166, 206, 227]./255;
-red = [227, 27, 27; 251, 154, 153]./255;
-colorpicked = {blue};
-depth = n_level;
+figure;
+set(gcf, 'Position', [0, 0, 420, 300]);
 
-for c = 1:numel(colorpicked)
-    if c ==2
-        depth = 5;
+nPlot = num_para;
+nRow  = ceil(sqrt(nPlot));
+nCol  = ceil(sqrt(nPlot));
+if nPlot <= (nRow*nCol)-nCol, nRow = nRow-1; end
+
+for jj = 1:num_para
+
+    subplot(nRow,nCol,jj);
+    set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
+    set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
+    set(gca, 'FontName', 'Helvetica');
+    axis square;
+    axis equal
+    hold on
+    scatter(gt(:,jj), est(:,jj),10,'MarkerEdgeColor','k','MarkerFaceColor','none');
+    xlim([lb(jj) ub(jj)])
+    ylim([lb(jj) ub(jj)])
+
+    % identity line
+    ax = gca;
+    x_limits = ax.XLim;
+    y_limits = ax.YLim;
+    line_min = min([x_limits y_limits]);
+    line_max = max([x_limits y_limits]);
+    plot([line_min line_max], [line_min line_max], 'k--', 'LineWidth', lw);
+
+    % Calculate the Pearson correlation coefficient and p-value
+    [R, P] = corrcoef(gt(:, jj), est(:, jj));
+
+    % Extract the correlation coefficient and p-value
+    r = R(1,2);
+    p_value = P(1,2);
+
+    % Label the r and p in the title
+
+    if p_value < 0.01
+        title(sprintf('%s \n r = %.2f, p < 0.01', paraID{jj}, r),'FontSize',fontSZ,'FontWeight','normal');
+    else
+        title(sprintf('%s \n r = %.2f, p = %.3f', paraID{jj}, r, round(p_value, 3)),'FontSize',fontSZ,'FontWeight','normal');
     end
-    [grad{c},im{c}]= colorGradient(colorpicked{c}(1,:),colorpicked{c}(2,:),depth);
-end
 
-%% A1. plot causal inference model
-
-figure;
-set(gcf, 'Position', [0,0,420,150]); hold on
-
-subplot(1,2,1); hold on
-set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
-set(gca, 'ColorOrder', grad{1});
-
-plot(adaptor, recal_cauInf,'LineWidth',lw*2)
-yline(0,'--','LineWidth',lw,'HandleVisibility','off')
-
-title('Causal-inference model')
-xlabel('Adapter SOA (s)')
-yl = 100;
-ylim([-yl, yl])
-yticks([-yl, 0, yl])
-yticklabels([-yl, 0, yl]./1e3)
-ylabel('Recalibration effect (s)')
-xticks(adaptor)
-xticklabels(adaptor/1e3)
-xtickangle(45)
-xlim([min(adaptor)-50, max(adaptor)+50])
-
-%% A2. plot heuristic model
-
-subplot(1,2,2); hold on
-set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
-set(gca, 'ColorOrder', grad{1});
-
-plot(adaptor, recal_heu,'LineWidth',lw*2)
-yline(0,'--','LineWidth',lw,'HandleVisibility','off')
-
-% Create an array of legend labels corresponding to parameter values
-legendLabels = cellstr(num2str(tau_as(:)));
-
-% Add the legend with specified labels
-lgd = legend(legendLabels, 'Location', 'northwest');
-lgd.Title.String = '\tau_{A}';
-ldg.LineWidth = lw;
-lgd.ItemTokenSize = [10,10];
-
-title('Heuristic model')
-xlabel('Adapter SOA (s)')
-yl = 100;
-ylim([-yl, yl])
-yticks([-yl, 0, yl])
-yticklabels([-yl, 0, yl]./1e3)
-ylabel('Recalibration effect (s)')
-xticks(adaptor)
-xticklabels(adaptor/1e3)
-xtickangle(45)
-xlim([min(adaptor)-50, max(adaptor)+50])
-
-flnm = 'sim_cauinf_heu';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
-
-%% simulation of likelihood of cauinf, and p_simultaneous of heu
-
-figure;
-set(gcf, 'Position', [0,0,210,70]); hold on
-
-subplot(1,2,1); hold on
-set(gca, 'ColorOrder', grad{1});
-
-soa = 50;
-min_x = -200;
-max_x = 200;
-x_axis = min_x:max_x;
-n_level = numel(tau_as);
-
-idx_peak = find(x_axis == (soa + beta));
-lx_axis = x_axis(1:idx_peak);
-rx_axis = x_axis(idx_peak+1:end);
-
-prior = normpdf(x_axis, 0, 30);
-
-for i = 1:n_level
-
-    i_tau_a = tau_as(i);
-
-    lf = (1/(i_tau_a + tau_v)).* exp(1/i_tau_a * (lx_axis - ((soa + beta))));
-    rf = (1/(i_tau_a + tau_v)).* exp(-1/tau_v * (rx_axis - ((soa + beta))));
-    likelihood = [lf, rf];
-    likelihood = likelihood./sum(likelihood);
-
-    plot(x_axis, likelihood,'-','LineWidth',lw);
-
-end
-plot(x_axis, prior,'-','Color',repmat(0.7, 1,3),'LineWidth',lw);
-xticks(0)
-yticks([])
-
-subplot(1,2,2); hold on
-set(gca, 'ColorOrder', grad{1});
-
-soa = 0;
-min_x = -200;
-max_x = 200;
-x_axis = min_x:max_x;
-
-for i = 1:n_level
-
-    i_tau_a = tau_as(i);
-
-    p_m_given_simul = measurementGiven0(x_axis, beta, i_tau_a, tau_v);
-
-    plot(x_axis, p_m_given_simul,'-','LineWidth',lw);
+    if jj == 4
+        ylabel('Model prediction','FontSize',titleSZ)
+    elseif jj == 8
+        xlabel('Ground-truth','FontSize',titleSZ)
+    end
 
 end
 
-xticks(0)
-yticks([])
-
-flnm = 'sim_inset';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
-
-%% utility functions
-
-function p = measurementGiven0(soa_m, tau, sigma_a, sigma_v)
-
-p = zeros(size(soa_m));
-% right side of measurement distribution
-bool_m = soa_m > tau;
-p(bool_m) = (1/(sigma_a + sigma_v)).* exp(-1/sigma_v .* (soa_m(bool_m) - tau));
-% left side of measurement distribution
-p(~bool_m) = (1/(sigma_a + sigma_v)).* exp(1/sigma_a .* (soa_m(~bool_m) - tau));
-
-end
+% Save figure
+flnm = 'param_recovery';
+saveas(gcf, fullfile(out_dir, flnm), 'pdf');

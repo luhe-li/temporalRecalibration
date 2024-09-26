@@ -1,156 +1,128 @@
-% fig S10: data analysis of the oddball-detection task
+% fig S9: outlier behavior
 
 clear; clc; close all;
 
-%% Manage Paths
+%% model info
+
+specifications = {'Exponential likelihood, shift criterion', 'Exponential likelihood, shift bias', 'Gaussian likelihood, shift criterion',  'Gaussian likelihood, shift bias',};
+folders = {'exp_shiftC', 'exp_shiftMu', 'gauss_shiftC', 'gauss_shiftMu'};
+numbers = (1:numel(specifications))';
+model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
+
+%% manage paths
 
 restoredefaultpath;
-current_dir = pwd;
-[project_dir, ~] = fileparts(current_dir);
-addpath(genpath(fullfile(project_dir, 'data')));
-out_dir = fullfile(current_dir, mfilename);
-if ~exist(out_dir, 'dir')
-    mkdir(out_dir);
+currentDir= pwd;
+[projectDir, ~]= fileparts(currentDir);
+[tempDir, ~] = fileparts(projectDir);
+dataDir = fullfile(tempDir,'temporalRecalibrationData');
+addpath(genpath(fullfile(projectDir, 'data')));
+addpath(genpath(fullfile(projectDir, 'utils')));
+out_dir = fullfile(currentDir, mfilename);
+if ~exist(out_dir, 'dir'); mkdir(out_dir); end
+
+%% load atheoretical results
+
+save_fig = 1;
+sub_slc = 5;
+
+result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
+pred = atheo{1}.pred;
+
+% reorganize data
+for  ses  = 1:9
+    tempD(ses)  = organizeData(sub_slc, ses);
 end
+[sorted_adaptor_soa, order] = sort([tempD.adaptor_soa]);
+D.data = tempD(order);
 
-%% Set Up
+%% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-subject_list = [1:4, 6:10]; % Selected subjects
-num_subjects = 10;
-num_sessions = 9;
+%% figure set up
 
-[hit_rate, false_alarm] = deal(NaN(2, num_subjects, 2)); % Preallocate Hit Rate and False Alarm arrays
+cmp1 = [229, 158, 168; 203, 227, 172; 171,223,235;]./255;
+cmp2 = [216, 49, 91; 175, 213, 128; 88,193,238]./255;
 
-%% Load and Process Data
+lw = 0.5;
+fontSZ = 7;
+titleSZ = 9;
+dotSZ = 10;
 
-for subj = subject_list
-    % Preallocate response and oddball arrays
-    [expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis] = deal([]);
-    [post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis] = deal([]);
-    
-    for sess = 1:num_sessions
-        % Load exposure session data
-        load(sprintf('exposure_sub%i_session%i.mat', subj, sess));
-        [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(1, ExpInfo.nTTrials, ExpInfo.idxOddballA, ExpInfo.idxOddballV, Response.oddball);
-        expo_resp_aud = [expo_resp_aud, resp_aud];
-        expo_oddball_aud = [expo_oddball_aud, oddball_aud];
-        expo_resp_vis = [expo_resp_vis, resp_vis];
-        expo_oddball_vis = [expo_oddball_vis, oddball_vis];
-        
-        % Load post-test session data
-        load(sprintf('posttest_sub%i_session%i.mat', subj, sess));
-        [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(1, ExpInfo.expoNTTrials, ExpInfo.idxOddballA, ExpInfo.idxOddballV, ExpoResponse.oddball);
-        post_resp_aud = [post_resp_aud, resp_aud];
-        post_oddball_aud = [post_oddball_aud, oddball_aud];
-        post_resp_vis = [post_resp_vis, resp_vis];
-        post_oddball_vis = [post_oddball_vis, oddball_vis];
-    end
+tick_y = 0:0.5:1;
+tick_x = [-500, 0, 500];
+test_soa = pred.test_soa; %ms
+adaptor_soa = pred.adaptor_soa; %ms
+num_ses = 9;
 
-    % Exclude trials with both oddballs present
-    expo_exclude_idx = expo_oddball_aud & expo_oddball_vis;
-    post_exclude_idx = post_oddball_aud & post_oddball_vis;
-    
-    % Remove excluded trials
-    [expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis] = remove_excluded_trials(expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis, expo_exclude_idx);
-    [post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis] = remove_excluded_trials(post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis, post_exclude_idx);
-    
-    % Calculate Hit Rates (HR) and False Alarms (FA)
-    hit_rate(:, subj, :) = [sum(expo_oddball_aud & expo_resp_aud) / sum(expo_oddball_aud), sum(expo_oddball_vis & expo_resp_vis) / sum(expo_oddball_vis); ...
-                            sum(post_oddball_aud & post_resp_aud) / sum(post_oddball_aud), sum(post_oddball_vis & post_resp_vis) / sum(post_oddball_vis)];
-    false_alarm(:, subj, :) = [sum(~expo_oddball_aud & expo_resp_aud) / sum(~expo_oddball_aud), sum(~expo_oddball_vis & expo_resp_vis) / sum(~expo_oddball_vis); ...
-                               sum(~post_oddball_aud & post_resp_aud) / sum(~post_oddball_aud), sum(~post_oddball_vis & post_resp_vis) / sum(~post_oddball_vis)];
-end
+%% plot TOJ
 
-%% Calculate d-prime and Criterion
+for mm = 2%1:n_model
 
-dprime = NaN(2, numel(subject_list), 2);
-criteria = NaN(2, numel(subject_list), 2);
+        figure; hold on
+        set(gcf, 'Position', [0,0,800,150]);
 
-for task = 1:2
-    for idx = 1:numel(subject_list)
-        subj = subject_list(idx);
-        for av = 1:2 % 1 = Auditory; 2 = Visual
-            [dprime(task, idx, av), criteria(task, idx, av)] = calculate_dprime(hit_rate(task, subj, av), false_alarm(task, subj, av), [numel(expo_resp_aud), numel(post_resp_aud)]);
+        tl = tiledlayout(2,9);
+        sgtitle('Temporal-order-judgmenst of excluded participant','FontSize',titleSZ,'FontWeight','bold')
+       
+
+        for adapter = 1:9
+
+            % pre
+            nexttile(adapter); hold on
+            set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+            title(sprintf('Adapter SOA\n%.1f s', adaptor_soa(adapter)./1e3),'FontSize',fontSZ-1,'FontWeight','bold')
+
+            % data
+            scatter(D.data(adapter).pre_ms_unique, D.data(adapter).pre_pResp, dotSZ, 'filled');
+
+            % prediction
+            plot(pred.test_soa, pred.pre_pmf{adapter}, 'LineWidth',lw)
+
+            % look better
+            xlim([-550 550])
+            xticks([])
+            yticks([])
+
+            if adapter == 1
+                ylabel({'Pre-test', 'probability'}, 'FontSize',fontSZ,'FontWeight','bold')
+                yticks(tick_y)
+                yticklabels(strsplit(num2str(tick_y)))
+            end
+
+            % post
+            nexttile(adapter+num_ses); hold on
+            set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out','ColorOrder', cmp2)
+
+            % data
+            scatter(D.data(adapter).post_ms_unique, D.data(adapter).post_pResp, dotSZ, 'filled');
+
+            % prediction
+            plot(pred.test_soa, pred.post_pmf{adapter},'LineWidth',lw)
+            if adapter == 5
+                xlabel('Test SOA','FontSize',fontSZ,'FontWeight','bold')
+            end
+
+            % look better
+            xlim([-550 550])
+            xticks(tick_x)
+            xticklabels(strsplit(num2str(tick_x./1e3)))
+            yticks(tick_y)
+            yticklabels(strsplit(num2str(tick_y)))
+
+            if adapter == 1
+                ylabel({'Post-test'; 'probability'},'FontSize',fontSZ,'FontWeight','bold')
+                yticks(tick_y)
+                yticklabels(strsplit(num2str(tick_y)))
+            end
+
         end
-    end
-end
 
-%% Display Stats
+        tl.TileSpacing = 'compact';
 
-fprintf('[%s] Mean of auditory d-prime %.2f and visual d-prime %.2f\n', mfilename, mean(dprime(:, :, 1), 'all'), mean(dprime(:, :, 2), 'all'));
-re_dprime = reshape(dprime, [2 * numel(subject_list), 2]);
-fprintf('[%s] S.D. of auditory d-prime %.2f and visual d-prime %.2f\n', mfilename, std(re_dprime(:, 1)), std(re_dprime(:, 2)));
+        if save_fig
+            flnm  = sprintf('M-%s_S%s_TOJ', folders{mm}, sub_slc);
+            saveas(gca, fullfile(out_dir, flnm),'pdf')
+        end   
 
-%% Plot
-
-clt = [202, 0, 32; 5, 113, 176] ./ 255; % red and blue
-lw = 1.5;
-font_sz = 15;
-title_sz = 20;
-dot_sz = 120;
-label = {'auditory'; 'visual'};
-
-figure;
-set(gcf, 'Position', [10 10 450 400]);
-axis equal;
-set(gca, 'LineWidth', lw, 'FontSize', font_sz, 'TickDir', 'out');
-hold on;
-scatter(dprime(1, :, 1), dprime(2, :, 1), dot_sz, 'filled', 'MarkerFaceColor', clt(1, :), 'MarkerEdgeColor', 'w', 'LineWidth', lw);
-scatter(dprime(1, :, 2), dprime(2, :, 2), dot_sz, 'filled', 'MarkerFaceColor', clt(2, :), 'MarkerEdgeColor', 'w', 'LineWidth', lw);
-
-lb = 1;
-ub = 4.5;
-x = linspace(lb, ub, 10);
-plot(x, x, 'k--', 'LineWidth', 1, 'HandleVisibility', 'off');
-
-xlim([lb, ub]);
-xticks(lb:ub);
-ylim([lb, ub]);o
-yticks(lb:ub);
-
-xlabel('d'', exposure phase','Interpreter', 'latex');
-ylabel('d'', post-test phase', 'Interpreter', 'latex');
-
-legend({'Audition', 'Vision'}, 'Location', 'southeast');
-
-flnm = 'oddball_result';
-saveas(gca, fullfile(out_dir, flnm), 'pdf');
-
-%% Helper Functions
-
-function [d, c] = calculate_dprime(hit_rate, false_alarm, n_trial)
-    iHR = hit_rate;
-    iFA = false_alarm;
-    if hit_rate == 1
-        iHR = 1 - 0.5 / n_trial; % or 1 - 0.5(hit_rate + false_alarm)
-    elseif hit_rate == 0
-        iHR = 0.5 / n_trial;
-    elseif false_alarm == 1
-        iFA = 1 - 0.5 / n_trial;
-    elseif false_alarm == 0
-        iFA = 0.5 / n_trial;
-    end
-    d = norminv(iHR, 0, 1) - norminv(iFA, 0, 1);
-    c = norminv(1 - iFA, 0, 1);
-end
-
-function [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(start_trial, end_trial, idx_oddball_aud, idx_oddball_vis, response)
-    oddball_aud = zeros(1, length(response));
-    oddball_aud(idx_oddball_aud) = 1; % oddball presence
-    resp_aud = ismember(response, [2, 3]); % oddball response
-    oddball_aud = oddball_aud(start_trial:end_trial);
-    resp_aud = resp_aud(start_trial:end_trial);
-    
-    oddball_vis = zeros(1, length(response));
-    oddball_vis(idx_oddball_vis) = 1; % oddball presence
-    resp_vis = ismember(response, [2, 1]); % oddball response
-    oddball_vis = oddball_vis(start_trial:end_trial);
-    resp_vis = resp_vis(start_trial:end_trial);
-end
-
-function [resp_aud, oddball_aud, resp_vis, oddball_vis] = remove_excluded_trials(resp_aud, oddball_aud, resp_vis, oddball_vis, exclude_idx)
-    resp_aud(exclude_idx) = [];
-    oddball_aud(exclude_idx) = [];
-    resp_vis(exclude_idx) = [];
-    oddball_vis(exclude_idx) = [];
 end

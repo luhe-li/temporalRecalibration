@@ -1,116 +1,156 @@
-% fig S11: model recovery results
+% fig S10: data analysis of the oddball-detection task
 
-clear; close all;
+clear; clc; close all;
 
-%% select models
+%% Manage Paths
 
-% specifications = {'Heuristic, asymmetric likelihood', 'Heuristic, symmetric likelihood', 'Causal inference, asymmetric likelihood',  'Causal inference, symmetric likelihood','Fixed updated, asymmetric likelihood', 'Fixed updated, symmetric likelihood'};
-specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-indepdent precision', 'Causal inference, modality-specific precision',  'Causal inference, modality-independent precision','Fixed updated, modality-specific precision', 'Fixed updated, modality-independent precision'};
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
-
-%% manage path
-
-cur_dir               = pwd;
-[project_dir, ~]      = fileparts(cur_dir);
-[git_dir, ~] = fileparts(project_dir);
-% dataDir = fullfile(git_dir,'temporalRecalibrationData');
-dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
-addpath(genpath(fullfile(project_dir, 'utils')));
-addpath(genpath(fullfile(project_dir, 'vbmc')));
-out_dir               = fullfile(cur_dir, mfilename);
-if ~exist(out_dir,'dir') mkdir(out_dir); end
-
-%% load results
-
-results_folder = fullfile(dataDir,'recalibration_models_VBMC','model_recovery_s3');
-files = dir(fullfile(results_folder, 'fitM*'));
-pattern = 'fitM(\d+)_sample-(\d+)_';
-
-model_slc = 1:6;
-log_model_evidence = nan(6, 6, 100);
-for pp = 1:size(files)
-
-    flnm =  files(pp).name;
-    r = load(fullfile(results_folder, flnm));
-    tokens = regexp(flnm, pattern, 'tokens');
-    fit_m = str2double(tokens{1}{1});
-    i_sample = str2double(tokens{1}{2});
-
-    % metric fo rmodel comparison
-    log_model_evidence(:, fit_m, i_sample) = r.summ.bestELBO;
-    RMSE(:, fit_m, i_sample) = r.summ.RMSE;
-
-    % extract model predictions
-    fake_pred(:, fit_m, i_sample) = r.fake_pred;
-    fake_data(:, fit_m, i_sample) = r.fake_data;
-    fit_pred(:,fit_m, i_sample) = r.fit_pred;
-    fit_est(:, fit_m,i_sample) = r.fit_est;
-
+restoredefaultpath;
+current_dir = pwd;
+[project_dir, ~] = fileparts(current_dir);
+addpath(genpath(fullfile(project_dir, 'data')));
+out_dir = fullfile(current_dir, mfilename);
+if ~exist(out_dir, 'dir')
+    mkdir(out_dir);
 end
 
-% use model_evidence for CM
-log_model_evidence = log_model_evidence(model_slc,model_slc,:);
-[num_sim_m, num_fit_m, num_i_sample] = size(log_model_evidence);
-CM = zeros(num_sim_m, num_fit_m);
-for sim_m = 1:num_sim_m
+%% Set Up
 
-    for i_sample = 1:num_i_sample
+subject_list = [1:4, 6:10]; % Selected subjects
+num_subjects = 10;
+num_sessions = 9;
 
-        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
-        [~, max_fit_m_index] = max(log_model_evidence(sim_m, :, i_sample));
-        % Increment the count for the corresponding fit_m
-        CM(sim_m, max_fit_m_index) = CM(sim_m, max_fit_m_index) + 1;
+[hit_rate, false_alarm] = deal(NaN(2, num_subjects, 2)); % Preallocate Hit Rate and False Alarm arrays
 
+%% Load and Process Data
+
+for subj = subject_list
+    % Preallocate response and oddball arrays
+    [expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis] = deal([]);
+    [post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis] = deal([]);
+    
+    for sess = 1:num_sessions
+        % Load exposure session data
+        load(sprintf('exposure_sub%i_session%i.mat', subj, sess));
+        [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(1, ExpInfo.nTTrials, ExpInfo.idxOddballA, ExpInfo.idxOddballV, Response.oddball);
+        expo_resp_aud = [expo_resp_aud, resp_aud];
+        expo_oddball_aud = [expo_oddball_aud, oddball_aud];
+        expo_resp_vis = [expo_resp_vis, resp_vis];
+        expo_oddball_vis = [expo_oddball_vis, oddball_vis];
+        
+        % Load post-test session data
+        load(sprintf('posttest_sub%i_session%i.mat', subj, sess));
+        [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(1, ExpInfo.expoNTTrials, ExpInfo.idxOddballA, ExpInfo.idxOddballV, ExpoResponse.oddball);
+        post_resp_aud = [post_resp_aud, resp_aud];
+        post_oddball_aud = [post_oddball_aud, oddball_aud];
+        post_resp_vis = [post_resp_vis, resp_vis];
+        post_oddball_vis = [post_oddball_vis, oddball_vis];
+    end
+
+    % Exclude trials with both oddballs present
+    expo_exclude_idx = expo_oddball_aud & expo_oddball_vis;
+    post_exclude_idx = post_oddball_aud & post_oddball_vis;
+    
+    % Remove excluded trials
+    [expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis] = remove_excluded_trials(expo_resp_aud, expo_oddball_aud, expo_resp_vis, expo_oddball_vis, expo_exclude_idx);
+    [post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis] = remove_excluded_trials(post_resp_aud, post_oddball_aud, post_resp_vis, post_oddball_vis, post_exclude_idx);
+    
+    % Calculate Hit Rates (HR) and False Alarms (FA)
+    hit_rate(:, subj, :) = [sum(expo_oddball_aud & expo_resp_aud) / sum(expo_oddball_aud), sum(expo_oddball_vis & expo_resp_vis) / sum(expo_oddball_vis); ...
+                            sum(post_oddball_aud & post_resp_aud) / sum(post_oddball_aud), sum(post_oddball_vis & post_resp_vis) / sum(post_oddball_vis)];
+    false_alarm(:, subj, :) = [sum(~expo_oddball_aud & expo_resp_aud) / sum(~expo_oddball_aud), sum(~expo_oddball_vis & expo_resp_vis) / sum(~expo_oddball_vis); ...
+                               sum(~post_oddball_aud & post_resp_aud) / sum(~post_oddball_aud), sum(~post_oddball_vis & post_resp_vis) / sum(~post_oddball_vis)];
+end
+
+%% Calculate d-prime and Criterion
+
+dprime = NaN(2, numel(subject_list), 2);
+criteria = NaN(2, numel(subject_list), 2);
+
+for task = 1:2
+    for idx = 1:numel(subject_list)
+        subj = subject_list(idx);
+        for av = 1:2 % 1 = Auditory; 2 = Visual
+            [dprime(task, idx, av), criteria(task, idx, av)] = calculate_dprime(hit_rate(task, subj, av), false_alarm(task, subj, av), [numel(expo_resp_aud), numel(post_resp_aud)]);
+        end
     end
 end
-CM = CM./num_i_sample;
 
-% use RMSE of the recalibration prediction for CM
-RMSE = RMSE(model_slc,model_slc,:);
-[num_sim_m, num_fit_m, num_i_sample] = size(RMSE);
-CM2 = zeros(num_sim_m, num_fit_m);
-for sim_m = 1:num_sim_m
+%% Display Stats
 
-    for i_sample = 1:num_i_sample
+fprintf('[%s] Mean of auditory d-prime %.2f and visual d-prime %.2f\n', mfilename, mean(dprime(:, :, 1), 'all'), mean(dprime(:, :, 2), 'all'));
+re_dprime = reshape(dprime, [2 * numel(subject_list), 2]);
+fprintf('[%s] S.D. of auditory d-prime %.2f and visual d-prime %.2f\n', mfilename, std(re_dprime(:, 1)), std(re_dprime(:, 2)));
 
-        % Find the index of fit_m with the maximum log_model_evidence for the current i_sample
-        [~, min_fit_m_index] = min(RMSE(sim_m, :, i_sample));
-        % Increment the count for the corresponding fit_m
-        CM2(sim_m, min_fit_m_index) = CM2(sim_m, min_fit_m_index) + 1;
+%% Plot
 
-    end
-end
-CM2 = CM2./num_i_sample;
-
-%% plot 
+clt = [202, 0, 32; 5, 113, 176] ./ 255; % red and blue
+lw = 1.5;
+font_sz = 15;
+title_sz = 20;
+dot_sz = 120;
+label = {'auditory'; 'visual'};
 
 figure;
-set(gcf, 'Position',[0,0,420,300]);
-set(gca, 'FontSize', 4)
+set(gcf, 'Position', [10 10 450 400]);
+axis equal;
+set(gca, 'LineWidth', lw, 'FontSize', font_sz, 'TickDir', 'out');
+hold on;
+scatter(dprime(1, :, 1), dprime(2, :, 1), dot_sz, 'filled', 'MarkerFaceColor', clt(1, :), 'MarkerEdgeColor', 'w', 'LineWidth', lw);
+scatter(dprime(1, :, 2), dprime(2, :, 2), dot_sz, 'filled', 'MarkerFaceColor', clt(2, :), 'MarkerEdgeColor', 'w', 'LineWidth', lw);
 
-imagesc(CM);
-colormap('bone')
-xticks(1:6)
-yticks(1:6)
-xticklabels(specifications(model_slc))
-yticklabels(specifications(model_slc))
-xlabel('Model used for fitting','FontWeight','bold');
-ylabel('Data generating model','FontWeight','bold');
-title({'Percentage of winning'},'fontsize',12)
+lb = 1;
+ub = 4.5;
+x = linspace(lb, ub, 10);
+plot(x, x, 'k--', 'LineWidth', 1, 'HandleVisibility', 'off');
 
-[num_rows, num_cols] = size(CM);
-for row = 1:num_rows
-    for col = 1:num_cols
-        val = CM(row, col);
-        % Choose text color for better contrast
-        textColor = 'w'; % default black
-        if val >= 0.3
-            textColor = 'k'; % white for contrast
-        end
-        text(col, row, num2str(val, '%0.2f'), ...
-            'HorizontalAlignment', 'center', ...
-            'Color', textColor);
+xlim([lb, ub]);
+xticks(lb:ub);
+ylim([lb, ub]);o
+yticks(lb:ub);
+
+xlabel('d'', exposure phase','Interpreter', 'latex');
+ylabel('d'', post-test phase', 'Interpreter', 'latex');
+
+legend({'Audition', 'Vision'}, 'Location', 'southeast');
+
+flnm = 'oddball_result';
+saveas(gca, fullfile(out_dir, flnm), 'pdf');
+
+%% Helper Functions
+
+function [d, c] = calculate_dprime(hit_rate, false_alarm, n_trial)
+    iHR = hit_rate;
+    iFA = false_alarm;
+    if hit_rate == 1
+        iHR = 1 - 0.5 / n_trial; % or 1 - 0.5(hit_rate + false_alarm)
+    elseif hit_rate == 0
+        iHR = 0.5 / n_trial;
+    elseif false_alarm == 1
+        iFA = 1 - 0.5 / n_trial;
+    elseif false_alarm == 0
+        iFA = 0.5 / n_trial;
     end
+    d = norminv(iHR, 0, 1) - norminv(iFA, 0, 1);
+    c = norminv(1 - iFA, 0, 1);
 end
 
-saveas(gca, fullfile(out_dir, 'CM'),'pdf');
+function [resp_aud, oddball_aud, resp_vis, oddball_vis] = summarize_session_performance(start_trial, end_trial, idx_oddball_aud, idx_oddball_vis, response)
+    oddball_aud = zeros(1, length(response));
+    oddball_aud(idx_oddball_aud) = 1; % oddball presence
+    resp_aud = ismember(response, [2, 3]); % oddball response
+    oddball_aud = oddball_aud(start_trial:end_trial);
+    resp_aud = resp_aud(start_trial:end_trial);
+    
+    oddball_vis = zeros(1, length(response));
+    oddball_vis(idx_oddball_vis) = 1; % oddball presence
+    resp_vis = ismember(response, [2, 1]); % oddball response
+    oddball_vis = oddball_vis(start_trial:end_trial);
+    resp_vis = resp_vis(start_trial:end_trial);
+end
+
+function [resp_aud, oddball_aud, resp_vis, oddball_vis] = remove_excluded_trials(resp_aud, oddball_aud, resp_vis, oddball_vis, exclude_idx)
+    resp_aud(exclude_idx) = [];
+    oddball_aud(exclude_idx) = [];
+    resp_vis(exclude_idx) = [];
+    oddball_vis(exclude_idx) = [];
+end
