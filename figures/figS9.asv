@@ -84,8 +84,8 @@ end
 %% Plotting
 
 % Figure setup
-lineWidth = 1;
-fontSize = 10;
+lineWidth = 0.5;
+fontSize = 7;
 
 %% First Figure (1x2 subplots)
 figure;
@@ -119,6 +119,10 @@ xlim([-700, 700]);
 xlabel('Adaptor SOA (ms)');
 ylabel('Recalibration effect (ms)');
 grid on;
+
+set(gcf, 'Renderer', 'painters');
+print(gcf, fullfile(out_dir, 'population_model2'), '-dpdf')
+saveas(gcf, fullfile(out_dir, 'population_model2'), 'pdf')
 
 %% Second Figure (2x3 subplots)
 figure;
@@ -163,25 +167,24 @@ for aa = 1:2
 
     % Plot responses
     plot(preferredSOAs, responsesZeroUnadapted, 'k', 'LineWidth', lineWidth, 'DisplayName', 'Unadapted Response');
-    plot(preferredSOAs, responsesZeroAdapted, 'k--', 'LineWidth', lineWidth, 'DisplayName', 'Adapted Response');
+    plot(preferredSOAs, responsesZeroAdapted, 'k:', 'LineWidth', lineWidth, 'DisplayName', 'Adapted Response');
 
     % Mark the physical stimulus
-    xline(0, 'b--', 'LineWidth', lineWidth, 'DisplayName', 'Physical Stimulus');
+    xline(0, '--', 'Color',[90,174,97]./255,'LineWidth', lineWidth*2, 'DisplayName', 'Physical Stimulus');
 
-    % Mark the estimated SOA before adaptation
-    xline(estimatedSOAUnadapted, 'k:', 'LineWidth', lineWidth, 'DisplayName', 'Estimated SOA (unadapted)');
+%     % Mark the estimated SOA before adaptation
+%     xline(estimatedSOAUnadapted, 'k:', 'LineWidth', lineWidth, 'DisplayName', 'Estimated SOA (unadapted)');
 
     % Mark the estimated SOA after adaptation
-    xline(estimatedSOAAdapted, 'r:', 'LineWidth', lineWidth, 'DisplayName', 'Estimated SOA (adapted)');
+    xline(estimatedSOAAdapted, '--','Color',[153,112,171]./255, 'LineWidth', lineWidth*2, 'DisplayName', 'Estimated SOA (adapted)');
 
     % Mark the adaptor SOA
-    xline(adaptorSOA, 'g-', 'LineWidth', lineWidth, 'DisplayName', 'Adaptor SOA');
+    xline(adaptorSOA, 'k-', 'LineWidth', lineWidth*2, 'DisplayName', 'Adaptor SOA');
 
     xlabel('Preferred SOA (ms)');
     ylabel('Neural response');
-    xlim([-maxSOA, maxSOA]);
+    xlim([-500, 500]);
     xticks([-500, 0, 500]);
-    title('Decoder Bias Due to Adaptation');
     legend('Location', 'Best');
 
     % (3) Bias plot with matching color
@@ -202,4 +205,4 @@ end
 
 set(gcf, 'Renderer', 'painters');
 print(gcf, fullfile(out_dir, 'population_model1'), '-dpdf')
-% saveas(gcf, fullfile(out_dir, 'population_model1'), 'pdf')
+saveas(gcf, fullfile(out_dir, 'population_model1'), 'pdf')

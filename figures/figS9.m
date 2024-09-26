@@ -18,7 +18,7 @@ adaptationWidth = 122.6;       % Breadth of the gain field for adaptation
 baseGain = 1;                  % Unadapted response gain
 
 maxSOA = 1000;
-exampleAdaptorSOAs = [175, 700];          % Example adaptor SOAs for subplots
+exampleAdaptorSOAs = [175, 525];          % Example adaptor SOAs for subplots
 allAdaptorSOAs = linspace(-700, 700, 9);  % Adaptor SOAs for bias calculation
 stimulusSOAs = -maxSOA:1:maxSOA;          % Stimulus SOAs
 preferredSOAs = linspace(-500, 500, numNeurons);  % Preferred SOAs of neurons
@@ -84,45 +84,109 @@ end
 %% Plotting
 
 % Figure setup
-lineWidth = 1;
-fontSize = 10;
+lineWidth = 0.5;
+fontSize = 7;
 
 %% First Figure (1x2 subplots)
-figure;
-set(gcf, 'Position',[0,0,420,120]);
-
-% (1) Bias vs. Stimulus SOA with color palette
-subplot(1, 2, 1);
-set(gca, 'LineWidth', lineWidth, 'FontSize', fontSize, 'TickDir', 'out');
-hold on;
-for aa = 1:numel(allAdaptorSOAs)
-    plot(stimulusSOAs, bias(aa, :), 'Color', colors(aa, :), 'LineWidth', lineWidth);
-end
-xlim([-900, 900]);
-ylim([-60, 60]);
-xlabel('Stimulus SOA (ms)');
-ylabel('Bias (ms)');
-legend
+% 
+% figure;
+% set(gcf, 'Position',[0,0,420,120]);
+% 
+% % (1) Bias vs. Stimulus SOA with color palette
+% subplot(1, 2, 1);
+% set(gca, 'LineWidth', lineWidth, 'FontSize', fontSize, 'TickDir', 'out');
+% hold on;
+% for aa = 1:numel(allAdaptorSOAs)
+%     plot(stimulusSOAs, bias(aa, :), 'Color', colors(aa, :), 'LineWidth', lineWidth);
+% end
+% xlim([-900, 900]);
+% ylim([-60, 60]);
+% xlabel('Stimulus SOA (ms)');
+% ylabel('Bias (ms)');
+% 
 % % Create a colorbar with labels corresponding to adaptor SOAs
 % colormap(colors);
 % caxis([allAdaptorSOAs(1), allAdaptorSOAs(end)]);
 % colorbar('Ticks', allAdaptorSOAs, 'TickLabels', arrayfun(@num2str, allAdaptorSOAs, 'UniformOutput', false));
 % grid on;
+% 
+% % (2) Mean Bias vs. Adapted SOA
+% subplot(1, 2, 2);
+% set(gca, 'LineWidth', lineWidth, 'FontSize', fontSize, 'TickDir', 'out');
+% hold on;
+% plot(allAdaptorSOAs, PSS, 'k', 'LineWidth', lineWidth);
+% ylim([-60, 60]);
+% xlim([-700, 700]);
+% xlabel('Adaptor SOA (ms)');
+% ylabel('Recalibration effect (ms)');
+% grid on;
+% 
+% set(gcf, 'Renderer', 'painters');
+% print(gcf, fullfile(out_dir, 'population_model2'), '-dpdf')
+% saveas(gcf, fullfile(out_dir, 'population_model2'), 'pdf')
+% 
+% Figure setup
+figure;
+set(gcf, 'Position', [0, 0, 420, 120]);
+
+% Define margins and gaps
+left_margin = 0.08;
+right_margin = 0.02;
+bottom_margin = 0.15;
+top_margin = 0.1;
+horizontal_gap = 0.15;
+
+% Calculate total available width and height
+total_width = 1 - left_margin - right_margin - horizontal_gap;
+total_height = 1 - bottom_margin - top_margin;
+
+% Calculate widths for the two subplots based on the 6:4 ratio
+width1 = total_width * (5 / 10);
+width2 = total_width * (4 / 10);
+
+% Define positions for the two axes
+pos1 = [left_margin, bottom_margin, width1, total_height];
+pos2 = [left_margin + width1 + horizontal_gap, bottom_margin, width2, total_height];
+
+% (1) Bias vs. Stimulus SOA with color palette
+ax1 = axes('Position', pos1);
+set(ax1, 'LineWidth', lineWidth, 'FontSize', fontSize, 'TickDir', 'out');
+hold(ax1, 'on');
+for aa = 1:numel(allAdaptorSOAs)
+    plot(ax1, stimulusSOAs, bias(aa, :), 'Color', colors(aa, :), 'LineWidth', lineWidth*2);
+end
+xlim(ax1, [-900, 900]);
+ylim(ax1, [-60, 60]);
+xlabel(ax1, 'Stimulus SOA (ms)');
+ylabel(ax1, 'Bias (ms)');
+
+% Create a colorbar with labels corresponding to adaptor SOAs
+colormap(ax1, colors);
+caxis(ax1, [allAdaptorSOAs(1), allAdaptorSOAs(end)]);
+cb = colorbar(ax1, 'Ticks', allAdaptorSOAs, 'TickLabels', arrayfun(@num2str, allAdaptorSOAs, 'UniformOutput', false));
+cb.Position(1) = pos1(1) + width1 + 0.005; % Adjust colorbar position
+cb.Position(3) = 0.02; % Adjust colorbar width
+grid(ax1, 'on');
 
 % (2) Mean Bias vs. Adapted SOA
-subplot(1, 2, 2);
-set(gca, 'LineWidth', lineWidth, 'FontSize', fontSize, 'TickDir', 'out');
-hold on;
-plot(allAdaptorSOAs, PSS, 'k', 'LineWidth', lineWidth);
-ylim([-60, 60]);
-xlim([-700, 700]);
-xlabel('Adaptor SOA (ms)');
-ylabel('Recalibration effect (ms)');
-grid on;
+ax2 = axes('Position', pos2);
+set(ax2, 'LineWidth', lineWidth, 'FontSize', fontSize, 'TickDir', 'out');
+hold(ax2, 'on');
+plot(ax2, allAdaptorSOAs, PSS, 'k', 'LineWidth', lineWidth, 'DisplayName', 'PSS');
+ylim(ax2, [-60, 60]);
+xlim(ax2, [-700, 700]);
+xlabel(ax2, 'Adaptor SOA (ms)');
+ylabel(ax2, 'Recalibration effect (ms)');
+grid(ax2, 'on');
 
+% Adjust subplot positions to accommodate the legend
+pos2(3) = pos2(3) - 0.05; % Reduce width to make space for legend
+set(ax2, 'Position', pos2);
+
+% Save the figure
 set(gcf, 'Renderer', 'painters');
-print(gcf, fullfile(out_dir, 'population_model2'), '-dpdf')
-saveas(gcf, fullfile(out_dir, 'population_model2'), 'pdf')
+print(gcf, fullfile(out_dir, 'population_model2'), '-dpdf');
+saveas(gcf, fullfile(out_dir, 'population_model2'), 'pdf');
 
 %% Second Figure (2x3 subplots)
 figure;
@@ -142,7 +206,7 @@ for aa = 1:2
     plot(stimulusSOAs, responsesAdapted{aa}, 'Color', [0.5, 0.5, 0.5]);
     xlabel('Preferred SOA (ms)');
     ylabel('Neural response');
-    xlim([-maxSOA, maxSOA]);
+    xlim([-700, 700]);
     xticks([-500, 0, 500]);
     xline(adaptorSOA, 'k-', 'LineWidth', lineWidth * 2); % Mark the adapted SOA
 
@@ -170,7 +234,7 @@ for aa = 1:2
     plot(preferredSOAs, responsesZeroAdapted, 'k:', 'LineWidth', lineWidth, 'DisplayName', 'Adapted Response');
 
     % Mark the physical stimulus
-    xline(0, '--', 'Color',[90,174,97]./255,'LineWidth', lineWidth*2, 'DisplayName', 'Physical Stimulus');
+    xline(0, '-', 'Color',[90,174,97]./255,'LineWidth', lineWidth*2, 'DisplayName', 'Physical Stimulus');
 
 %     % Mark the estimated SOA before adaptation
 %     xline(estimatedSOAUnadapted, 'k:', 'LineWidth', lineWidth, 'DisplayName', 'Estimated SOA (unadapted)');
@@ -178,8 +242,8 @@ for aa = 1:2
     % Mark the estimated SOA after adaptation
     xline(estimatedSOAAdapted, '--','Color',[153,112,171]./255, 'LineWidth', lineWidth*2, 'DisplayName', 'Estimated SOA (adapted)');
 
-    % Mark the adaptor SOA
-    xline(adaptorSOA, 'k-', 'LineWidth', lineWidth*2, 'DisplayName', 'Adaptor SOA');
+%     % Mark the adaptor SOA
+%     xline(adaptorSOA, 'k-', 'LineWidth', lineWidth*2, 'DisplayName', 'Adaptor SOA');
 
     xlabel('Preferred SOA (ms)');
     ylabel('Neural response');
@@ -192,7 +256,7 @@ for aa = 1:2
     set(gca, 'LineWidth', lineWidth, 'FontSize', fontSize, 'TickDir', 'out');
     hold on;
     idx = find(allAdaptorSOAs == adaptorSOA);
-    plot(stimulusSOAs, bias(idx, :), 'Color', currentColor, 'LineWidth', lineWidth);
+    plot(stimulusSOAs, bias(idx, :), 'Color', currentColor, 'LineWidth', lineWidth*2);
     yline(0, 'k--');
     xlabel('Stimulus SOA (ms)');
     ylabel('Bias (ms)');
