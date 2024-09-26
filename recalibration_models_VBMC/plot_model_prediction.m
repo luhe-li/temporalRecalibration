@@ -4,8 +4,8 @@
 clear; clc; close all;
 
 %% model info
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior'}; 
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior', 'Causal inference, asymmetric, trigger','Causal inference, symmetric, update','Trigger, asymmetric, 2 criteria'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior','cauInf_asym_trigger','cauInf_asym_update','trigger_asym_2criteria'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -24,14 +24,14 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recalibration model results
 
-model_slc = 5:6;
+model_slc = 9;
 n_model = numel(model_slc);
 sub_slc = [1:4, 6:10];
 save_fig = 0;
 plotTOJ = 0;
 
-for mm = 1:n_model
-    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{model_slc(mm)});
+for mm = model_slc%1:n_model
+    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
     R(mm, :) = load_subject_data(result_folder, sub_slc, 'sub-*');
     
     for ss = 1:numel(sub_slc)
@@ -96,8 +96,8 @@ dotSZ = 10;
 
 tick_y = 0:0.5:1;
 tick_x = [-500, 0, 500];
-test_soa = pred{1,1}.test_soa; %ms
-adaptor_soa = pred{1,1}.adaptor_soa; %ms
+test_soa = pred{model_slc(1),1}.test_soa; %ms
+adaptor_soa = pred{model_slc(1),1}.adaptor_soa; %ms
 num_ses = 9;
 
 %% 1. plot group recalibration
@@ -106,14 +106,12 @@ figure;
 set(gcf, 'Position',[0,0,420,250]);
 set(gcf, 'DefaultAxesFontName', 'Helvetica');
 set(gcf, 'DefaultTextFontName', 'Helvetica');
-t = tiledlayout(2,3,'Padding', 'compact', 'TileSpacing', 'compact');
+t = tiledlayout(3,3,'Padding', 'compact', 'TileSpacing', 'compact');
 
-adaptor_soa = pred{1,1}.adaptor_soa; %ms
-
-order = [6,2,4, 5,1,3];
+order = [6,2,4, 5,1,3, 7];
 yl = 100;
-ytks = {[], [],[],[],[-yl, 0, yl], [-yl, 0, yl]};
-ytklabels = {[], [], [], [], [-yl, 0, yl]./1e3, [-yl, 0, yl]./1e3};
+ytks = {[-yl, 0, yl], [], [],[-yl, 0, yl],[], [],[-yl,0,yl],[], []};
+ytklabels = {[-yl, 0, yl]./1e3,[], [], [-yl, 0, yl]./1e3,[], [],[-yl, 0, yl]./1e3,[], []};
 
 for mm = 1:n_model
 
@@ -132,8 +130,8 @@ for mm = 1:n_model
     % color parameter for model fitting
     clt = repmat(0.7, 1, 3);
 
-    mean_sim_recal = mean(squeeze(pred_recal(mm,:,:)), 1, 'omitnan');
-    se_sim_recal = std(squeeze(pred_recal(mm,:,:)), [], 1, 'omitnan')./sqrt(numel(sub_slc));
+    mean_sim_recal = mean(squeeze(pred_recal(model_slc(mm),:,:)), 1, 'omitnan');
+    se_sim_recal = std(squeeze(pred_recal(model_slc(mm),:,:)), [], 1, 'omitnan')./sqrt(numel(sub_slc));
 
     % calculate lower and upper bound using se
     lb_sim_recal  = mean_sim_recal - se_sim_recal;
@@ -155,8 +153,7 @@ for mm = 1:n_model
     xlabel(t, 'Adaptor SOA (s)','FontSize',titleSZ);
     ylabel(t,'Recalibration effect (s)','FontSize',titleSZ);
 
-    parts = strsplit(specifications{model_slc(mm)}, ', ');
-    title({parts{1}, parts{2}},'FontSize',fontSZ,'FontWeight', 'normal');
+    title(specifications{model_slc(mm)},'FontSize',fontSZ,'FontWeight', 'normal');
 
 end
 
@@ -169,7 +166,7 @@ for mm = 1:n_model
     figure; hold on
     set(gcf, 'Position',[0, 0, 600, 400]);
 
-    sgtitle(specifications{mm},'FontSize',titleSZ)
+    sgtitle(specifications{model_slc(mm)},'FontSize',titleSZ)
 
     for ss = 1:numel(sub_slc)
 
@@ -191,7 +188,7 @@ for mm = 1:n_model
 
         %% plot model prediction
 
-        redL = plot(adaptor_soa, squeeze(pred_recal(mm, ss,:)), '-o','LineWidth',lw, 'Color','r','MarkerSize',3);
+        redL = plot(adaptor_soa, squeeze(pred_recal(model_slc(mm), ss,:)), '-o','LineWidth',lw, 'Color','r','MarkerSize',3);
 
         % look better
         yl = 250;

@@ -105,11 +105,11 @@ plot(x, x, 'k--', 'LineWidth', 1, 'HandleVisibility', 'off');
 
 xlim([lb, ub]);
 xticks(lb:ub);
-ylim([lb, ub]);
+ylim([lb, ub]);o
 yticks(lb:ub);
 
-xlabel('d'', exposure phase')%, 'Interpreter', 'latex');
-ylabel('d'', post-test phase')%, 'Interpreter', 'latex');
+xlabel('d'', exposure phase','Interpreter', 'latex');
+ylabel('d'', post-test phase', 'Interpreter', 'latex');
 
 legend({'Audition', 'Vision'}, 'Location', 'southeast');
 

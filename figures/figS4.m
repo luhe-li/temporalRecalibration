@@ -1,19 +1,20 @@
 % fig S4: individual model prediction of recalibration effect
 % A. causal inference model
 % B. heuristic model
+% C. checkpoint model
 
 clear; clc; close all;
 
 %% model info
 
 % specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Atheoretical'}; % Column 2: specifications
-specifications = {'Heuristic, modality-specific uncertainty',...
-    'Heuristic, modality-independent uncertainty',...
-    'Causal inference, modality-specific uncertainty',...
-    'Causal inference, modality-independent uncertainty'...
-    'Fixed update, modality-specific uncertainty',...
-    'Fixed update, modality-independent uncertainty'};
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'}; 
+specifications = {'Heuristic, modality-specific precision',...
+    'Heuristic, modality-independent precision',...
+    'causal inference, modality-specific precision',...
+    'causal inference, modality-independent precision'...
+    'Checkpoint, modality-specific precision',...
+    'Checkpoint, modality-independent precision'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym'}; 
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -30,7 +31,7 @@ if ~exist(out_dir,'dir') mkdir(out_dir); end
 
 %% load recal models
 
-model_slc = [1,3];
+model_slc = [1,3, 7];
 sub_slc = [1:4, 6:10];
 save_fig = 1;
 

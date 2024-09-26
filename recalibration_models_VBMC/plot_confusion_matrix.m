@@ -3,8 +3,8 @@
 clear; close all; clc;
 
 %% model info
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior'}; 
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior'};
+specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior', 'Causal inference, asymmetric, trigger','Causal inference, asymmetric, update','Trigger, asymmetric, 2 criteria'}; 
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior','cauInf_asym_trigger','cauInf_asym_update','trigger_asym_2criteria'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -23,12 +23,12 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load recal models
 
-model_slc = 1:6;
+model_slc = [1:6,9];
 n_model = numel(model_slc);
 sub_slc = [1:4,6:10];%[1:4,6:10];
 save_fig = 0;
 
-for mm = 1:n_model
+for mm = model_slc%1:n_model
     result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
     R(mm, :) = load_subject_data(result_folder, sub_slc, 'sub-*');
     
@@ -37,43 +37,44 @@ for mm = 1:n_model
     end
 end
 
-%% load atheoretical model
-
-result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
-atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
-
-for ss = 1:numel(sub_slc)
-   log_model_evi(n_model+1, ss)= atheo{ss}.diag.bestELCBO;
-end
+% %% load atheoretical model
+% 
+% result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+% atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
+% 
+% for ss = 1:numel(sub_slc)
+%    log_model_evi(n_model+1, ss)= atheo{ss}.diag.bestELCBO;
+% end
 
 %% %%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% 1. plot model evidence with atheoretical model
-
-% max subtract other log model evidence
-delta_LME = log_model_evi - max(log_model_evi, [], 1); 
-
-figure
-h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
-    'Colormap', flipud(bone),...
-    'ColorLimits', [-6.9, 0], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
-    'FontSize', 8);
-colorbar;
-%     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
-
-h.YDisplayLabels = specifications;
-h.XDisplayLabels = num2cell(1:numel(sub_slc));
-
-% save figure
-set(gca, 'FontSize', 8)
-set(gcf, 'Position',[0 0 400 110])
-
-if save_fig
-flnm = 'ModelEvidence_all_models';
-saveas(gca, fullfile(out_dir, flnm),'png')
-end
+% %% 1. plot model evidence with atheoretical model
+% 
+% % max subtract other log model evidence
+% delta_LME = log_model_evi - max(log_model_evi, [], 1); 
+% 
+% figure
+% h = heatmap(round(delta_LME, 1), 'XLabel','Participant', ...
+%     'Colormap', flipud(bone),...
+%     'ColorLimits', [-6.9, 0], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+%     'FontSize', 8);
+% colorbar;
+% %     'ColorLimits', [0, 15], 'ColorbarVisible', 'on', 'GridVisible', 'off',...
+% 
+% h.YDisplayLabels = specifications;
+% h.XDisplayLabels = num2cell(1:numel(sub_slc));
+% 
+% % save figure
+% set(gca, 'FontSize', 8)
+% set(gcf, 'Position',[0 0 400 110])
+% 
+% if save_fig
+% flnm = 'ModelEvidence_all_models';
+% saveas(gca, fullfile(out_dir, flnm),'png')
+% end
 %% 2. plot model evidence within recalibration model
 
+model_slc = [1,2,4,5,6,9];
 % max subtract other log model evidence
 delta_LME = log_model_evi(model_slc,:) - max(log_model_evi(model_slc,:), [], 1); 
 
@@ -98,7 +99,7 @@ saveas(gca, fullfile(out_dir, flnm),'pdf')
 end
 
 %% 3. plot group log bayes factor
-order = [6, 5,2, 1, 4, 3];
+order = [6, 5, 2, 1, 4, 3, 9];
 delta = log_model_evi(order, :) - log_model_evi(6, :);
 m_delta = mean(delta, 2);
 se_delta = std(delta, [], 2) ./ numel(sub_slc);
@@ -110,7 +111,7 @@ hold on;
 bar_handle = bar(m_delta, 'FaceColor', [0.8, 0.8, 0.8], 'EdgeColor', 'none','BarWidth', 0.6);
 errorbar(m_delta, se_delta, 'k', 'LineStyle', 'none', 'CapSize', 0);
 yticks([0:10:40])
-ylim([0, 45])
+ylim([0, 70])
 
 xticks(1:length(m_delta));
 labels = specifications(order);

@@ -84,7 +84,7 @@ model.currModelStr = currModelStr; % current model folder
 options = vbmc('defaults');
 if ismember(i_model, [3,4]); options.MaxFunEvals = 500; end % set max iter for cau-inf models
 options.TolStableCount = 15;
-options.SpecifyTargetNoise = true;
+% options.SpecifyTargetNoise = true;
 
 %% model fitting
 
