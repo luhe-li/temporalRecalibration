@@ -79,7 +79,8 @@ dotSZ = 10;
 
 %% A. plot group log bayes factor
 
-order = [6,5,2, 1, 4, 3];
+% order = [6,5,2, 1, 4, 3];
+order = [3,4,1,2,5,6];
 delta = log_model_evi(order, :) - log_model_evi(6, :);
 m_delta = mean(delta, 2);
 se_delta = std(delta, [], 2) ./ numel(sub_slc);
@@ -122,7 +123,7 @@ t = tiledlayout(2,3,'Padding', 'compact', 'TileSpacing', 'compact');
 
 adaptor_soa = pred{1,1}.adaptor_soa; %ms
 
-order = [6,2,4, 5,1,3];
+order = [4,2,6,3,1,5];
 yl = 100;
 ytks = {[], [],[],[],[-yl, 0, yl], [-yl, 0, yl]};
 ytklabels = {[], [], [], [], [-yl, 0, yl]./1e3, [-yl, 0, yl]./1e3};
