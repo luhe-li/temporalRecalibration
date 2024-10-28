@@ -69,6 +69,26 @@ else
     save(fullfile(out_dir, fileName))
 end
 
+%% simulation, varying prior width of the SOA conditioned on a common cause
+
+fileName = 'sim_prior.mat';
+if exist(fullfile(out_dir, fileName), 'file') == 2  
+    fprintf('File found! Loading %s\n', fileName);
+    load(fullfile(out_dir, fileName));
+else
+    fprintf('File does not exist. Performing simulation...\n');
+
+    sigma_C1s = 20:20:100;
+    n_level = numel(betas);
+    parfor i = 1:n_level
+        tempModel = currModel;
+        i_sigma_C1 = sigma_C1s(i);
+        pred =  tempModel([beta, tau_a, tau_v, criterion, lambda, p_common, alpha, i_sigma_C1, sigma_C2], model, []);
+        recal_bias2(i,:)       = mean(pred.pss_shift, 2);
+    end
+    save(fullfile(out_dir, fileName))
+end
+
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plotting section
 
@@ -120,5 +140,42 @@ xticklabels(adaptor/1e3)
 xlim([min(adaptor)-50, max(adaptor)+50])
 
 flnm = 'sim_beta';
+saveas(gca,fullfile(out_dir,flnm),'pdf')
+
+%% plot prior width
+
+figure;
+set(gcf, 'Position', [0,0,420,150]); hold on
+
+subplot(1,2,1); hold on
+set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
+set(gca, 'ColorOrder', grad{1});
+plot(adaptor, recal_bias2,'LineWidth',lw*2)
+
+% Create an array of legend labels corresponding to \tau values
+legendLabels = cell(1, numel(sigma_C1s));
+for i = 1:numel(sigma_C1s)
+    legendLabels{i} = sprintf('%.2f', sigma_C1s(i)./1e3);
+end
+
+% Add the legend with specified labels
+leg  = legend(legendLabels, 'Location', 'northwest');
+leg.Title.String = 'Width of prior given a common cause (s)';
+leg.ItemTokenSize = [repmat(10,1,5)];
+
+% Add yline (excluding it from the legend)
+yline(0,'--','LineWidth',lw,'HandleVisibility','off')
+
+yl = 100;
+ylim([-yl, yl])
+yticks([-yl, 0, yl])
+yticklabels([-yl, 0, yl]./1e3)
+xlabel('Adaptor SOA (s)')
+ylabel('Recalibration effect (s)')
+xticks(adaptor)
+xticklabels(adaptor/1e3)
+xlim([min(adaptor)-50, max(adaptor)+50])
+
+flnm = 'sim_beta.pdf';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
 
