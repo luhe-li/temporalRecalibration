@@ -291,7 +291,6 @@ else
             else; pdf_delta = ksdensity(i_tau_shift); end
             pdf_delta = pdf_delta./sum(pdf_delta);
 
-
             %% posttest TOJ
             if out.R2(jj) > model.thres_R2
 

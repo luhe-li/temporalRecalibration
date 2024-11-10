@@ -28,6 +28,15 @@ alpha = 0.0052;
 sigma_C1 = 51.9;
 sigma_C2 = 261.39;
 
+% tau_a = 80;
+% tau_v = 80;
+% criterion = 77.23;
+% lambda = 0.018;
+% p_common = 0.7;
+% alpha = 0.0052;
+% sigma_C1 = 51.9;
+% sigma_C2 = 261.39;
+
 %% set up model
 
 % set fixed & set-up parameters
@@ -45,7 +54,6 @@ model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
 model.toj_axis_finer = 0; % simulate pmf with finer axis
 model.adaptor_axis_finer = 0; % simulate with more adpators
 
-model_str = 'cauInf_asym';
 currModel = str2func(['nll_' model_str]);
 model.mode       = 'predict';
 
@@ -98,9 +106,12 @@ titleFontSz = 10;
 adaptor = model.sim_adaptor_soa;
 
 % color for pcc, dark to light
-brown = [99, 71, 44; 204, 172, 142]./255;
-colorpicked = {brown};
-depth = 5;
+% brown = [99, 71, 44; 204, 172, 142]./255;
+% orange = [0, 124, 145; 204, 204, 204]./255;
+brown = [140, 86, 75; 204, 204, 204]./255;
+green = [85, 160, 170; 204, 204, 204]./255;
+colorpicked = {brown, green};
+depth = 6;
 for c = 1:numel(colorpicked)
     [grad{c},im{c}]= colorGradient(colorpicked{c}(1,:),colorpicked{c}(2,:),depth);
 end
@@ -118,7 +129,7 @@ plot(adaptor, recal_bias,'LineWidth',lw*2)
 % Create an array of legend labels corresponding to \tau values
 legendLabels = cell(1, numel(betas));
 for i = 1:numel(betas)
-    legendLabels{i} = sprintf('%.0f', betas(i)./1e3);
+    legendLabels{i} = sprintf('%.2f', betas(i)./1e3);
 end
 
 % Add the legend with specified labels
@@ -133,23 +144,21 @@ yl = 100;
 ylim([-yl, yl])
 yticks([-yl, 0, yl])
 yticklabels([-yl, 0, yl]./1e3)
-xlabel('Adaptor SOA (s)')
+% xlabel('Adaptor SOA (s)')
 ylabel('Recalibration effect (s)')
 xticks(adaptor)
 xticklabels(adaptor/1e3)
 xlim([min(adaptor)-50, max(adaptor)+50])
 
-flnm = 'sim_beta';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
+% saveas(gca,fullfile(out_dir,flnm),'pdf')
 
 %% plot prior width
 
-figure;
-set(gcf, 'Position', [0,0,420,150]); hold on
 
-subplot(1,2,1); hold on
+
+subplot(1,2,2); hold on
 set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
-set(gca, 'ColorOrder', grad{1});
+set(gca, 'ColorOrder', grad{2});
 plot(adaptor, recal_bias2,'LineWidth',lw*2)
 
 % Create an array of legend labels corresponding to \tau values
@@ -170,12 +179,11 @@ yl = 100;
 ylim([-yl, yl])
 yticks([-yl, 0, yl])
 yticklabels([-yl, 0, yl]./1e3)
-xlabel('Adaptor SOA (s)')
-ylabel('Recalibration effect (s)')
+% xlabel('Adaptor SOA (s)')
 xticks(adaptor)
 xticklabels(adaptor/1e3)
 xlim([min(adaptor)-50, max(adaptor)+50])
 
-flnm = 'sim_beta.pdf';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
+flnm = 'sim_beta';
+saveas(gca,flnm,'pdf')
 
