@@ -7,33 +7,33 @@ if strcmp(model.mode, 'initialize')
     out.num_para   = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
-    paraH.mu         = [-300,   300]; % ms
-    paraH.sigma      = [0.01,   300]; % ms
-    paraH.c          = [0.01,   350]; % ms
-    paraH.mu_post1   = [-300,   300]; % ms
-    paraH.mu_post2   = [-300,   300]; % ms
-    paraH.mu_post3   = [-300,   300]; % ms
-    paraH.mu_post4   = [-300,   300]; % ms
-    paraH.mu_post5   = [-300,   300]; % ms
-    paraH.mu_post6   = [-300,   300]; % ms
-    paraH.mu_post7   = [-300,   300]; % ms
-    paraH.mu_post8   = [-300,   300]; % ms
-    paraH.mu_post9   = [-300,   300]; % ms
+    paraH.mu         = [-100,   100]; % ms
+    paraH.sigma      = [   1,   200]; % ms
+    paraH.c          = [   1,   300]; % ms
+    paraH.mu_post1   = [-200,   200]; % ms
+    paraH.mu_post2   = [-200,   200]; % ms
+    paraH.mu_post3   = [-200,   200]; % ms
+    paraH.mu_post4   = [-200,   200]; % ms
+    paraH.mu_post5   = [-200,   200]; % ms
+    paraH.mu_post6   = [-200,   200]; % ms
+    paraH.mu_post7   = [-200,   200]; % ms
+    paraH.mu_post8   = [-200,   200]; % ms
+    paraH.mu_post9   = [-200,   200]; % ms
     paraH.lambda     = [1e-4,  0.06]; % percentage
 
     % soft bounds, the range for PLB, PUB
-    paraS.mu         = [-100,   100]; % ms
-    paraS.sigma      = [  10,   100]; % ms
-    paraS.c          = [  10,   100]; % ms
-    paraS.mu_post1   = [-100,   100]; % ms
-    paraS.mu_post2   = [-100,   100]; % ms
-    paraS.mu_post3   = [-100,   100]; % ms
-    paraS.mu_post4   = [-100,   100]; % ms
-    paraS.mu_post5   = [-100,   100]; % ms
-    paraS.mu_post6   = [-100,   100]; % ms
-    paraS.mu_post7   = [-100,   100]; % ms
-    paraS.mu_post8   = [-100,   100]; % ms
-    paraS.mu_post9   = [-100,   100]; % ms
+    paraS.mu         = [ -40,    40]; % ms
+    paraS.sigma      = [  10,    40]; % ms
+    paraS.c          = [  10,    80]; % ms
+    paraS.mu_post1   = [-50,   50]; % ms
+    paraS.mu_post2   = [-50,   50]; % ms
+    paraS.mu_post3   = [-50,   50]; % ms
+    paraS.mu_post4   = [-50,   50]; % ms
+    paraS.mu_post5   = [-50,   50]; % ms
+    paraS.mu_post6   = [-50,   50]; % ms
+    paraS.mu_post7   = [-50,   50]; % ms
+    paraS.mu_post8   = [-50,   50]; % ms
+    paraS.mu_post9   = [-50,   50]; % ms
     paraS.lambda     = [0.01,  0.03]; % percentage
 
     % reorganize parameter bounds to feed to bads
@@ -48,7 +48,7 @@ if strcmp(model.mode, 'initialize')
 
     % get grid initializations
     numSections = model.num_runs * 2;
-    out.init = getInit(out.lb, out.ub, numSections, model.num_runs);
+    out.init = getInit(out.plb, out.pub, numSections, model.num_runs);
 
 else
 
@@ -81,7 +81,7 @@ else
         [~, order]               = sort(adaptor_soas);
 
         [pre_afirst, pre_simul, pre_vfirst] = pmf_gauss(model.test_soa,...
-            mu, sigma, mu - c, mu + c, lambda);
+            mu, sigma, mu-c, mu+c, lambda);
 
         nLL_ses = NaN(1, model.num_ses);
         for i = 1:model.num_ses
@@ -99,7 +99,7 @@ else
                 + data(adaptor).post_nT_V1st*log(post_vfirst)'...
                 + data(adaptor).post_nT_simul*log(post_simul)';
 
-            nLL_ses(adaptor)         = - pre_LL - post_LL;
+            nLL_ses(adaptor)         = pre_LL + post_LL;
 
         end
         out                  = nansum(nLL_ses);

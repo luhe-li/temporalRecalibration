@@ -1,8 +1,8 @@
 % fig 5. Simulation of the causal inference model
-% A. effect of increasing p_common on recalibration magnitude
-% B. effect of increasing sensory noise on recalibration magnitude at large SOA
-% C. effect of increasing sensory noise of one modality, \tau_a or \tau_v,
-% on recalibration asymmetry
+% A. Effect of increasing p_common on recalibration magnitude
+% B. Effect of increasing sensory noise on recalibration magnitude at large SOA
+% C. Effect of increasing sensory noise of one modality, \tau_a or \tau_v,
+%    on recalibration asymmetry
 
 clear; clc; close all;
 recompute = 0;
@@ -11,11 +11,10 @@ model_str = 'cauInf_asym';
 %% manage paths
 
 restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
+[projectDir, ~]= fileparts(pwd);
 addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC', model_str)));
-out_dir = fullfile(currentDir, mfilename);
+addpath(genpath(fullfile(projectDir, 'recalibration_models', model_str)));
+out_dir = fullfile(pwd, mfilename);
 addpath(genpath(out_dir))
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
@@ -52,7 +51,7 @@ model.adaptor_axis_finer = 0; % simulate with more adpators
 currModel = str2func(['nll_' model_str]);
 model.mode = 'predict';
 
-%% simulation A, pcc
+%% simulation A, varying probability of a common cause
 
 fileName = 'sim_pcc.mat';
 if ~exist(fullfile(out_dir, fileName), 'file') || recompute
@@ -74,7 +73,7 @@ else
     load(fullfile(out_dir, fileName));
 end
 
-%% simulation B, uncertainty of both modalities
+%% simulation B, varying uncertainty of both modalities
 
 fileName = 'sim_taus.mat';
 if ~exist(fullfile(out_dir, fileName), 'file') || recompute
@@ -96,7 +95,7 @@ else
     load(fullfile(out_dir, fileName));
 end
 
-%% simulation C, uncertainty of one modality
+%% simulation C, varying uncertainty of one modality
 
 fileName = 'sim_one_tau.mat';
     
@@ -130,7 +129,6 @@ else
     load(fullfile(out_dir, fileName)); 
 end
 
-
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plotting section
 
@@ -140,8 +138,6 @@ titleFontSz = 10;
 adaptor = model.sim_adaptor_soa;
 
 % color for pcc, dark to light
-% purple = [106, 61, 154; 223,209,230]./255;
-% green = [51, 160, 43; 178, 223, 138]./255;
 purple = [106, 61, 154; 230, 230, 230]./255;
 green = [51, 160, 43; 230, 230, 230]./255;
 colorpicked = {purple, green};
@@ -151,8 +147,6 @@ for c = 1:numel(colorpicked)
 end
 
 % color for taus, dark to light
-% blue = [30, 120, 180; 166, 206, 227]./255;
-% red = [227, 27, 27; 251, 154, 153]./255;
 blue = [30, 120, 180; 230, 230, 230]./255;
 red = [227, 27, 27; 230, 230, 230]./255;
 colorpicked = {blue, red};
@@ -211,8 +205,6 @@ end
 leg  = legend(legendLabels, 'Location', 'northwest');
 leg.Title.String = 'Auditory and visual uncertainty';
 leg.ItemTokenSize = [repmat(10,1,7)];
-
-% Add yline (excluding it from the legend)
 yline(0,'--','LineWidth',lw,'HandleVisibility','off')
 
 yl = 100;
@@ -235,19 +227,13 @@ subplot(1,2,1); hold on
 set(gca, 'LineWidth', lw, 'FontSize', fontsz,'TickDir', 'out');
 set(gca, 'ColorOrder', grad{1});
 
-% Plot your data with labels
 plot(adaptor, recal_tau_a,'LineWidth',lw*2)
-
-% Create an array of legend labels corresponding to \beta values
 legendLabels = cellstr(num2str(tau_as(:)/1e3));
-
-% Add the legend with specified labels
 lgd = legend(legendLabels, 'Location', 'northwest');
 lgd.Title.String = '\tau_{A}';
 ldg.LineWidth = lw;
 lgd.ItemTokenSize = [10,10];
 
-% Add yline (excluding it from the legend)
 yline(0,'--','LineWidth',lw,'HandleVisibility','off')
 
 yl = 100;
@@ -293,72 +279,3 @@ xlabel('Adapter SOA (s)')
 
 flnm = 'C_asymmetry';
 saveas(gca,fullfile(out_dir,flnm),'pdf')
-
-%% B1.1-1.2 zoom-in figures of likelihood
-
-figure;
-set(gcf, 'Position', [0,0,210,70]); hold on
-
-subplot(1,2,1); hold on
-set(gca, 'ColorOrder', grad{1});
-
-soa = 50;
-min_x = -200;
-max_x = 200;
-x_axis = min_x:max_x;
-n_level = numel(tau_as);
-
-idx_peak = find(x_axis == (soa + beta));
-lx_axis = x_axis(1:idx_peak);
-rx_axis = x_axis(idx_peak+1:end);
-prior = normpdf(x_axis, 0, 30);
-
-for i = 1:n_level
-
-    i_tau_a = tau_as(i);
-
-    lf = (1/(i_tau_a + tau_v)).* exp(1/i_tau_a * (lx_axis - ((soa + beta))));
-    rf = (1/(i_tau_a + tau_v)).* exp(-1/tau_v * (rx_axis - ((soa + beta))));
-    likelihood = [lf, rf];
-    likelihood = likelihood./sum(likelihood);
-
-    plot(x_axis, likelihood,'-','LineWidth',lw);
-
-end
-plot(x_axis, prior,'-','Color',repmat(0.7, 1,3),'LineWidth',lw);
-xticks(0)
-yticks([])
-
-subplot(1,2,2); hold on
-set(gca, 'ColorOrder', grad{2});
-
-soa = -50;
-min_x = -200;
-max_x = 200;
-x_axis = min_x:max_x;
-n_level = numel(tau_vs);
-
-idx_peak = find(x_axis == (soa + beta));
-lx_axis = x_axis(1:idx_peak);
-rx_axis = x_axis(idx_peak+1:end);
-
-for i = 1:n_level
-
-    i_tau_v = tau_vs(i);
-
-    lf = (1/(tau_a + i_tau_v)).* exp(1/tau_a * (lx_axis - ((soa + beta))));
-    rf = (1/(tau_a + i_tau_v)).* exp(-1/i_tau_v * (rx_axis - ((soa + beta))));
-    likelihood = [lf, rf];
-    likelihood = likelihood./sum(likelihood);
-
-    plot(x_axis, likelihood,'-','LineWidth',lw);
-
-end
-
-plot(x_axis, prior,'-','Color',repmat(0.7, 1,3),'LineWidth',lw);
-xticks(0)
-yticks([])
-
-flnm = 'C_inset';
-saveas(gca,fullfile(out_dir,flnm),'pdf')
-

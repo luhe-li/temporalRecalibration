@@ -9,7 +9,7 @@ clear; close all;
 
 restoredefaultpath;
 [projectDir, ~]= fileparts(pwd);
-dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
+dataDir = fullfile(projectDir,'fit_results');
 addpath(genpath(fullfile(projectDir, 'utils')));
 out_dir = fullfile(pwd, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
@@ -40,7 +40,7 @@ model.sim_adaptor_soa  = adapter*1e3;
 model.toj_axis_finer = 0; % simulate pmf with finer axis
 model.adaptor_axis_finer = 0; % simulate with more adpators
 
-% checkpoint model
+% Asynchrony-correction, modality-specific-precision model
 tau = 0;
 sigma_a = 60;
 sigma_v = 80;
@@ -49,16 +49,16 @@ lambda = 0.018;
 alpha = 0.000002;
 
 model_str = 'trigger_asym';
-addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC',model_str)));
+addpath(genpath(fullfile(projectDir, 'recalibration_models',model_str)));
 currModel = str2func(['nll_' model_str]);
 model.mode       = 'predict';
 pred =  currModel([tau, sigma_a, sigma_v, criterion, lambda, alpha], model, []);
 trigger_recal = mean(pred.pss_shift, 2);
 
-% heuristic model
+% Asynchrony-contingent, modality-specific-precision model
 p = measurementGiven0(adapter*1e3, tau, sigma_a, sigma_v);
 
-% causal inference model
+% Causal-inference, modality-specific-precision model
 tau = 0;
 sigma_a = 60;
 sigma_v = 80;
@@ -70,9 +70,9 @@ sigma_C1 = 51.9;
 sigma_C2 = 261.39;
 
 model_str = 'cauInf_asym';
-addpath(genpath(fullfile(projectDir, 'recalibration_models_VBMC',model_str)))
+addpath(genpath(fullfile(projectDir, 'recalibration_models',model_str)))
 currModel = str2func(['nll_' model_str]);
-model.mode       = 'predict';
+model.mode = 'predict';
 pred =  currModel([tau, sigma_a, sigma_v, criterion, lambda, p_common, alpha, sigma_C1, sigma_C2], model, []);
 CI_recal = mean(pred.pss_shift, 2);
 
@@ -152,7 +152,7 @@ plot([idx_tau_a,idx_tau_a], [0, g_a(idx_tau_a)],'Color',cmp(3,:),'LineWidth',lw)
 xline(0,'k','LineWidth',lw)
 xlim([x_axis(1)-50, x_axis(end)])
 xlabel('Arrival latency (s)')
-xticks([0:100:200])
+xticks(0:100:200)
 xticklabels({'0','0.1','0.2'})
 
 ax = gca;
@@ -211,7 +211,7 @@ plot([idx_tau_a,idx_tau_a], [0, g_a(idx_tau_a)],'Color',cmp(3,:),'LineWidth',lw)
 xline(0,'k','LineWidth',lw)
 xlim([x_axis(1)-50, x_axis(end)])
 xlabel('Arrival latency (s)')
-xticks([0:100:200])
+xticks(0:100:200)
 xticklabels({'0','0.1','0.2'})
 
 ax = gca;

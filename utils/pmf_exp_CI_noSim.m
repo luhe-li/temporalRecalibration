@@ -3,11 +3,9 @@ function [p_afirst_lapse, p_simul_lapse, p_vfirst_lapse] = pmf_exp_CI_noSim(test
 
 % Assuming that the mapping function of causal-inference from measurement
 % to estiamte is monotonic, i.e., larger the measurement, larger the
-% estimate. This allows us to find the criteria in measurement space
+% estimate. This allows us to find the criteria in the measurement space
 % (m_lc, m_uc), which can be used to determine response probabilities using
 % closed-form CDF without simulation.
-
-checkPlot       = 0;
 
 % cau_inf_map works best on a limit of shift range. We chose a reasonable
 % range where measurements could happen, which is twice the stimulus SOA
@@ -64,28 +62,6 @@ elseif est_min > -criterion && est_max < criterion
     p_afirst_lapse  = zeros(size(test_soa))+realmin;
     p_vfirst_lapse  = zeros(size(test_soa))+realmin;
     p_simul_lapse   = 1 - p_afirst_lapse - p_vfirst_lapse;
-
-end
-
-if checkPlot
-    % check estimate function and its roots
-    figure; hold on
-    fplot(@(soa_m) cau_inf_map(soa_m, p_common, fixP));
-    xlim([real_m_min, real_m_max])
-    yline(criterion); yline(-criterion)
-    plot(m_lc,  cau_inf_map(m_lc, tau, p_common, fixP),'ro','MarkerSize',3)
-    plot(m_uc,  cau_inf_map(m_uc, tau, p_common, fixP),'ro','MarkerSize',3)
-    xlabel('measurement')
-    ylabel('estimate')
-
-    % check 3 responses
-    figure; hold on
-    set(gca, 'LineWidth', 2, 'FontSize', 15,'TickDir', 'out')
-    set(gcf, 'Position',[10 10 500 400])
-    plot(test_soa, [p_afirst_lapse; p_simul_lapse; p_vfirst_lapse],'LineWidth',1.5)
-    xlabel('Test SOA')
-    ylabel('Probability')
-    title('Model with causal inference')
 
 end
 

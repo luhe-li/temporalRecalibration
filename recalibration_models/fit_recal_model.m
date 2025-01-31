@@ -1,17 +1,16 @@
-function fit_recal_model(i_model, useCluster)
+function fit_recal_model(i_model, useCluster, sub)
 
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym'}; % Column 3: folder names
+specifications = {'Asynchrony-contingent, modality-specific-precision', 'Asynchrony-contingent, modality-independent-precision', 'Causal-inference, modality-specific-precision',  'Causal-inference, modality-independent-precision','Asynchrony-correction, modality-specific-precision', 'Asynchrony-correction, modality-independent-precision'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
 
 %% set environment
 
-% exclude outlier
 sub_slc = [1:4, 6:10];
 
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -28,29 +27,28 @@ switch useCluster
         if isnan(hpc_job_number), error('Problem with array assigment'); end
         fprintf('Job number: %i \n', hpc_job_number);
         sub  = sub_slc(hpc_job_number);
+
     case false
         numCores = feature('numcores');
-        sub = 1;
-%         sub = str2num(input('Enter Subject ID to analyze: ', 's'));
 end
 
 % make sure Matlab does not exceed this
-fprintf('Number of cores: %i  \n', numCores);
+fprintf('[%s] Number of cores: %i  \n', mfilename, numCores);
 maxNumCompThreads(numCores);
-if isempty(gcp('nocreate'))
-    parpool(numCores-1);
-end
+if isempty(gcp('nocreate')); parpool(numCores-1); end
 
 %% manage paths
 
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[git_dir, ~] = fileparts(project_dir);
 addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'bads')));
 addpath(genpath(fullfile(projectDir, 'utils')));
+addpath(genpath(fullfile(git_dir, 'vbmc')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
-outDir = fullfile(currentDir, currModelStr);
+outDir = fullfile(project_dir, 'fit_results','recalibration_models', currModelStr);
+if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 %% organize data
 
@@ -65,77 +63,87 @@ end
 model.thres_R2 = 0.95;
 model.expo_num_sim = 1e3; % number of simulation for exposure phase
 model.expo_num_trial = 250; % number of *real* trials in exposure phase
-model.num_runs = numCores-1; % fit the model 100 times, each with a different initialization
+model.num_runs = numCores-1; % fit the model multiple times, each with a different initialization
 model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
 model.bound_full = 10*1e3; % in second, the bound for prior axis
 model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
 model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
-model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
-model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; 
+model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
+model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; % in ms
 model.toj_axis_finer = 1; % simulate pmf with finer axis
-model.adaptor_axis_finer = 0; 
+model.adaptor_axis_finer = 0;
 
 % save all model information
 model.model_info = model_info; 
 model.i_model = i_model; % current model index
 model.currModelStr = currModelStr; % current model folder
 
-% set BADS options
-OPTIONS.MaxIterations = 1000; % for debug
-OPTIONS.TolMesh = 1e-4;
+% set OPTIONS
+options = vbmc('defaults');
+if ismember(i_model, [3,4]); options.MaxFunEvals = 500; end % set max iter for cau-inf models in case of timeout
+options.TolStableCount = 15;
+options.SpecifyTargetNoise = true;
 
 %% model fitting
 
 currModel = str2func(['nll_' currModelStr]);
 
+% initialize starting points
 model.mode = 'initialize';
 Val = currModel([], model, data);
 model.initVal = Val;
 
-model.mode                  = 'optimize';
-NLL                         = NaN(1, model.num_runs);
-estP                        = NaN(model.num_runs, Val.num_para);
+% set priors
+lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 
-% model.mode       = 'predict';
-% p = [53.857421875 86.15234375 39.23828125 54.66796875 0.00470703125 0.923046875 0.00622314453125 184.96512220759 376.953125];
-% bestP = [-60, 80, 40, 50, 0.06, 0.02];
-% test = currModel(p, model, data);
+% set likelihood
+model.mode = 'optimize';
+llfun = @(x) currModel(x, model, data);
+fun = @(x) lpostfun(x,llfun,lpriorfun); 
 
-parfor i  = 1:model.num_runs
-    fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
-    try
-        tempModel            = model;
-        tempVal              = Val;
-        tempFunc             = currModel;
+[elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 
-        [estP(i,:),NLL(i)] = bads(@(p) tempFunc(p, tempModel, data),...
-            tempVal.init(i,:), tempVal.lb,...
-            tempVal.ub, tempVal.plb, tempVal.pub, [], OPTIONS);
-    catch
-        sprintf('Skipped invalid NLL\n')
-        continue;
-    end
+for i  = 1:model.num_runs
+    
+        fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
+        tempVal = Val;
+
+        % vp: variational posterior
+        % elbo: Variational Evidence Lower Bound
+        [temp_vp{i}, elbo(i),elbo_sd(i),exitflag(i),temp_output{i}] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
+            tempVal.ub, tempVal.plb, tempVal.pub, options);
+
 end
 
-model.estP            = estP;
-model.NLL             = NLL;
+% save all outputs
+model.vp = temp_vp;
+model.elbo = elbo;
+model.elbo_sd = elbo_sd;
+model.exitflag = exitflag;
+model.output = temp_output;
 
-% find the parameter with the least NLL 
-[model.minNLL, best_idx] = min(NLL);
-bestP = estP(best_idx, :);
-model.bestP = bestP;
+% save in case diagnosis fails
+save(fullfile(outDir, sprintf('sub-%02d_%s', sub)),'data','model')
+
+% evaluate fits
+[diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
+diag.bestELCBO = diag.bestELBO.elbo - 3*diag.bestELBO.elbo_sd;
+
+% find best-fitting parameters
+diag.Xs = vbmc_rnd(diag.bestELBO.vp,1e5);
+diag.post_mean = mean(diag.Xs,1);
 
 %% model prediction by best-fitting parameters
 
 model.mode       = 'predict';
-pred =  currModel(bestP, model, data);
+pred =  currModel(diag.post_mean, model, data);
 
 %% save the data for each participant
-save(fullfile(outDir, sprintf('sub-%i_%s', sub, datestr(datetime('now')))),'data','model','pred')
+save(fullfile(outDir, sprintf('sub-%02d_%s', sub)),'data','model','diag','pred')
 
 % delete current pool
 if ~isempty(gcp('nocreate'))
     delete(gcp('nocreate'));
 end
 
-% end
+end

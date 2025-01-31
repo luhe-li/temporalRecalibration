@@ -42,10 +42,10 @@ x_axis = min_x:max_x;
 soas = min_x:50:max_x;
 
 % set fixed param for causal inference
-model.expo_num_trial        = 250; % number of *real* trials in exposure phase
+model.expo_num_trial = 250; % number of *real* trials in exposure phase
 model.bound_full = 10*1e3; % in ms, the bound for prior axis
 model.bound_int = 2*1e3; % in ms, where measurements are likely to reside
-model.sim_adaptor_soa       = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
+model.sim_adaptor_soa = [-0.7, -0.3:0.1:0.3, 0.7]*1e3;
 
 % prior
 fixP.x_axis     = -model.bound_full:1:model.bound_full;
@@ -82,14 +82,13 @@ fixP.likelihoods = fixP.df_likelihood(indices);
 fixP.protopost_C1s = fixP.likelihoods .* repmat(fixP.prior_C1, numShifts, 1);
 fixP.protopost_C2s = fixP.likelihoods .* repmat(fixP.prior_C2, numShifts, 1);
 
-
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 lw = 0.5;
 fontSz = 7;
 titleFontSz = 10;
 mksz = 3;
-cmp =  [216, 49, 91; 175, 213, 128; 88,193,238]./255;
+cmp = [216, 49, 91; 175, 213, 128; 88,193,238]./255;
 
 %% subplot1: measurement pdf
 
@@ -177,8 +176,6 @@ width = 0.7;     % Width of the subplot
 height = 0.7;    % Height of the subplot
 subplot('Position', [left, bottom, width, height]);
 set(gca, 'LineWidth', lw, 'FontSize', fontSz); hold on
-
-% set fix para
 model.test_soa              = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
 
 [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI(model.test_soa, fixP,...
@@ -199,7 +196,6 @@ yticks([0 1])
 ylabel('Probability')
 xlim([min(model.test_soa),max(model.test_soa)])
 xlabel('Test SOA (sec)')
-% tick options
 xticks([min(model.test_soa),0,max(model.test_soa)])
 xticklabels({'-0.5','0','0.5'})
 set(gca,'TickDir','out');
