@@ -10,31 +10,31 @@ if strcmp(model.mode, 'initialize')
     paraH.sigma_a    = [  10,   200]; % ms
     paraH.sigma_v    = [  10,   200]; % ms
     paraH.c1         = [   1,   350]; % ms
-    paraH.dc_post1   = [0.01,   300]; % ms
-    paraH.dc_post2   = [0.01,   300]; % ms
-    paraH.dc_post3   = [0.01,   300]; % ms
-    paraH.dc_post4   = [0.01,   300]; % ms
-    paraH.dc_post5   = [0.01,   300]; % ms
-    paraH.dc_post6   = [0.01,   300]; % ms
-    paraH.dc_post7   = [0.01,   300]; % ms
-    paraH.dc_post8   = [0.01,   300]; % ms
-    paraH.dc_post9   = [0.01,   300]; % ms
+    paraH.dc_post1   = [   1,   300]; % ms
+    paraH.dc_post2   = [   1,   300]; % ms
+    paraH.dc_post3   = [   1,   300]; % ms
+    paraH.dc_post4   = [   1,   300]; % ms
+    paraH.dc_post5   = [   1,   300]; % ms
+    paraH.dc_post6   = [   1,   300]; % ms
+    paraH.dc_post7   = [   1,   300]; % ms
+    paraH.dc_post8   = [   1,   300]; % ms
+    paraH.dc_post9   = [   1,   300]; % ms
     paraH.lambda     = [1e-4,  0.06]; % percentage
 
     % soft bounds, the range for PLB, PUB
-    paraS.mu         = [-100,   100]; % ms
-    paraS.sigma_a    = [  20,   120]; % ms
-    paraS.sigma_v    = [  30,   150]; % ms
-    paraS.c1         = [   1,   100]; % ms
-    paraS.dc_post1   = [   1,   100]; % ms
-    paraS.dc_post2   = [   1,   100]; % ms
-    paraS.dc_post3   = [   1,   100]; % ms
-    paraS.dc_post4   = [   1,   100]; % ms
-    paraS.dc_post5   = [   1,   100]; % ms
-    paraS.dc_post6   = [   1,   100]; % ms
-    paraS.dc_post7   = [   1,   100]; % ms
-    paraS.dc_post8   = [   1,   100]; % ms
-    paraS.dc_post9   = [   1,   100]; % ms
+    paraS.mu         = [ -40,    40]; % ms
+    paraS.sigma_a    = [  20,    50]; % ms
+    paraS.sigma_v    = [  20,    80]; % ms
+    paraS.c1         = [  30,    80]; % ms
+    paraS.dc_post1   = [  30,   100]; % ms
+    paraS.dc_post2   = [  30,   100]; % ms
+    paraS.dc_post3   = [  30,   100]; % ms
+    paraS.dc_post4   = [  30,   100]; % ms
+    paraS.dc_post5   = [  30,   100]; % ms
+    paraS.dc_post6   = [  30,   100]; % ms
+    paraS.dc_post7   = [  30,   100]; % ms
+    paraS.dc_post8   = [  30,   100]; % ms
+    paraS.dc_post9   = [  30,   100]; % ms
     paraS.lambda     = [0.01,  0.03]; % percentage
 
     % reorganize parameter bounds to feed to bads
@@ -49,7 +49,7 @@ if strcmp(model.mode, 'initialize')
 
     % get grid initializations
     numSections = model.num_runs * 2;
-    out.init = getInit(out.lb, out.ub, numSections, model.num_runs);
+    out.init = getInit(out.plb, out.pub, numSections, model.num_runs);
 
 else
 
@@ -117,7 +117,7 @@ else
                 + data(adaptor).post_nT_V1st*log(post_vfirst)'...
                 + data(adaptor).post_nT_simul*log(post_simul)';
 
-            nLL_ses(adaptor)         = - pre_LL - post_LL;
+            nLL_ses(adaptor)         = pre_LL + post_LL;
 
         end
         out                  = nansum(nLL_ses);
