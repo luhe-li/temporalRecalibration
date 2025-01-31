@@ -1,4 +1,4 @@
-function fit_recal_model_VBMC(i_model, useCluster, sub)
+function fit_recal_model(i_model, useCluster, sub)
 
 %% select models
 
@@ -36,8 +36,8 @@ switch useCluster
         end
 
     case false
-        % for local debug
-        numCores = 21;%feature('numcores');
+        
+        numCores = feature('numcores');
 end
 
 
@@ -46,9 +46,10 @@ end
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
+[git_dir, ~] = fileparts(project_dir);
 addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
 addpath(genpath(fullfile(projectDir, 'utils')));
+addpath(genpath(fullfile(git_dir, 'vbmc')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
 outDir = fullfile(currentDir, currModelStr);
 

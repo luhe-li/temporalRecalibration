@@ -1,7 +1,7 @@
 % This script fits all atheoretical models to the TOJ data, saves the model
 % evidence, parameter estimates, and model predictions.
 
-clear all; close all; clc;
+clear; close all; clc;
 
 %% Select models
 
@@ -26,14 +26,16 @@ addpath(genpath(fullfile(git_dir, 'vbmc')));
 %% Model setup
 
 % Set fixed & set-up parameters
-model.num_ses = 9;
-model.num_runs = num_cores - 1; % Fit the model multiple times, each with a different initialization
-model.bound = 10; % Bound for prior axis in seconds
-model.bound_int = 1.5; % Likely bound for estimates in seconds
-model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5] * 1e3; % Test SOA in ms
-model.sim_adaptor_soa = [-0.7, -0.3:0.1:0.3, 0.7] * 1e3; % Simulated adaptor SOA in ms
-model.test_axis_finer = 1; % Simulate with finer axis
-model.model_info = model_info; % Save all model information
+model.num_ses    = 9;
+model.num_runs   = numCores-1; % fit the model multiple times, each with a different initialization
+model.bound      = 10; % in second, the bound for prior axis
+model.bound_int  = 1.5; % in second, where estimates are likely to reside
+model.test_soa   = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
+model.sim_adaptor_soa = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; % in ms
+model.test_axis_finer = 1; % simulate with finer axis
+model.model_info = model_info; % save all model information
+model.i_model = i_model; % current model index
+model.currModelStr = currModelStr; % current model folder
 
 % Set fitting options
 options = vbmc('defaults');
@@ -57,76 +59,77 @@ for i_model = 1:numel(folders)
         for ses = 1:model.num_ses
             data(ses) = organize_data(sub, ses);
         end
+        %% set model
 
-        %% Set model
+        currModel = str2func(['nll_' currModelStr]);
 
-        curr_model = str2func(['nll_' curr_model_str]);
-
-        % Initialize starting points
+        % initialize starting points
         model.mode = 'initialize';
-        val = curr_model([], model, data);
-        model.init_val = val;
+        Val = currModel([], model, data);
+        model.initVal = Val;
 
-        % Set priors
-        lprior_fun = @(x) msplinetrapezlogpdf(x, val.lb, val.plb, val.pub, val.ub);
+        % set priors
+        lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 
-        % Set likelihood
+        % set likelihood
         model.mode = 'optimize';
-        ll_fun = @(x) curr_model(x, model, data);
+        llfun = @(x) currModel(x, model, data);
 
-        fun = @(x) ll_fun(x) + lprior_fun(x);
+        fun = @(x) llfun(x) + lpriorfun(x);
 
-        [elbo, elbo_sd, exitflag] = deal(NaN(1, model.num_runs));
+        [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
 
-        parfor i = 1:model.num_runs
+        parfor i  = 1:model.num_runs
 
-            fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, curr_model_str, sub, i);
-            temp_val = val;
+            fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
+            tempVal = Val;
 
             % vp: variational posterior
             % elbo: Variational Evidence Lower Bound
-            [temp_vp{i}, elbo(i), elbo_sd(i), exitflag(i), temp_output{i}] = vbmc(fun, temp_val.init(i,:), temp_val.lb, temp_val.ub, temp_val.plb, temp_val.pub, options);
+            [temp_vp{i}, elbo(i),elbo_sd(i),exitflag(i),temp_output{i}] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
+                tempVal.ub, tempVal.plb, tempVal.pub, options);
 
         end
 
-        % Save all outputs
+        % save all outputs
         model.vp = temp_vp;
         model.elbo = elbo;
         model.elbo_sd = elbo_sd;
         model.exitflag = exitflag;
         model.output = temp_output;
 
-        % Save in case diagnosis fails
-        save(fullfile(out_dir, sprintf('sub-%i_%s', sub, curr_model_str)), 'data', 'model')
+        % save incase diagnosis fails
+        save(fullfile(outDir, sprintf('sub-%i_%s', sub)),'data','model')
 
-        %% Evaluate fits
+        %% evaluate fits
 
         try
-            [diag.exitflag, diag.best_elbo, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
-            diag.best_elcbo = diag.best_elbo.elbo - 3 * diag.best_elbo.elbo_sd;
+            [diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
+            diag.bestELCBO = diag.bestELBO.elbo - 3*diag.bestELBO.elbo_sd;
 
-            % Find best-fitting parameters
-            diag.Xs = vbmc_rnd(diag.best_elbo.vp, 1e5);
-            diag.post_mean = mean(diag.Xs, 1);
+            % find best-fitting parameters
+            diag.Xs = vbmc_rnd(diag.bestELBO.vp,1e5);
+            diag.post_mean = mean(diag.Xs,1);
 
-            % Model prediction by best-fitting parameters
-            model.mode = 'predict';
-            pred = curr_model(diag.post_mean, model, data);
+            % model prediction by best-fitting parameters
+            model.mode       = 'predict';
+            pred =  currModel(diag.post_mean, model, data);
 
         catch
-            fprintf('[%s] No solution has converged. Skip model prediction. \n', mfilename);
+            sprintf('No solution has converged. Skip model prediction. \n')
             continue;
         end
 
-        %% Save the data for each participant
+        %% save the data for each participant
 
-        save(fullfile(out_dir, sprintf('sub-%i_%s', sub, curr_model_str)), 'data', 'model', 'diag', 'pred')
+        save(fullfile(outDir, sprintf('sub-%i_%s', sub)),'data','model','diag','pred')
 
     end
 
     rmpath(genpath(fullfile(current_dir, curr_model_str)));
 
 end
+
 % Delete current pool
 if ~isempty(gcp('nocreate'))
     delete(gcp('nocreate'));
