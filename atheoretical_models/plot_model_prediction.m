@@ -62,7 +62,7 @@ end
 for ss = 1:numel(sub_slc)
     sub = sub_slc(ss);
     for ses = 1:9
-        temp_d(ses) = organize_data(sub, ses);
+        temp_d(ses) = organizeData(sub, ses);
     end
     [sorted_adaptor_soa, order] = sort([temp_d.adaptor_soa]);
     D(ss).data = temp_d(order);

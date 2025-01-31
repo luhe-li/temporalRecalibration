@@ -57,7 +57,7 @@ for i_model = 1:numel(folders)
         %% Organize data
 
         for ses = 1:model.num_ses
-            data(ses) = organize_data(sub, ses);
+            data(ses) = organizeData(sub, ses);
         end
         %% set model
 

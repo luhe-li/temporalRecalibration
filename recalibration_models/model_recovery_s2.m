@@ -1,37 +1,29 @@
-% part 2 of model recovry: organize 100 simulated datesets to 1 file
-% only used when s1 is done on hpc
+% Step 2 of model recovry: organize 100 simulated datesets to 1 file
+% Run locally
 
 clear; close all; clc;
 
 %% manage paths
 
-% set cluster option
-if ~exist('useCluster', 'var') || isempty(useCluster)
-    useCluster                  = false;
-end
-
-% restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-[tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
-addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
-addpath(genpath(fullfile(projectDir, 'utils')));
-outDir =  fullfile(projectDir, 'recalibration_models_VBMC', 'model_recovery_s2');
+restoredefaultpath;
+[project_dir, ~]= fileparts(pwd);
+[git_dir, ~] = fileparts(project_dir);
+addpath(genpath(fullfile(project_dir, 'data')));
+addpath(genpath(fullfile(git_dir, 'vbmc')));
+addpath(genpath(fullfile(project_dir, 'utils')));
+outDir = fullfile(project_dir, 'fit_results', 'recalibration_models',mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
-if useCluster == false; projectDir = dataDir; end
 
 %% load
 
-results_folder = fullfile(projectDir, 'recalibration_models_VBMC', 'model_recovery_s1');
-files = dir(fullfile(results_folder, 'sim_data_sample-*'));
+result_folder = fullfile(project_dir, 'fit_results','recalibration_models', 'model_recovery_s1');
+files = dir(fullfile(result_folder, 'sim_data_sample-*'));
 pattern = 'sim_data_sample-(\d+)';
 
 for pp = 1:size(files)
 
     flnm =  files(pp).name;
-    r = load(fullfile(results_folder, flnm));
+    r = load(fullfile(result_folder, flnm));
     tokens = regexp(flnm, pattern, 'tokens');
     i_sample = str2double(tokens{1}{1});
 

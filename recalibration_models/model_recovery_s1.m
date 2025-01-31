@@ -1,59 +1,32 @@
-% part 1 of model recovry: simulate 100 datesets from 6 models
+% Step 1 of model recovry: simulate 100 datesets from 6 models
+% - Run locally
+% - Model recovery s1-s3 can be easily combined as a single file to run on
+%   the cluster
 
 clear; close all; clc;
 
 %% select models
 
 rng('shuffle'); rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric', 'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
+specifications = {'Asynchrony-contingent, modality-specific-precision', 'Asynchrony-contingent, modality-independent-precision', 'Causal-inference, modality-specific-precision',  'Causal-inference, modality-independent-precision','Asynchrony-correction, modality-specific-precision', 'Asynchrony-correction, modality-independent-precision'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
-%% set environment
-useCluster = false;
-
-% set cores
-if ~exist('useCluster', 'var') || isempty(useCluster)
-    useCluster                  = false;
-end
-
-% job/sample = 100, core/sim_m = 6, fit once
-switch useCluster
-    case true
-        if ~exist('numCores', 'var') || isempty(numCores)
-            numCores  = maxNumCompThreads;
-        end
-        hpc_job_number = str2double(getenv('SLURM_ARRAY_TASK_ID'));
-        if isnan(hpc_job_number), error('Problem with array assigment'); end
-        fprintf('Job number: %i \n', hpc_job_number);
-        i_sample = hpc_job_number;
-
-        % make sure Matlab does not exceed this
-        fprintf('Number of cores: %i  \n', numCores);
-        maxNumCompThreads(numCores);
-        if isempty(gcp('nocreate'))
-            parpool(numCores);
-        end
-
-    case false
-        numCores = 6;
-        n_sample = 100;
-end
+num_cores = feature('numcores');
+if isempty(gcp('nocreate')); parpool(num_cores-1); end
+n_sample = 100; % number of datasets to simulate
 
 %% manage paths
 
-% restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-[tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
-addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
-addpath(genpath(fullfile(projectDir, 'utils')));
-outDir = fullfile(currentDir, mfilename);
+restoredefaultpath;
+[project_dir, ~]= fileparts(pwd);
+[git_dir, ~] = fileparts(project_dir);
+addpath(genpath(fullfile(project_dir, 'data')));
+addpath(genpath(fullfile(git_dir, 'vbmc')));
+addpath(genpath(fullfile(project_dir, 'utils')));
+outDir = fullfile(project_dir, 'fit_results','recalibration_models', mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
-if useCluster == false; projectDir = dataDir; end
 
 %% organize data
 sub_slc = [1:4,6:10];
@@ -91,7 +64,7 @@ for sim_m = 1:numel(folders)
 
     % load best estimates
     clearvars bestP
-    result_folder = fullfile(projectDir, 'recalibration_models_VBMC', sim_str);
+    result_folder = fullfile(project_dir, 'fit_results','recalibration_models', folders{sim_m});
     R = load_subject_data(result_folder, sub_slc, 'sub-*');
     for ss = 1:numel(sub_slc)
         bestP(ss,:) = R{ss}.diag.post_mean;
@@ -117,13 +90,12 @@ for sim_m = 1:numel(folders)
 end
 
 save(fullfile(outDir, sprintf('sim_data')),'fake_data')
-% save(fullfile(outDir, sprintf('sim_data_sample-%02d',i_sample)),'fake_data')
 
 % %% optinal: check predictions
-% 
+%
 % i_sample = 1;
 % for sim_m = 1:numel(folders)
-%     figure; 
+%     figure;
 %     sgtitle(folders{sim_m})
 %     subplot 121
 %     plot(fake_data(sim_m, i_sample).pred.adaptor_soa, mean(fake_data(sim_m, i_sample).pred.pss_shift,2))

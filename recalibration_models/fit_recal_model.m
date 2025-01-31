@@ -3,8 +3,8 @@ function fit_recal_model(i_model, useCluster, sub)
 %% select models
 
 rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Trigger, asymmetric', 'Trigger, symmetric','Causal inference, symmetric, biased prior', 'Causal inference, asymmetric, trigger','Causal inference, symmetric, update','Trigger, asymmetric, 2 criteria'}; 
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','cauInf_sym_biasedPrior','cauInf_asym_trigger','cauInf_asym_update','trigger_asym_2criteria'};
+specifications = {'Asynchrony-contingent, modality-specific-precision', 'Asynchrony-contingent, modality-independent-precision', 'Causal-inference, modality-specific-precision',  'Causal-inference, modality-independent-precision','Asynchrony-correction, modality-specific-precision', 'Asynchrony-correction, modality-independent-precision'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{i_model};
@@ -28,18 +28,14 @@ switch useCluster
         fprintf('Job number: %i \n', hpc_job_number);
         sub  = sub_slc(hpc_job_number);
 
-        % make sure Matlab does not exceed this
-        fprintf('Number of cores: %i  \n', numCores);
-        maxNumCompThreads(numCores);
-        if isempty(gcp('nocreate'))
-            parpool(numCores-1);
-        end
-
     case false
-        
         numCores = feature('numcores');
 end
 
+% make sure Matlab does not exceed this
+fprintf('[%s] Number of cores: %i  \n', mfilename, numCores);
+maxNumCompThreads(numCores);
+if isempty(gcp('nocreate')); parpool(numCores-1); end
 
 %% manage paths
 
@@ -51,7 +47,8 @@ addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(git_dir, 'vbmc')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
-outDir = fullfile(currentDir, currModelStr);
+outDir = fullfile(project_dir, 'fit_results','recalibration_models', currModelStr);
+if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 %% organize data
 
@@ -71,10 +68,10 @@ model.num_bin  = 100; % numer of bin to approximate tau_shift distribution
 model.bound_full = 10*1e3; % in second, the bound for prior axis
 model.bound_int = 1.4*1e3; % in second, where measurements are likely to reside
 model.num_sample = 1e3; % number of samples for simulating psychometric function with causal inference, only used in pmf_exp_CI
-model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3;
-model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; 
+model.test_soa = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
+model.sim_adaptor_soa  = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; % in ms
 model.toj_axis_finer = 1; % simulate pmf with finer axis
-model.adaptor_axis_finer = 0; 
+model.adaptor_axis_finer = 0;
 
 % save all model information
 model.model_info = model_info; 
@@ -83,9 +80,9 @@ model.currModelStr = currModelStr; % current model folder
 
 % set OPTIONS
 options = vbmc('defaults');
-if ismember(i_model, [3,4]); options.MaxFunEvals = 500; end % set max iter for cau-inf models
+if ismember(i_model, [3,4]); options.MaxFunEvals = 500; end % set max iter for cau-inf models in case of timeout
 options.TolStableCount = 15;
-% options.SpecifyTargetNoise = true;
+options.SpecifyTargetNoise = true;
 
 %% model fitting
 
@@ -102,13 +99,9 @@ lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
 % set likelihood
 model.mode = 'optimize';
 llfun = @(x) currModel(x, model, data);
-% fun = @(x) llfun(x) + lpriorfun(x);
 fun = @(x) lpostfun(x,llfun,lpriorfun); 
 
 [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
-
-%test
-% pp = fun(Val.init(1,:));
 
 for i  = 1:model.num_runs
     
@@ -129,7 +122,7 @@ model.elbo_sd = elbo_sd;
 model.exitflag = exitflag;
 model.output = temp_output;
 
-% save incase diagnosis fails
+% save in case diagnosis fails
 save(fullfile(outDir, sprintf('sub-%02d_%s', sub)),'data','model')
 
 % evaluate fits

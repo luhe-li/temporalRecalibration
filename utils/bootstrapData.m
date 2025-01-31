@@ -1,4 +1,4 @@
-function btstData = bootstrap_data(sub)
+function btstData = bootstrapData(sub)
 
 for ses = 1:9
 

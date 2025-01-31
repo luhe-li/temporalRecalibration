@@ -1,12 +1,13 @@
-function model_recovery_s3(fit_m)
+% Step 3: Fit each dataset by all models
+% - Run on the cluster
 
-% job = sample, core = sim_m
+function model_recovery_s3(fit_m)
 
 %% select models
 
 rng('shuffle'); rng('Shuffle');
-specifications = {'Heuristic, asymmetric', 'Heuristic, symmetric', 'Causal inference, asymmetric',  'Causal inference, symmetric','Fixed updated, asymmetric', 'Fixed updated, symmetric'};
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','fixed_asym','fixed_sym'};
+specifications = {'Asynchrony-contingent, modality-specific-precision', 'Asynchrony-contingent, modality-independent-precision', 'Causal-inference, modality-specific-precision',  'Causal-inference, modality-independent-precision','Asynchrony-correction, modality-specific-precision', 'Asynchrony-correction, modality-independent-precision'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 currModelStr = model_info.FolderName{fit_m};
@@ -20,7 +21,7 @@ if ~exist('useCluster', 'var') || isempty(useCluster)
     useCluster                  = false;
 end
 
-% job/sample = 100, core/sim_m = 6, fit once
+% job/sample = 100, core/sim_m = 6
 switch useCluster
     case true
         if ~exist('numCores', 'var') || isempty(numCores)
@@ -31,32 +32,27 @@ switch useCluster
         fprintf('Job number: %i \n', hpc_job_number);
         i_sample = hpc_job_number;
 
-        % make sure Matlab does not exceed this
-        fprintf('Number of cores: %i  \n', numCores);
-        maxNumCompThreads(numCores);
-        if isempty(gcp('nocreate'))
-            parpool(numCores);
-        end
-
     case false
+        % debug locally
         numCores = 6;
         i_sample = 1;
 end
 
+% make sure Matlab does not exceed this
+fprintf('[%s] Number of cores: %i  \n', mfilename, numCores);
+maxNumCompThreads(numCores);
+if isempty(gcp('nocreate')); parpool(numCores-1); end
+
 %% manage paths
 
-% restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-[tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
-addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
-addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(currentDir, currModelStr)));
-outDir = fullfile(currentDir, mfilename);
+restoredefaultpath;
+[project_dir, ~]= fileparts(pwd);
+[git_dir, ~] = fileparts(project_dir);
+addpath(genpath(fullfile(project_dir, 'data')));
+addpath(genpath(fullfile(git_dir, 'vbmc')));
+addpath(genpath(fullfile(project_dir, 'utils')));
+outDir = fullfile(project_dir, 'fit_results','recalibration_models', mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
-if useCluster == false; projectDir = dataDir; end
 
 %% define model
 
@@ -84,10 +80,10 @@ options.TolStableCount = 15;
 
 %% load similated data
 
-result_folder = fullfile(projectDir, 'recalibration_models_VBMC', 'model_recovery_s1');
-d = load(fullfile(result_folder, 'sim_data.mat')); % load struct `sim`
+result_folder = fullfile(projectDir, 'fit_results','recalibration_models', 'model_recovery_s2');
+d = load(fullfile(result_folder, 'sim_data.mat')); 
 
-parfor sim_m = 1:(numCores-1)
+parfor sim_m = 1:numCores
 
     temp_d = d;
     temp_model = model;
@@ -144,7 +140,7 @@ model.elbo_sd = elbo_sd;
 model.exitflag = exitflag;
 model.output = output;
 
-%% summariz some metrics
+%% summarize metrics
 
 for sim_m = 1:(numCores-1)
     

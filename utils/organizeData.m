@@ -1,7 +1,7 @@
 % This function loads and organize the pretest and posttest TOJ data for
 % one session, one subject.
 
-function data = organize_data(subjID, sess)
+function data = organizeData(subjID, sess)
 
 %--------------------------------------------------------------------------
 % Outputs:

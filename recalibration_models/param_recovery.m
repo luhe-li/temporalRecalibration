@@ -1,4 +1,5 @@
-% parameter recovery of the causal-inference, asymmetrical likelihood model
+% Parameter recovery of the winning model: Causal-inference,
+% modality-specific-precision model
 
 clear; close all; rng('shuffle');
 
@@ -23,32 +24,26 @@ switch useCluster
         fprintf('Job number: %i \n', hpc_job_number);
         recov_run = hpc_job_number;
 
-        % make sure Matlab does not exceed this
-        fprintf('Number of cores: %i  \n', numCores);
-        maxNumCompThreads(numCores);
-        if isempty(gcp('nocreate'))
-            parpool(numCores);
-        end
-
     case false
         numCores = feature('numcores');
         recov_run = 1;
 end
 
+% make sure Matlab does not exceed this
+fprintf('[%s] Number of cores: %i  \n', mfilename, numCores);
+maxNumCompThreads(numCores);
+if isempty(gcp('nocreate')); parpool(numCores-1); end
+
 %% manage paths
 
 restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-[git_dir, ~] = fileparts(projectDir);
-dataDir = fullfile(git_dir,'temporalRecalibrationData');
-addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
-addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(currentDir, currModelStr)));
-outDir = fullfile(currentDir, mfilename);
+[project_dir, ~]= fileparts(pwd);
+[git_dir, ~] = fileparts(project_dir);
+addpath(genpath(fullfile(project_dir, 'data')));
+addpath(genpath(fullfile(git_dir, 'vbmc')));
+addpath(genpath(fullfile(project_dir, 'utils')));
+outDir = fullfile(project_dir, 'fit_results','recalibration_models', mfilename);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
-if ~useCluster; projectDir = dataDir; end
 
 %% organize data
 
