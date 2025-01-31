@@ -1,9 +1,8 @@
 function [shat, post_C1] = cau_inf_map(soa_m, p_common, fixP)
 
 % This function takes in a measurement, and a set of free parameters,
-% carries out the inference process as the recalibration phase and outpurs
-% a final estimate. Thus it is a function of estimate given measurement.
-% Works for soa_m as scaler or vector.
+% carries out the inference process as the recalibration phase and outputs
+% a final estimate. Works for soa_m as scaler or vector.
 
 % shift default likelihood and calculates posterior
 shift = round(soa_m);
@@ -34,10 +33,9 @@ post_C2   = 1 - post_C1;
 shat_C1   = fixP.x_axis_int(idx_C1)';
 shat_C2   = fixP.x_axis_int(idx_C2)';
 
-% compute the final estimates: assume model averaging
-% MA: the final estimate is the sum of two intermediate estimates weighted
-% by the posterior of the correponding causal structure
-% Eq. 4 in Wozny et al., 2010
+% compute the final estimates: assume model averaging: the final estimate
+% is the sum of two intermediate estimates weighted by the posterior of the
+% correponding causal structure Eq. 4 in Wozny et al., 2010
 shat      = shat_C1 .* post_C1 + shat_C2 .* post_C2;
 
 end

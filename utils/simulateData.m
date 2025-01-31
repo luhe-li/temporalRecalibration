@@ -1,4 +1,5 @@
 function fake_data = simulateData(pred, data)
+
 % simulate binary data using psychometric function
 
 fake_data = data;

@@ -1,5 +1,5 @@
 function tau_shift = sim_recal_heu(exp_trial, adaptor_soa, ...
-    tau, sigma_a, sigma_v, criterion, alpha)
+    tau, sigma_a, sigma_v, alpha)
 
 % initiate delta_mu as zero before the exposure phase
 num_adaptor_soa              = numel(adaptor_soa);

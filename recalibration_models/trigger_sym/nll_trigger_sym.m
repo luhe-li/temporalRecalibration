@@ -44,8 +44,6 @@ else
     lambda = freeParam(4);
     alpha = freeParam(5);
 
-    checkPlot = 0;
-
     %% loop for each session
 
     if strcmp(model.mode, 'optimize')
@@ -54,10 +52,6 @@ else
 
         [pre_afirst, pre_simul, pre_vfirst] = pmf_exp(model.test_soa,...
             tau, sigma_a, sigma_v, -criterion, criterion, lambda);
-
-        if checkPlot
-            figure; plot(model.test_soa, [pre_afirst; pre_simul; pre_vfirst],'-o');
-        end
 
         %% simulate shift_mu of all adaptors
 
@@ -71,12 +65,6 @@ else
             tau_shift(:, t)  = sim_recal_trigger(model.expo_num_trial, adaptor_soas, ...
                 tau, sigma_a, sigma_v, criterion, alpha);
 
-        end
-
-        if checkPlot
-            [~, order] = sort(adaptor_soas);
-            figure; plot(-mean(tau_shift(order,:),2))
-            title('PSS shift')
         end
 
         [LL_ses, L_VAR] = deal(NaN(1, model.num_ses));
@@ -122,11 +110,6 @@ else
             else; pdf_delta = ksdensity(i_tau_shift); end
             pdf_delta = pdf_delta./sum(pdf_delta);
 
-            if checkPlot
-                figure;
-                plot(delta_tau_shift, pdf_delta)
-            end
-
             %% calculate posttest nLL
 
             % compute the likelihood of approxiamated delta: P(resp|delta_pss_shift, M,
@@ -138,10 +121,6 @@ else
                 % delta_tau = tau_pre - tau_post, use tau_post to predict probability of three responses
                 [post_afirst, post_simul, post_vfirst] = pmf_exp(model.test_soa,...
                     tau + delta_tau_shift(i), sigma_a, sigma_v, -criterion, criterion, lambda);
-
-                if checkPlot
-                    figure; plot(model.test_soa, [post_afirst; post_simul; post_vfirst] ,'-o');
-                end
 
                 LL_delta(i) = data(ses).post_nT_A1st*log(post_afirst)'...
                     + data(ses).post_nT_V1st*log(post_vfirst)'...
@@ -171,17 +150,6 @@ else
         out = nansum(LL_ses); % estimated LL
         out_sd = sqrt(nansum(L_VAR)); % S.D. of likelihood
 
-        if checkPlot
-            [~, order] = sort(adaptor_soas);
-            figure; hold on
-            plot(1:9, [-post_LL_resp(order,:)])
-            legend('a','v','simul')
-            ylabel('nll')
-            xlabel('adaptor')
-            ylim([0, 350])
-        end
-
-
     elseif strcmp(model.mode,'predict')
 
         %% pre-test TOJ
@@ -204,9 +172,6 @@ else
             tau, sigma_a, sigma_v, -criterion, criterion, lambda);
         out.pre_pmf     = [pre_vfirst; pre_simul; pre_afirst];
 
-        if checkPlot
-            figure; plot(out.test_soa, out.pre_pmf)
-        end
         %% simulate shift_mu of all adaptors
 
         % simulate in ordered adaptor_soa

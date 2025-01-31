@@ -4,8 +4,6 @@ function [tau_shift, shat, post_C1] = sim_recal_CI(exp_trial, adaptor_soa, fixP,
 % We model the recalibration process as the shift of measurement after
 % encountering the adaptor SOA in each exposure trial. 
 
-checkPlot                    = 0;
-
 % Initiate delta_mu as zero before the exposure phase
 num_adaptor_soa              = numel(adaptor_soa);
 delta_tau                    = zeros(num_adaptor_soa, exp_trial+1);
@@ -37,26 +35,6 @@ for tt                       = 1:exp_trial
     idx_update                   = ~isnan(shat);
     delta_tau(idx_update, tt+1)  = delta_tau(idx_update, tt) + alpha .* (shat(idx_update) - soa_m(idx_update));
     delta_tau(~idx_update, tt+1) = delta_tau(~idx_update, tt); % carry over mu from the last trial
-
-    if checkPlot
-        figure;hold on
-        subplot(1,2,1)
-        plot(fixP.x_axis_int, protopost_C1);
-        title('protopost_c1')
-        subplot(1,2,2)
-        plot(fixP.x_axis_int, protopost_C1./sum(protopost_C1, 2));
-        title('normalized posterior_c1')
-        legend
-
-        figure;hold on
-        subplot(1,2,1)
-        plot(fixP.x_axis_int, protopost_C2);
-        title('protopost_c2')
-        subplot(1,2,2)
-        plot(fixP.x_axis_int, protopost_C2./sum(protopost_C2, 2));
-        title('normalized posterior_c2')
-        legend
-    end
 
 end
 
