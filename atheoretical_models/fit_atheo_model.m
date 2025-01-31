@@ -22,6 +22,8 @@ current_dir = pwd;
 addpath(genpath(fullfile(project_dir, 'data')));
 addpath(genpath(fullfile(project_dir, 'utils')));
 addpath(genpath(fullfile(git_dir, 'vbmc')));
+outDir = fullfile(project_dir, 'fit_results','atheoretical_models', currModelStr);
+if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 %% Model setup
 

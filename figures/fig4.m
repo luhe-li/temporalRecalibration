@@ -5,9 +5,8 @@
 clear; clc; close all;
 
 %% model info
-
-specifications = {'Heuristic, modality-specific precision', 'Heuristic, modality-independent precision', 'Causal-inference, modality-specific precision',  'Causal-inference, modality-independent precision','Checkpoint, modality-specific precision', 'Checkpoint, modality-independent precision','Atheoretical'}; % Column 2: specifications
-folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','exp_shiftMu'}; % Column 3: folder names
+specifications = {'Asynchrony-contingent, modality-specific-precision', 'Asynchrony-contingent, modality-independent-precision', 'Causal-inference, modality-specific-precision',  'Causal-inference, modality-independent-precision','Asynchrony-correction, modality-specific-precision', 'Asynchrony-correction, modality-independent-precision','Atheoretical'};
+folders = {'heu_asym', 'heu_sym', 'cauInf_asym', 'cauInf_sym','trigger_asym','trigger_sym','exp_shiftMu'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
 
@@ -16,11 +15,9 @@ model_info = table(numbers, specifications', folders', 'VariableNames', {'Number
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
-[tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(fileparts(fileparts(fileparts(fileparts(pwd)))), 'Google Drive','My Drive','temporalRecalibrationData');
+dataDir = fullfile(projectDir,'fit_results');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(projectDir, 'vbmc')));
 out_dir = fullfile(currentDir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
@@ -31,7 +28,7 @@ n_model = numel(model_slc);
 sub_slc = [1:4,6:10];
 
 for mm = 1:n_model
-    result_folder = fullfile(dataDir, 'recalibration_models_VBMC', folders{mm});
+    result_folder = fullfile(dataDir, 'recalibration_models', folders{mm});
     R(mm, :) = load_subject_data(result_folder, sub_slc, 'sub-*');
     
     for ss = 1:numel(sub_slc)
@@ -43,7 +40,7 @@ end
 
 %% load atheoretical model
 
-result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+result_folder = fullfile(dataDir, 'atheoretical_models', 'exp_shiftMu');
 atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 toj_pss = zeros(numel(sub_slc), size(atheo{1}.pred.pss_shift, 2));
@@ -51,11 +48,11 @@ for ss = 1:numel(sub_slc)
     toj_pss(ss, :) = atheo{ss}.pred.pss_shift;
 end
 
-% Calculate group mean and standard error
+% calculate group mean and standard error
 mean_toj_pss = mean(toj_pss, 1, 'omitnan');
 se_toj_pss = std(toj_pss, [], 1, 'omitnan') ./ sqrt(numel(sub_slc));
 
-% Reorganize data
+% reorganize data
 D = struct([]);
 for ss = 1:numel(sub_slc)
     for ses = 1:9
@@ -79,7 +76,6 @@ dotSZ = 10;
 
 %% A. plot group log bayes factor
 
-% order = [6,5,2, 1, 4, 3];
 order = [3,4,1,2,5,6];
 delta = log_model_evi(order, :) - log_model_evi(6, :);
 m_delta = mean(delta, 2);
@@ -100,9 +96,7 @@ xlim([0.5, 6.5])
 labels = specifications(order);
 
 for i = 1:numel(labels)
-    % Split each string into three parts
     parts = strsplit(labels{i}, ' ');
-    % Concatenate parts with newline characters
     splitStr{i} = strjoin(parts, '\n');
 end
 
@@ -131,9 +125,7 @@ ytklabels = {[], [], [], [], [-yl, 0, yl]./1e3, [-yl, 0, yl]./1e3};
 for mm = order
 
     nexttile; hold on
-    %     set(gca, 'Position',[0,0,420,150]);
     set(gca, 'FontSize', fontSZ, 'LineWidth', lw, 'TickDir', 'out')
-    %     axis equal
     set(gca, 'LineWidth', lw, 'FontSize', fontSZ,'TickDir', 'out')
     set(gca, 'FontName', 'Helvetica');
 
@@ -172,7 +164,7 @@ for mm = order
 
 end
 
-xlabel(t, 'Adaptor SOA (s)','FontSize',titleSZ);
+xlabel(t, 'Adapter SOA (s)','FontSize',titleSZ);
 ylabel(t,'Recalibration effect (s)','FontSize',titleSZ);
 
 flnm = 'B_model prediction';

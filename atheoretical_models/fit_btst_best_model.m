@@ -19,7 +19,8 @@ addpath(genpath(fullfile(project_dir, 'data')));
 addpath(genpath(fullfile(project_dir, 'utils')));
 addpath(genpath(fullfile(git_dir, 'vbmc')));
 addpath(genpath(fullfile(current_dir, curr_model_str)));
-out_dir = fullfile(current_dir, curr_model_str);
+outDir = fullfile(project_dir, 'fit_results','atheoretical_models', curr_model_str);
+if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 %% Define model
 
