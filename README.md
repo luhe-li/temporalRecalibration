@@ -21,8 +21,9 @@ This project develops computational models of audiovisual temporal recalibration
 ## Usage
 
 ### 1. Model Fitting
-- **Local fitting**: Run the `run_local.m` script under `recalibration_models` to fit all recalibration models or a specific one.
+- **Local fitting**: Run the `run_local.m` script under `recalibration_models/` to fit all recalibration models or a specific one.
 - **Cluster fitting**: Modify script to run `fit_recal_model.m` to submit jobs via your cluster’s scheduling system.
+- Recalibraton models:
    - `caulnf_asym/` Causal inference model, modality-specific temporal precision
    - `caulnf_sym/` Causal inference model, modality-independent temporal precision
    - `caulnf_asym_update/` A variant of causal inference model, modality-specific temporal precision, mentioned in Appendix 12
