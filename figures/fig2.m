@@ -9,8 +9,7 @@ clear; clc; close all;
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
-[tempDir, ~] = fileparts(projectDir);
-dataDir = fullfile(tempDir,'temporalRecalibrationData');
+dataDir = fullfile(projectDir,'fit_results');
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 out_dir = fullfile(currentDir, mfilename);
@@ -23,7 +22,7 @@ exp_sub = 7;
 idx_exp_exp = 6;
 exp_adp = 2;
 
-result_folder = fullfile(dataDir, 'atheoretical_models_VBMC', 'exp_shiftMu');
+result_folder = fullfile(dataDir, 'atheoretical_models', 'exp_shiftMu');
 atheo = load_subject_data(result_folder, sub_slc, 'sub-*');
 
 for ss = 1:numel(sub_slc)
@@ -81,7 +80,7 @@ titleSZ = 9;
 dotSZ = 10;
 
 adaptor_soa = pred{1}.adaptor_soa;
-soa_finer = btst.pred{1}.test_soa;
+soa_finer = atheo_btst{1}.pred{1}.test_soa;
 
 %% A. Individual behavior
 figure;

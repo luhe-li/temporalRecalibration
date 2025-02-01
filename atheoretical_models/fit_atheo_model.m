@@ -1,56 +1,35 @@
-function fit_atheo_model(i_model, useCluster)
+% This script fits all atheoretical models to the TOJ data, saves the model
+% evidence, parameter estimates, and model predictions.
 
-%% select models
+clear; close all; clc;
 
-rng('Shuffle');
-specifications = {'Exponential likelihood, shift criterion', 'Exponential likelihood, shift bias', 'Gaussian likelihood, shift criterion',  'Gaussian likelihood, shift bias',};
+%% Select models
+
+rng('shuffle');
+specifications = {'Exponential likelihood, shift criterion', 'Exponential likelihood, shift bias', 'Gaussian likelihood, shift criterion', 'Gaussian likelihood, shift bias'};
 folders = {'exp_shiftC', 'exp_shiftMu', 'gauss_shiftC', 'gauss_shiftMu'};
 numbers = (1:numel(specifications))';
 model_info = table(numbers, specifications', folders', 'VariableNames', {'Number', 'Specification', 'FolderName'});
-currModelStr = model_info.FolderName{i_model};
+num_cores = feature('numcores');
+if isempty(gcp('nocreate')); parpool(num_cores-1); end
 
-%% set environment
-
-if ~exist('useCluster', 'var') || isempty(useCluster)
-    useCluster = false;
-end
-
-% job = model, core = run, each job runs all subjects
-switch useCluster
-    case true
-        if ~exist('numCores', 'var') || isempty(numCores)
-            numCores         = maxNumCompThreads;
-        end
-    case false
-        numCores = feature('numcores');
-end
-
-% make sure Matlab does not exceed this
-fprintf('Number of cores: %i  \n', numCores);
-maxNumCompThreads(numCores);
-if isempty(gcp('nocreate'))
-    parpool(numCores-1);
-end
-
-%% manage paths
+%% Manage paths
 
 restoredefaultpath;
-currentDir= pwd;
-[projectDir, ~]= fileparts(currentDir);
-addpath(genpath(fullfile(projectDir, 'data')));
-addpath(genpath(fullfile(projectDir, 'bads')));
-addpath(genpath(fullfile(projectDir, 'utils')));
-addpath(genpath(fullfile(currentDir, currModelStr)));
-outDir = fullfile(currentDir, currModelStr);
+current_dir = pwd;
+[project_dir, ~] = fileparts(current_dir);
+[git_dir, ~] = fileparts(project_dir);
+addpath(genpath(fullfile(project_dir, 'data')));
+addpath(genpath(fullfile(project_dir, 'utils')));
+addpath(genpath(fullfile(git_dir, 'vbmc')));
+outDir = fullfile(project_dir, 'fit_results','atheoretical_models', currModelStr);
+if ~exist(outDir, 'dir'); mkdir(outDir); end
 
-%% model set up
+%% Model setup
 
-% subject and session
-n_sub          = 10;
-
-% set fixed & set-up parameters
+% Set fixed & set-up parameters
 model.num_ses    = 9;
-model.num_runs   = 40; % fit the model multiple times, each with a different initialization
+model.num_runs   = numCores-1; % fit the model multiple times, each with a different initialization
 model.bound      = 10; % in second, the bound for prior axis
 model.bound_int  = 1.5; % in second, where estimates are likely to reside
 model.test_soa   = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
@@ -60,71 +39,100 @@ model.model_info = model_info; % save all model information
 model.i_model = i_model; % current model index
 model.currModelStr = currModelStr; % current model folder
 
-% set OPTIONS to tell bads that my objective function is noisy
-OPTIONS.UncertaintyHandling = 1;
-OPTIONS.TolMesh = 1e-5;
-if useCluster; OPTIONS.Display = 'off'; end
+% Set fitting options
+options = vbmc('defaults');
+options.TolStableCount = 30;
 
-%% fit model
+%% Fit model
 
-for i_sub = 1:n_sub
+n_sub = 10;
 
-    %% organize data
+for i_model = 1:numel(folders)
 
-    for  ses         = 1:model.num_ses
-        data(ses)        = organizeData(i_sub, ses);
-    end
+    curr_model_str = model_info.FolderName{i_model};
+    addpath(genpath(fullfile(current_dir, curr_model_str)));
+    out_dir = fullfile(current_dir, curr_model_str);
+    model.curr_model_str = curr_model_str; % Current model folder
 
-    %% set model
+    for sub = 1:n_sub
 
-    currModel = str2func(['nll_' currModelStr]);
+        %% Organize data
 
-    model.mode = 'initialize';
-    Val = currModel([], model, data);
-    model.initVal = Val;
+        for ses = 1:model.num_ses
+            data(ses) = organizeData(sub, ses);
+        end
+        %% set model
 
-    model.mode                  = 'optimize';
-    NLL                         = NaN(1, model.num_runs);
-    estP                        = NaN(model.num_runs, Val.num_para);
+        currModel = str2func(['nll_' currModelStr]);
 
-    parfor i  = 1:model.num_runs
-        fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, i_sub, i);
+        % initialize starting points
+        model.mode = 'initialize';
+        Val = currModel([], model, data);
+        model.initVal = Val;
+
+        % set priors
+        lpriorfun = @(x) msplinetrapezlogpdf(x, Val.lb, Val.plb, Val.pub, Val.ub);
+
+        % set likelihood
+        model.mode = 'optimize';
+        llfun = @(x) currModel(x, model, data);
+
+        fun = @(x) llfun(x) + lpriorfun(x);
+
+        [elbo,elbo_sd,exitflag] = deal(NaN(1,model.num_runs));
+
+        parfor i  = 1:model.num_runs
+
+            fprintf('[%s] Start fitting model-%s sub-%i run-%i \n', mfilename, currModelStr, sub, i);
+            tempVal = Val;
+
+            % vp: variational posterior
+            % elbo: Variational Evidence Lower Bound
+            [temp_vp{i}, elbo(i),elbo_sd(i),exitflag(i),temp_output{i}] = vbmc(fun, tempVal.init(i,:), tempVal.lb,...
+                tempVal.ub, tempVal.plb, tempVal.pub, options);
+
+        end
+
+        % save all outputs
+        model.vp = temp_vp;
+        model.elbo = elbo;
+        model.elbo_sd = elbo_sd;
+        model.exitflag = exitflag;
+        model.output = temp_output;
+
+        % save incase diagnosis fails
+        save(fullfile(outDir, sprintf('sub-%i_%s', sub)),'data','model')
+
+        %% evaluate fits
+
         try
-            tempModel            = model;
-            tempVal              = Val;
-            tempFunc             = currModel;
+            [diag.exitflag, diag.bestELBO, diag.idx_best, diag.stats] = vbmc_diagnostics(temp_vp);
+            diag.bestELCBO = diag.bestELBO.elbo - 3*diag.bestELBO.elbo_sd;
 
-            [estP(i,:),NLL(i)] = bads(@(p) tempFunc(p, tempModel, data),...
-                tempVal.init(i,:), tempVal.lb,...
-                tempVal.ub, tempVal.plb, tempVal.pub, [], OPTIONS);
+            % find best-fitting parameters
+            diag.Xs = vbmc_rnd(diag.bestELBO.vp,1e5);
+            diag.post_mean = mean(diag.Xs,1);
+
+            % model prediction by best-fitting parameters
+            model.mode       = 'predict';
+            pred =  currModel(diag.post_mean, model, data);
+
         catch
-            sprintf('Skipped invalid NLL\n')
+            sprintf('No solution has converged. Skip model prediction. \n')
             continue;
         end
+
+        %% save the data for each participant
+
+        save(fullfile(outDir, sprintf('sub-%i_%s', sub)),'data','model','diag','pred')
+
     end
 
-    model.estP            = estP;
-    model.NLL             = NLL;
-
-    % find the parameter with the least NLL
-    [model.minNLL, best_idx] = min(NLL);
-    bestP = estP(best_idx, :);
-    model.bestP = bestP;
-
-    %% model prediction by best-fitting parameters
-
-    model.mode       = 'predict';
-    pred =  currModel(bestP, model, data);
-
-    %% save the data for each participant
-
-    save(fullfile(outDir, sprintf('sub-%i_%s', i_sub, datestr(datetime('now')))),'data','model','pred')
+    rmpath(genpath(fullfile(current_dir, curr_model_str)));
 
 end
 
-% delete current pool
+% Delete current pool
 if ~isempty(gcp('nocreate'))
     delete(gcp('nocreate'));
-end
-
 end

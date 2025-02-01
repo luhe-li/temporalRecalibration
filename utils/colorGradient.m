@@ -29,6 +29,7 @@ function [grad,im]=colorGradient(c1,c2,depth)
 
 %Check input arguments.
 %input arguments must be 2 or 3.
+
 error(nargchk(2, 3, nargin));
 
 %If c1 or c2 is not a valid RGB vector return an error.

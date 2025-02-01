@@ -22,19 +22,19 @@ if strcmp(model.mode, 'initialize')
     paraH.lambda                = [1e-4,  0.06]; % percentage
 
     % soft bounds, the range for PLB, PUB
-    paraS.tau_pre               = [-200,   200]; % ms
-    paraS.tau1                  = [-200,   200]; % ms
-    paraS.tau2                  = [-200,   200]; % ms
-    paraS.tau3                  = [-200,   200]; % ms
-    paraS.tau4                  = [-200,   200]; % ms
-    paraS.tau5                  = [-200,   200]; % ms
-    paraS.tau6                  = [-200,   200]; % ms
-    paraS.tau7                  = [-200,   200]; % ms
-    paraS.tau8                  = [-200,   200]; % ms
-    paraS.tau9                  = [-200,   200]; % ms
+    paraS.tau_pre               = [ -40,    40]; % ms
+    paraS.tau1                  = [-100,   100]; % ms
+    paraS.tau2                  = [-100,   100]; % ms
+    paraS.tau3                  = [-100,   100]; % ms
+    paraS.tau4                  = [-100,   100]; % ms
+    paraS.tau5                  = [-100,   100]; % ms
+    paraS.tau6                  = [-100,   100]; % ms
+    paraS.tau7                  = [-100,   100]; % ms
+    paraS.tau8                  = [-100,   100]; % ms
+    paraS.tau9                  = [-100,   100]; % ms
     paraS.sigma_a               = [  20,    50]; % ms
-    paraS.sigma_v               = [  20,   120]; % ms
-    paraS.criterion             = [  30,   150]; % criterion, s
+    paraS.sigma_v               = [  20,    50]; % ms
+    paraS.criterion             = [  30,    80]; % criterion, s
     paraS.lambda                = [0.01,  0.03]; % percentage
 
     % reorganize parameter bounds to feed to bads
@@ -47,9 +47,9 @@ if strcmp(model.mode, 'initialize')
     end
     model.paraS      = paraS; model.paraH = paraH;
 
-    % get grid initializations
+    % get grid initializations (bounds not included)
     numSections = model.num_runs * 2;
-    out.init = getInit(out.lb, out.ub, numSections, model.num_runs);
+    out.init = getInit(out.plb, out.pub, numSections, model.num_runs);
 
 else
 
@@ -102,7 +102,7 @@ else
                 + data(adaptor).post_nT_simul*log(post_simul)';
 
             % sum the negative likelihood of pre and post test
-            nLL_ses(adaptor)         = - pre_LL - post_LL;
+            nLL_ses(adaptor)         = pre_LL + post_LL;
 
         end
         out                  = nansum(nLL_ses);

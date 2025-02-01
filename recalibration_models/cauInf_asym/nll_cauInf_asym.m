@@ -1,34 +1,34 @@
+function [out, out_sd] = nll_cauInf_asym(freeParam, model, data)
 
-function out   = nll_cauInf_asym(freeParam, model, data)
-
+out_sd = NaN;
 if strcmp(model.mode, 'initialize')
 
     out.paraID   = {'\tau','\sigma_{A}','\sigma_{V}','c','\lambda','p_{common}','\alpha','\sigma_{C=1}','\sigma_{C=2}'};
     out.num_para = length(out.paraID);
 
     % hard bounds, the range for LB, UB, larger than soft bounds
-    paraH.tau= [-100,   100]; % ms
-    paraH.sigma_a  = [  10,   120]; % ms
-    paraH.sigma_v  = [  10,   200]; % ms
-    paraH.criterion= [   1,   350]; % criterion, s
+    paraH.tau      = [-100,   100]; % ms
+    paraH.sigma_a  = [  10,   150]; % ms
+    paraH.sigma_v  = [  10,   150]; % ms
+    paraH.criterion= [   1,   300]; % criterion, s
     paraH.lambda   = [1e-4,  0.06]; % percentage
-    paraH.p_common = [1e-4, 1-1e-4]; % weight
+    paraH.p_common = [1e-4,1-1e-4]; % weight
     paraH.alpha    = [1e-4,  0.02]; % percentage
-    paraH.sigma_C1 = [   1,   300]; % ms
-    paraH.sigma_C2 = [ 100,   1e3]; % ms
+    paraH.sigma_C1 = [  10,   100]; % ms
+    paraH.sigma_C2 = [ 200,   500]; % ms
 
     % soft bounds, the range for PLB, PUB
-    paraS.tau= [ -50,    50]; % ms
-    paraS.sigma_a  = [  20,    50]; % ms
-    paraS.sigma_v  = [  20,   120]; % ms
-    paraS.criterion= [  30,   150]; % criterion, s
+    paraS.tau      = [ -40,    40]; % ms
+    paraS.sigma_a  = [  50,    70]; % ms
+    paraS.sigma_v  = [  50,    70]; % ms
+    paraS.criterion= [  30,    80]; % criterion, s
     paraS.lambda   = [0.01,  0.03]; % percentage
     paraS.p_common = [ 0.3,   0.7]; % weight
     paraS.alpha    = [1e-3,  2e-3]; % percentage
-    paraS.sigma_C1 = [  10,   100]; % ms
-    paraS.sigma_C2 = [ 500,   700]; % ms
+    paraS.sigma_C1 = [  30,    70]; % ms
+    paraS.sigma_C2 = [ 250,   350]; % ms
 
-    % reorganize parameter bounds to feed to bads
+    % reorganize parameter bounds
     fn = fieldnames(paraH);
     for k= 1:numel(fn)
         out.lb(:,k)  = paraH.(fn{k})(1);
@@ -37,9 +37,9 @@ if strcmp(model.mode, 'initialize')
         out.pub(:,k) = paraS.(fn{k})(2);
     end
 
-    % get grid initializations
+    % get grid initializations (bounds not included)
     numSections = model.num_runs * 2;
-    out.init = getInit(out.lb, out.ub, numSections, model.num_runs);
+    out.init = getInit(out.plb, out.pub, numSections, model.num_runs);
 
 else
 
@@ -56,8 +56,6 @@ else
     sigma_C2 = freeParam(9);
 
     %% pre-compute
-
-    checkPlot = 0;
 
     % prior
     fixP.x_axis     = -model.bound_full:1:model.bound_full;
@@ -86,10 +84,6 @@ else
         [pre_afirst, pre_simul, pre_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
             tau, sigma_a, sigma_v, criterion, lambda, p_common);
 
-        if checkPlot
-            figure; plot(model.test_soa, [pre_afirst; pre_simul; pre_vfirst],'-o');
-        end
-
         %% simulate shift_mu of all adaptors
 
         % simulate using adaptor_soa in session order
@@ -104,13 +98,7 @@ else
 
         end
 
-        if checkPlot
-            [~, order] = sort(adaptor_soas);
-            figure; plot(-mean(tau_shift(order,:),2))
-            title('PSS shift')
-        end
-
-        nLL_ses = NaN(1, model.num_ses);
+        [LL_ses, L_VAR] = deal(NaN(1, model.num_ses));
         for ses = 1:model.num_ses
 
             %% calculate pretest nLL
@@ -153,11 +141,6 @@ else
             else; pdf_delta = ksdensity(i_tau_shift); end
             pdf_delta = pdf_delta./sum(pdf_delta);
 
-            if checkPlot
-                figure;
-                plot(delta_tau_shift, pdf_delta)
-            end
-
             %% calculate posttest nLL
 
             % compute the likelihood of approxiamated delta: P(resp|delta_pss_shift, M,
@@ -170,10 +153,6 @@ else
 
                 [post_afirst, post_simul, post_vfirst] = pmf_exp_CI_noSim(model.test_soa, fixP,...
                     tau + delta_tau_shift(i), sigma_a, sigma_v, criterion, lambda, p_common);
-
-                if checkPlot
-                    figure; plot(model.test_soa, [post_afirst; post_simul; post_vfirst] ,'-o');
-                end
 
                 LL_delta(i) = data(ses).post_nT_A1st*log(post_afirst)'...
                     + data(ses).post_nT_V1st*log(post_vfirst)'...
@@ -192,22 +171,16 @@ else
             post_LL   = log(sum(exp(LL_delta + log(pdf_delta) - const))) + const;
 
             % sum the negative likelihood of pre and post test
-            nLL_ses(ses)   = - pre_LL - post_LL;
+            LL_ses(ses)   = pre_LL + post_LL;
+
+            % calcualte the VAR of likelihood over bins of delta_pss_shift for
+            % each session
+            L_VAR(ses) = sum((LL_delta - post_LL).^2./numel(delta_tau_shift));
 
         end
 
-        out= nansum(nLL_ses);
-
-        if checkPlot
-            [~, order] = sort(adaptor_soas);
-            figure; hold on
-            plot(1:9, [-post_LL_resp(order,:)])
-            legend('a','v','simul')
-            ylabel('nll')
-            xlabel('adaptor')
-            ylim([0, 350])
-        end
-
+        out = nansum(LL_ses); % estimated LL
+        out_sd = sqrt(nansum(L_VAR)); % S.D. of likelihood
 
     elseif strcmp(model.mode,'predict')
 
@@ -231,9 +204,6 @@ else
             tau, sigma_a, sigma_v, criterion, lambda, p_common);
         out.pre_pmf     = [pre_vfirst; pre_simul; pre_afirst];
 
-        if checkPlot
-            figure; plot(out.test_soa, out.pre_pmf)
-        end
         %% simulate shift_mu of all adaptors
 
         % simulate in ordered adaptor_soa
@@ -280,19 +250,50 @@ else
             observed_y     = histcounts(i_tau_shift, delta_shift_mu_edges)./numel(i_tau_shift); % manually normalize counts to probability
             R  = corr(predicted_y(:), observed_y(:));
             out.R2(jj)     = R^2;
+            
+            %if R2 is big enough, we fit a Gaussian, else use ksdensity
+            if out.R2(jj)  > model.thres_R2; pdf_delta = gauss_pdf;
+            else; pdf_delta = ksdensity(i_tau_shift); end
+            pdf_delta = pdf_delta./sum(pdf_delta);
 
             %% posttest TOJ
+            if out.R2(jj) > model.thres_R2
 
-            [post_afirst, post_simul, post_vfirst] = pmf_exp_CI_noSim(out.test_soa, fixP,...
-                tau + mean(i_tau_shift), sigma_a, sigma_v, criterion, lambda, p_common);
+                [post_afirst, post_simul, post_vfirst] = pmf_exp(out.test_soa,...
+                    tau + mean(i_tau_shift), sigma_a, sigma_v, -criterion, criterion, lambda);
 
-            out.post_tau(jj) = tau + mean(i_tau_shift);
-            out.post_pmf(jj, :, :) = [post_vfirst; post_simul; post_afirst];
+                out.post_tau(jj) = tau + mean(i_tau_shift);
+                out.post_pmf(jj, :, :) = [post_vfirst; post_simul; post_afirst];
+
+            else
+
+                for i = 1:numel(delta_tau_shift)
+                    [post_afirst_all(i, :) , post_simul_all(i, :) , post_vfirst_all(i,:)] =...
+                        pmf_exp(out.test_soa, tau + delta_tau_shift(i), ...
+                        sigma_a, sigma_v, -criterion, criterion, lambda);
+
+                end
+                % Integrate over delta_tau_shift weight probabilities by pdf_delta
+                weighted_post_afirst = pdf_delta * post_afirst_all;
+                weighted_post_simul = pdf_delta * post_simul_all;
+                weighted_post_vfirst = pdf_delta * post_vfirst_all;
+
+                out.post_tau(jj) = tau + sum(delta_tau_shift .* pdf_delta);
+                out.post_pmf(jj, :, :) =  [weighted_post_vfirst; weighted_post_simul; weighted_post_afirst];
+
+            end
 
         end
 
     end
 
+end
+
+if nargout > 1
+    varargout{1} = out;
+    varargout{2} = out_sd;
+else
+    varargout{1} = out;
 end
 
 end
