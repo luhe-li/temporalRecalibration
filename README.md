@@ -6,22 +6,6 @@ This project develops computational models of audiovisual temporal recalibration
 - **GUI-based simulations**  
 - **Plotting utilities** for reproducing figures in the [associated paper](https://elifesciences.org/reviewed-preprints/97765).  
 
-## Folder Structure
-root/
-├── atheoretical_models/ # Models without assumptions about recalibration mechanisms
-├── data/ # Raw experimental datasets (Matlab formats)
-├── fit_results/ # Precomputed fitting results (download from [OSF](https://osf.io/8s7qv/))
-├── figures/ # Scripts to regenerate all paper figures (Figs 1–6, Appendix 1-13)
-├── recalibration_models/ # Core model implementations
-│ ├── caulnf_asym/ # Causal inference model, modality-specific temporal precision
-│ ├── caulnf_sym/ # Causal inference model, modality-independent temporal precision
-│ ├── caulnf_asym_update/ # A variant of causal inference model, modality-specific temporal precision, mentioned in Appendix 12
-│ ├── heu_asym/ # Asynchrony-contingent model, modality-specific temporal precision
-│ ├── heu_sym/ # Asynchrony-contingent model, modality-independent temporal precision
-│ ├── trigger_asym/ # Asynchrony-correction model, modality-specific temporal precision
-│ └── trigger_sym/ # Asynchrony-correction model, modality-independent temporal precision
-└── utils/ # Helper functions
-
 ## Installation & Setup
 
 1. **Download dependencies**:  
