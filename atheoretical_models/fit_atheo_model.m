@@ -22,22 +22,18 @@ current_dir = pwd;
 addpath(genpath(fullfile(project_dir, 'data')));
 addpath(genpath(fullfile(project_dir, 'utils')));
 addpath(genpath(fullfile(git_dir, 'vbmc')));
-outDir = fullfile(project_dir, 'fit_results','atheoretical_models', currModelStr);
-if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 %% Model setup
 
 % Set fixed & set-up parameters
 model.num_ses    = 9;
-model.num_runs   = numCores-1; % fit the model multiple times, each with a different initialization
+model.num_runs   = num_cores-1; % fit the model multiple times, each with a different initialization
 model.bound      = 10; % in second, the bound for prior axis
 model.bound_int  = 1.5; % in second, where estimates are likely to reside
 model.test_soa   = [-0.5, -0.3:0.05:0.3, 0.5]*1e3; % in ms
 model.sim_adaptor_soa = [-0.7, -0.3:0.1:0.3, 0.7]*1e3; % in ms
 model.test_axis_finer = 1; % simulate with finer axis
 model.model_info = model_info; % save all model information
-model.i_model = i_model; % current model index
-model.currModelStr = currModelStr; % current model folder
 
 % Set fitting options
 options = vbmc('defaults');
@@ -49,10 +45,12 @@ n_sub = 10;
 
 for i_model = 1:numel(folders)
 
-    curr_model_str = model_info.FolderName{i_model};
-    addpath(genpath(fullfile(current_dir, curr_model_str)));
-    out_dir = fullfile(current_dir, curr_model_str);
-    model.curr_model_str = curr_model_str; % Current model folder
+    currModelStr = model_info.FolderName{i_model};
+    addpath(genpath(fullfile(current_dir, currModelStr)));
+    outDir = fullfile(project_dir, 'fit_results','atheoretical_models', currModelStr);
+    if ~exist(outDir, 'dir'); mkdir(outDir); end
+    model.i_model = i_model; % current model index
+    model.currModelStr = currModelStr; % current model folder
 
     for sub = 1:n_sub
 
@@ -128,7 +126,7 @@ for i_model = 1:numel(folders)
 
     end
 
-    rmpath(genpath(fullfile(current_dir, curr_model_str)));
+    rmpath(genpath(fullfile(current_dir, currModelStr)));
 
 end
 

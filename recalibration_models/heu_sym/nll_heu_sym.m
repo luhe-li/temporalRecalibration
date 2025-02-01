@@ -65,7 +65,7 @@ else
 
             % simulate by adaptor soas in each session, unsorted
             tau_shift(:, t)  = sim_recal_heu(model.expo_num_trial, adaptor_soas, ...
-                tau, sigma_a, sigma_v, criterion, alpha);
+                tau, sigma_a, sigma_v, alpha);
 
         end
 

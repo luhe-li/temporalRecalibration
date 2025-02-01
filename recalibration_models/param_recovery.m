@@ -1,12 +1,14 @@
 % Parameter recovery of the winning model: Causal-inference,
 % modality-specific-precision model
 
+% - Only run recovery of one fake dataset when run locally
+
 clear; close all; rng('shuffle');
 
 %% set environment
 
 currModelStr = 'cauInf_asym';
-useCluster = true;
+useCluster = 1;
 
 % set cores
 if ~exist('useCluster', 'var') || isempty(useCluster)
@@ -78,7 +80,7 @@ options.SpecifyTargetNoise = true;
 %% sample ground-truth from best parameter estimates
 
 sub_slc = [1:4,6:10];
-result_folder = fullfile(projectDir, 'recalibration_models_VBMC', currModelStr);
+result_folder = fullfile(project_dir, 'fit_results','recalibration_models', currModelStr);
 R = load_subject_data(result_folder, sub_slc, 'sub-*');
 for ss = 1:numel(sub_slc)
     bestP(ss,:) = R{ss}.diag.post_mean;
@@ -88,10 +90,12 @@ sd_GT = std(bestP, [], 1);
 num_sample = 1; % for each job, sample once
 
 currModel = str2func(['nll_' currModelStr]);
+addpath(fullfile(project_dir, 'recalibration_models', currModelStr))
 model.mode = 'initialize';
 Val = currModel([], model, []);
 GT_samples = generate_samples(Val, mu_GT, sd_GT, num_sample);
-fprintf('[%s] GT: %.2f', mfilename, GT_samples);
+formatted_GT = strjoin(arrayfun(@(x) sprintf('%.1f', x), GT_samples, 'UniformOutput', false), ', ');
+fprintf('[%s] GT: %s\n', mfilename, formatted_GT);
 
 %% simulation
 

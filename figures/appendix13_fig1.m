@@ -1,6 +1,6 @@
-% Appendix 13: 
-% Parameter recovery of causal-inference model with modality-specific
-% precision
+% Appendix 13-fig 1 
+% Parameter recovery of causal-inference model with
+% modality-specific precision
 
 clear; close all;
 
@@ -17,7 +17,7 @@ if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% load results
 
-results_folder           = fullfile(dataDir,'recalibration_models','param_recovery');
+results_folder  = fullfile(dataDir,'recalibration_models','parameter_recovery');
 files = dir(fullfile(results_folder, 'sample-*'));
 
 for jj = 1:size(files)

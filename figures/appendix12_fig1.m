@@ -1,10 +1,11 @@
-% Appendix 12-fig 1
-% Confusion matrix of model recovery of variants of causal-inference recalibration
-% models
+% Appendix 12-fig 1 
+% Confusion matrix of model recovery of variants of
+% causal-inference recalibration models with
+% modality-specific precision
+
 clear; close all;
 
 %% manage path
-
 
 restoredefaultpath;
 currentDir= pwd;

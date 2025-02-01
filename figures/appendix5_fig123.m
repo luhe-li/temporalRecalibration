@@ -1,8 +1,8 @@
 % Appendix 5 - fig 1-3
-% individual model prediction of recalibration effect
-% 1. causal inference model
-% 2. asynchrony-contingent model
-% 3. asynchrony-correction model
+% Individual model prediction of recalibration effect
+% 1. Causal inference model
+% 2. Asynchrony-contingent model
+% 3. Asynchrony-correction model
 
 clear; clc; close all;
 

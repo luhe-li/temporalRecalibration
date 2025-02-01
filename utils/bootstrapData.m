@@ -2,7 +2,7 @@ function btstData = bootstrapData(sub)
 
 for ses = 1:9
 
-    data = organize_data(sub, ses);
+    data = organizeData(sub, ses);
 
     %% pre-test
 

@@ -1,5 +1,5 @@
 % Appendix 1-fig 1
-% Model recovery results
+% Model recovery results of six main recalibration models
 
 clear; close all;
 

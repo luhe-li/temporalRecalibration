@@ -8,15 +8,15 @@ This project develops computational models of audiovisual temporal recalibration
 
 ## Installation & Setup
 
-1. **Download dependencies**:  
-   - Install [Psychtoolbox](https://psychtoolbox.org/) for experiment scripts.  
-   - Install [VBMC](https://github.com/acerbilab/vbmc) (MATLAB toolbox for Bayesian model fitting). 
+### 1. Download dependencies
+- Install [Psychtoolbox](https://psychtoolbox.org/) for experiment scripts.  
+- Install [VBMC](https://github.com/acerbilab/vbmc) (MATLAB toolbox for Bayesian model fitting). 
 
-2. **Download precomputed results**:  
-   - Download `fit_results.zip` from [OSF](https://osf.io/8s7qv/) and unzip it into the project root.  
+### 2. Download precomputed results
+- Download `fit_results.zip` from [OSF](https://osf.io/8s7qv/) and unzip it into the project root.  
 
-3. **Add paths in MATLAB**:  
-   - Add the project folders to your MATLAB path using `addpath(genpath('temporalRecalibration'))`.  
+### 3. Add paths in MATLAB
+- Add the project folders to your MATLAB path using `addpath(genpath('temporalRecalibration'))`.  
 
 ## Usage
 

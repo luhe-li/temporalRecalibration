@@ -18,8 +18,7 @@ current_dir = pwd;
 addpath(genpath(fullfile(project_dir, 'data')));
 addpath(genpath(fullfile(project_dir, 'utils')));
 addpath(genpath(fullfile(git_dir, 'vbmc')));
-addpath(genpath(fullfile(current_dir, curr_model_str)));
-out_dir = fullfile(current_dir, curr_model_str);
+out_dir = fullfile(current_dir, mfilename);
 if ~exist(out_dir, 'dir'); mkdir(out_dir); end
 
 %% Load
@@ -108,7 +107,7 @@ for mm = 1:n_model
             title(sprintf('Adapter SOA = %.1f s', adaptor_soa(adapter) ./ 1e3), 'FontSize', font_sz, 'FontWeight', 'bold')
 
             % Data
-            scatter(D(ss).data(adapter).pre_ms_unique, D(ss).data(adapter).pre_p_resp, dot_sz, 'filled');
+            scatter(D(ss).data(adapter).pre_ms_unique, D(ss).data(adapter).pre_pResp, dot_sz, 'filled');
 
             % Prediction
             plot(pred{mm, ss}.test_soa, pred{mm, ss}.pre_pmf{adapter}, 'LineWidth', lw)
@@ -129,7 +128,7 @@ for mm = 1:n_model
             set(gca, 'FontSize', font_sz, 'LineWidth', lw, 'TickDir', 'out', 'ColorOrder', cmp2)
 
             % Data
-            scatter(D(ss).data(adapter).post_ms_unique, D(ss).data(adapter).post_p_resp, dot_sz, 'filled');
+            scatter(D(ss).data(adapter).post_ms_unique, D(ss).data(adapter).post_pResp, dot_sz, 'filled');
 
             % Prediction
             plot(pred{mm, ss}.test_soa, pred{mm, ss}.post_pmf{adapter}, 'LineWidth', lw)

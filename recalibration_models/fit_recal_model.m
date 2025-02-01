@@ -42,12 +42,12 @@ if isempty(gcp('nocreate')); parpool(numCores-1); end
 restoredefaultpath;
 currentDir= pwd;
 [projectDir, ~]= fileparts(currentDir);
-[git_dir, ~] = fileparts(project_dir);
+[git_dir, ~] = fileparts(projectDir);
 addpath(genpath(fullfile(projectDir, 'data')));
 addpath(genpath(fullfile(projectDir, 'utils')));
 addpath(genpath(fullfile(git_dir, 'vbmc')));
 addpath(genpath(fullfile(currentDir, currModelStr)));
-outDir = fullfile(project_dir, 'fit_results','recalibration_models', currModelStr);
+outDir = fullfile(projectDir, 'fit_results','recalibration_models', currModelStr);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 %% organize data

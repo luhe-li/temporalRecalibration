@@ -1,5 +1,5 @@
 % Appendix 1-fig 1
-% model comparison of atheoretical models of recalibration
+% Model comparison of atheoretical models of recalibration
 
 clear; close all; clc;
 
