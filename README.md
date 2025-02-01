@@ -23,13 +23,13 @@ This project develops computational models of audiovisual temporal recalibration
 ### 1. Model Fitting
 - **Local fitting**: Run the `run_local.m` script under `recalibration_models` to fit all recalibration models or a specific one.
 - **Cluster fitting**: Modify script to run `fit_recal_model.m` to submit jobs via your cluster’s scheduling system.
-   - caulnf_asym/ # Causal inference model, modality-specific temporal precision
-   - caulnf_sym/ # Causal inference model, modality-independent temporal precision
-   - caulnf_asym_update/ # A variant of causal inference model, modality-specific temporal precision, mentioned in Appendix 12
-   - heu_asym/ # Asynchrony-contingent model, modality-specific temporal precision
-   - heu_sym/ # Asynchrony-contingent model, modality-independent temporal precision
-   - trigger_asym/ # Asynchrony-correction model, modality-specific temporal precision
-   - trigger_sym/ # Asynchrony-correction model, modality-independent temporal precision
+   - `caulnf_asym/` Causal inference model, modality-specific temporal precision
+   - `caulnf_sym/` Causal inference model, modality-independent temporal precision
+   - `caulnf_asym_update/` A variant of causal inference model, modality-specific temporal precision, mentioned in Appendix 12
+   - `heu_asym/` Asynchrony-contingent model, modality-specific temporal precision
+   - `heu_sym/` Asynchrony-contingent model, modality-independent temporal precision
+   - `trigger_asym/` Asynchrony-correction model, modality-specific temporal precision
+   - `trigger_sym/` Asynchrony-correction model, modality-independent temporal precision
 
 ### 2. Model Recovery
 Run the `model_recovery_s1.m`, `model_recovery_s2.m`, and `model_recovery_s3.m` scripts sequentially. Alternatively, modify and combine them to create a full pipeline. 
