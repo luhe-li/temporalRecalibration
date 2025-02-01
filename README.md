@@ -8,19 +8,13 @@ This project develops computational models of audiovisual temporal recalibration
 
 ## Installation & Setup
 
-1. Download dependencies
-- Install [Psychtoolbox](https://psychtoolbox.org/) for experiment scripts.  
-- Install [VBMC](https://github.com/acerbilab/vbmc) (MATLAB toolbox for Bayesian model fitting). 
-
-2. Download precomputed results
-- Download `fit_results.zip` from [OSF](https://osf.io/8s7qv/) and unzip it into the project root.  
-
-3. Add paths in MATLAB
+- Download dependencies: Install [Psychtoolbox](https://psychtoolbox.org/) for experiment scripts. Install [VBMC](https://github.com/acerbilab/vbmc) (MATLAB toolbox for Bayesian model fitting). 
+- Download precomputed results `fit_results.zip` from [OSF](https://osf.io/8s7qv/) and unzip it into the project root.  
 - Add the project folders to your MATLAB path.
 
 ## Usage
 
-1. Model Fitting
+### 1. Model Fitting
 - **Local fitting**: Run the `run_local.m` script under `recalibration_models/` to fit all recalibration models or a specific one.
 - **Cluster fitting**: Modify script to run `fit_recal_model.m` to submit jobs via your cluster’s scheduling system.
 - Recalibration models:
@@ -32,20 +26,16 @@ This project develops computational models of audiovisual temporal recalibration
    - `trigger_asym/` Asynchrony-correction model, modality-specific temporal precision
    - `trigger_sym/` Asynchrony-correction model, modality-independent temporal precision
 
-2. Model Recovery
-   
+### 2. Model Recovery
 Run the `model_recovery_s1.m`, `model_recovery_s2.m`, and `model_recovery_s3.m` scripts sequentially. Alternatively, modify and combine them to create a full pipeline. 
 
-3. Parameter Recovery
-
+### 3. Parameter Recovery
 Use the `param_recovery.m` script to run parameter recovery for a specific model. Modify the `currModelStr` variable to test other models.  
 
-4. GUI Simulation
-
+### 4. GUI Simulation
 Launch the `modelGUI.mlapp` from the respective model subfolder if it exists (e.g., `recalibration_models/caulnf_asym`). Ensure your MATLAB working directory matches the model folder.
 
-5. Regenerate Figures
-
+### 5. Regenerate Figures
 Run the plotting scripts in the `figures` folder to regenerate figures from the paper. Requires the `fit_results` folder in the root directory.  
 
 ## Troubleshooting
