@@ -33,15 +33,19 @@ This project develops computational models of audiovisual temporal recalibration
    - `trigger_sym/` Asynchrony-correction model, modality-independent temporal precision
 
 2. Model Recovery
+   
 Run the `model_recovery_s1.m`, `model_recovery_s2.m`, and `model_recovery_s3.m` scripts sequentially. Alternatively, modify and combine them to create a full pipeline. 
 
 3. Parameter Recovery
+
 Use the `param_recovery.m` script to run parameter recovery for a specific model. Modify the `currModelStr` variable to test other models.  
 
 4. GUI Simulation
+
 Launch the `modelGUI.mlapp` from the respective model subfolder if it exists (e.g., `recalibration_models/caulnf_asym`). Ensure your MATLAB working directory matches the model folder.
 
 5. Regenerate Figures
+
 Run the plotting scripts in the `figures` folder to regenerate figures from the paper. Requires the `fit_results` folder in the root directory.  
 
 ## Troubleshooting
